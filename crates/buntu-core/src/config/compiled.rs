@@ -6,6 +6,7 @@ use std::net::SocketAddr;
 
 use crate::config::file::{RawConfig, RawHooks, RawProvider, RawRoute};
 use crate::config::{ConfigError, Environment};
+use crate::keys::KeySelector;
 
 #[derive(Debug, Clone)]
 pub struct CompiledConfig {
@@ -45,6 +46,8 @@ pub struct CompiledProvider {
     pub id: String,
     pub kind: String,
     pub keys: Vec<CompiledKey>,
+    /// Table de sélection pondérée construite une fois, avec ses pauses par clé.
+    pub selector: KeySelector,
 }
 
 #[derive(Debug, Clone)]
@@ -174,10 +177,17 @@ fn compile_provider(
         });
     }
 
+    let weights: Vec<u32> = keys.iter().map(|key| key.weight).collect();
+    let selector = KeySelector::new(&weights).map_err(|error| ConfigError::Invalid {
+        path: format!("providers[{index}].keys"),
+        message: error.to_string(),
+    })?;
+
     Ok(CompiledProvider {
         id: id.to_owned(),
         kind: provider.kind.trim().to_owned(),
         keys,
+        selector,
     })
 }
 
