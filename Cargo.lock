@@ -186,10 +186,12 @@ name = "buntu-core"
 version = "0.0.0"
 dependencies = [
  "arc-swap",
+ "buntu-schema",
  "notify",
  "serde",
  "serde_json",
  "thiserror",
+ "tokio",
  "toml",
 ]
 
