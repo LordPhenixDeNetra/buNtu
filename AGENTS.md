@@ -102,11 +102,11 @@ Les documents du dépôt sont rédigés en français.
 
 ## État et périmètre
 
-**Le code s'arrête au squelette (T0.2).** Le workspace Cargo existe avec ses 13 crates vides,
-les lints et le profil release sont posés, et la CI (`fmt`, `clippy`, `nextest`, `deny`,
-`audit`, couverture) tourne. Aucune logique métier n'est écrite : `buntu-cli` affiche seulement
-sa version. Les prochains travaux sont **T0.1** (preuve de disponibilité du nom, côté humain),
-**T0.3** (simulateur de fournisseur), **T0.4** (banc de benchmark) et **T0.5** (schéma
-canonique v0).
+**Le socle est en place (T0.2, T0.3, T0.5, T0.6/T0.7).** Le workspace Cargo (13 crates), la CI
+complète, le simulateur de fournisseur (`tools/mock-provider`) et le schéma canonique v0
+(`buntu-schema`) existent, ainsi que les ADR et les fichiers du projet. Aucune logique métier :
+`buntu-cli` affiche seulement sa version. Les prochains travaux sont **T0.1** (preuve de
+disponibilité du nom, côté humain), puis **T1.1** (serveur HTTP), **T0.4** (banc complet, une
+fois la passerelle présente), **T1.3** (pipeline) et **T1.8–T1.11** (fournisseurs).
 
 Toute ligne de code écrite avant sa tâche est hors périmètre.
