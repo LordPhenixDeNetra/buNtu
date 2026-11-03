@@ -1,0 +1,9 @@
+buNtu
+Copyright 2026 LordPhenixDeNetra
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+It includes third-party software under compatible licences (MIT, Apache-2.0, BSD,
+ISC, Zlib, Unicode-3.0). The exact list and versions are in Cargo.lock; the
+licence policy and the automated check are in `deny.toml` (`cargo deny check`,
+run by CI on every pull request).
