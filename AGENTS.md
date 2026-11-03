@@ -105,14 +105,16 @@ Les documents du dépôt sont rédigés en français.
 
 ## État et périmètre
 
-**Le socle est en place (T0.2, T0.3, T0.4, T0.5, T0.6/T0.7, T1.1).** Le workspace Cargo
+**Le socle est en place (T0.2, T0.3, T0.4, T0.5, T0.6/T0.7, T1.1, T1.2).** Le workspace Cargo
 (13 crates), la CI complète, le simulateur de fournisseur (`tools/mock-provider`), le banc de
 benchmark (`cargo xtask bench`), le schéma canonique v0 (`buntu-schema`), les ADR et les
-fichiers du projet existent, et `buntu serve` démarre un serveur HTTP avec `/health`, `/ready`
-et arrêt gracieux. Aucune logique métier n'est encore écrite. T0.4 est livré **avec réserve** :
-le critère ± 10 % de P99 n'est pas atteignable sur un poste où le générateur est colocalisé ; il
-sera vérifié par la campagne §11.2 (T1.26). Les prochains travaux sont **T0.1** (preuve de
-disponibilité du nom, côté humain), **T1.2** (configuration et rechargement à chaud), puis
-**T1.3** (pipeline) et **T1.8–T1.11** (fournisseurs). Le suivi est tenu dans `docs/status.md`.
+fichiers du projet existent. `buntu serve` démarre un serveur HTTP avec `/health`, `/ready` et
+arrêt gracieux ; `buntu serve --config` charge une configuration TOML validée, la recompile et
+la recharge à chaud (fichier surveillé + SIGHUP), `buntu config validate` la vérifie. Aucune
+logique métier de routage n'est encore écrite. T0.4 est livré **avec réserve** : le critère
+± 10 % de P99 n'est pas atteignable sur un poste où le générateur est colocalisé ; il sera
+vérifié par la campagne §11.2 (T1.26). Les prochains travaux sont **T0.1** (preuve de
+disponibilité du nom, côté humain), **T1.3** (pipeline et hooks), puis **T1.4–T1.7** (routage et
+timeouts) et **T1.8–T1.11** (fournisseurs). Le suivi est tenu dans `docs/status.md`.
 
 Toute ligne de code écrite avant sa tâche est hors périmètre.
