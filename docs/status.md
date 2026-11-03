@@ -18,7 +18,7 @@ dans la PR.
 
 ## Tâche en cours
 
-Aucune. Prochaine : **T1.3** (pipeline de requête et hooks).
+Aucune. Prochaine : **T1.4** (sélection pondérée des clés).
 
 ## Phase 0 — Fondations (15 j)
 
@@ -38,7 +38,7 @@ Aucune. Prochaine : **T1.3** (pipeline de requête et hooks).
 | --- | --- | --- | --- | --- | --- |
 | T1.1 | Serveur HTTP, `/health`, `/ready`, arrêt gracieux, limites | fait | #7 | 2026-11-03 | 5 tests d'intégration : santé/préparation, corps > 10 Mo → 413, timeout des en-têtes, flux long terminé, aucune connexion après l'arrêt |
 | T1.2 | Configuration + rechargement à chaud | fait | #10 | 2026-11-03 | 10 tests de configuration ; `cargo xtask reload-soak --qps 5000 --seconds 60 --reload-every 2` → 4999 req/s, 100 %, 0 erreur, 30 rechargements |
-| T1.3 | Pipeline et hooks | à faire | — | — | — |
+| T1.3 | Pipeline et hooks | fait | #11 | 2026-11-03 | 9 tests pipeline : ordre déclaré, court-circuit sans appel, erreurs propres, usage final de flux ; chaîne vide **483 ns/requête en release** |
 | T1.4 | Sélection pondérée des clés | à faire | — | — | — |
 | T1.5 | Réessais | à faire | — | — | — |
 | T1.6 | Chaîne de repli et alias | à faire | — | — | — |
@@ -62,4 +62,5 @@ ajoutée à ce tableau au début de l'epic, en même temps que la rédaction de 
 | 2026-11-03 | #6 | T0.6 + T0.7 ADR et fichiers du projet | verte (1 min 07) |
 | 2026-11-03 | #7 | T1.1 Serveur HTTP, santé, arrêt gracieux | verte (1 min 23) |
 | 2026-11-03 | #9 | T0.4 Banc de benchmark scripté | verte (1 min 20) |
-| 2026-11-03 | #10 | T1.2 Configuration et rechargement à chaud | à confirmer |
+| 2026-11-03 | #10 | T1.2 Configuration et rechargement à chaud | verte (1 min 39) |
+| 2026-11-03 | #11 | T1.3 Pipeline et hooks | à confirmer |
