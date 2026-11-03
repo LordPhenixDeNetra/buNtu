@@ -18,7 +18,7 @@ dans la PR.
 
 ## Tâche en cours
 
-Aucune. Prochaine : **T1.7** (quatre timeouts).
+Aucune. Prochaine : **T1.8** (kit de conformité des fournisseurs).
 
 ## Phase 0 — Fondations (15 j)
 
@@ -42,7 +42,7 @@ Aucune. Prochaine : **T1.7** (quatre timeouts).
 | T1.4 | Sélection pondérée des clés | fait | #12 | 2026-11-03 | 1 M de tirages à ± 1 % des poids ; criterion **13,9 ns** (< 50 ns) ; toutes clés en pause → erreur explicite ; pauses réinitialisées au rechargement (documenté) |
 | T1.5 | Réessais | fait | #13 | 2026-11-03 | 6 tests : classification par statut (429/500/502/503/504 vs 400/401/403/404/422), flux déjà commencé jamais réessayé, gigue complète plafonnée ; 100 % de 503 → **taux de réessai 20,095 %** |
 | T1.6 | Chaîne de repli et alias | fait | #14 | 2026-11-03 | 11 tests : alias dans l'ordre, cible directe, erreurs, filtre de capacités ; **UC2 avec deux vrais simulateurs** (503 puis 200) → 200, en-têtes `x-buntu-provider`/`x-buntu-model`/`x-buntu-attempts` = 3 ; toutes cibles en échec → dernière erreur + liste |
-| T1.7 | Quatre timeouts | à faire | — | — | — |
+| T1.7 | Quatre timeouts | fait (réserve) | #15 | 2026-11-03 | 10 tests : défauts, surcharges globales et par route, premier octet et total via `TimedExecutor`, budgets de flux premier/inter/total, **abandon du futur amont prouvé**, timeout réel sur simulateur (200 ms coupé à 50 ms) ; réserve : connexion et inter-morceaux branchés dans le client hyper-util (T1.8+) |
 
 ## Phases suivantes
 
@@ -66,4 +66,5 @@ ajoutée à ce tableau au début de l'epic, en même temps que la rédaction de 
 | 2026-11-03 | #11 | T1.3 Pipeline et hooks | verte (1 min 09) |
 | 2026-11-03 | #12 | T1.4 Sélection pondérée des clés | verte (1 min 07) |
 | 2026-11-03 | #13 | T1.5 Réessais, backoff et budget | verte (1 min 05) |
-| 2026-11-03 | #14 | T1.6 Chaîne de repli et alias | à confirmer |
+| 2026-11-03 | #14 | T1.6 Chaîne de repli et alias | verte (1 min 28) |
+| 2026-11-03 | #15 | T1.7 Quatre timeouts | à confirmer |
