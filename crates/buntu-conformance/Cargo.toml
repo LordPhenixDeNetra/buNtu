@@ -1,0 +1,23 @@
+[package]
+name = "buntu-conformance"
+description = "Kit de conformité des fournisseurs (crate de test, non publiée)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+buntu-providers.workspace = true
+buntu-schema.workspace = true
+bytes.workspace = true
+hyper.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+wiremock.workspace = true
+
+[lints]
+workspace = true
