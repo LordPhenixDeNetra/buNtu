@@ -10,6 +10,8 @@ allow = [
     "MIT",
     # Données Unicode (unicode-ident, icu) : licence permissive, requise par serde_derive.
     "Unicode-3.0",
+    # `notify` (surveillance de fichiers, T1.2) est sous CC0-1.0, dédiée au domaine public.
+    "CC0-1.0",
     "Zlib",
 ]
 confidence-threshold = 0.93

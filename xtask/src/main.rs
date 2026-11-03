@@ -1,6 +1,7 @@
-//! Outillage du projet : `cargo xtask bench`.
+//! Outillage du projet : `cargo xtask bench` et `cargo xtask reload-soak`.
 
 mod bench;
+mod reload;
 mod report;
 
 use std::error::Error;
@@ -9,7 +10,8 @@ const USAGE: &str = "\
 usage: cargo xtask <commande>
 
 commandes:
-  bench [options]   lance le banc de benchmark (protocole : benchmarks/README.md)
+  bench [options]        banc de benchmark (protocole : benchmarks/README.md)
+  reload-soak [options]  preuve de rechargement à chaud sous charge (T1.2)
 
 options de bench:
   --runs N        exécutions complètes (défaut : 2 ; la reproductibilité est vérifiée à 2)
@@ -18,6 +20,11 @@ options de bench:
   --warmup N      durée de la chauffe, en secondes (défaut : 2)
   --tolerance F   écart relatif maximal des P99 entre exécutions (défaut : 0.10)
   --output DIR    répertoire de sortie (défaut : benchmarks/results/<date>)
+
+options de reload-soak:
+  --qps N             débit maintenu pendant l'essai (défaut : 5000)
+  --seconds N         durée de l'essai (défaut : 60)
+  --reload-every N    intervalle entre deux réécritures de configuration (défaut : 2)
 ";
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -26,6 +33,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         Some("bench") => {
             let options = bench::Options::parse(arguments.collect())?;
             bench::run(options)
+        }
+        Some("reload-soak") => {
+            let options = reload::Options::parse(arguments.collect())?;
+            reload::run(options)
         }
         Some("help") | Some("--help") | Some("-h") | None => {
             println!("{USAGE}");
