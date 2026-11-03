@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::net::SocketAddr;
 
-use crate::config::file::{RawConfig, RawProvider, RawRoute};
+use crate::config::file::{RawConfig, RawHooks, RawProvider, RawRoute};
 use crate::config::{ConfigError, Environment};
 
 #[derive(Debug, Clone)]
@@ -12,6 +12,7 @@ pub struct CompiledConfig {
     pub server: CompiledServer,
     pub providers: HashMap<String, CompiledProvider>,
     pub routes: HashMap<String, CompiledRoute>,
+    pub hooks: CompiledHooks,
 }
 
 impl Default for CompiledConfig {
@@ -22,6 +23,7 @@ impl Default for CompiledConfig {
             },
             providers: HashMap::new(),
             routes: HashMap::new(),
+            hooks: CompiledHooks::default(),
         }
     }
 }
@@ -29,6 +31,13 @@ impl Default for CompiledConfig {
 #[derive(Debug, Clone)]
 pub struct CompiledServer {
     pub listen: SocketAddr,
+}
+
+/// Chaîne de hooks déclarée par la configuration, dans l'ordre d'exécution.
+#[derive(Debug, Clone, Default)]
+pub struct CompiledHooks {
+    pub pre: Vec<String>,
+    pub post: Vec<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -114,10 +123,13 @@ pub fn compile(
         }
     }
 
+    let hooks = compile_hooks(&raw.hooks)?;
+
     Ok(CompiledConfig {
         server: CompiledServer { listen },
         providers,
         routes,
+        hooks,
     })
 }
 
@@ -248,4 +260,32 @@ fn parse_target(
         provider: provider.to_owned(),
         model: model.to_owned(),
     })
+}
+
+fn compile_hooks(hooks: &RawHooks) -> Result<CompiledHooks, ConfigError> {
+    check_hook_names(&hooks.pre, "hooks.pre")?;
+    check_hook_names(&hooks.post, "hooks.post")?;
+    Ok(CompiledHooks {
+        pre: hooks.pre.clone(),
+        post: hooks.post.clone(),
+    })
+}
+
+fn check_hook_names(names: &[String], section: &str) -> Result<(), ConfigError> {
+    let mut seen = std::collections::HashSet::new();
+    for (index, name) in names.iter().enumerate() {
+        if name.trim().is_empty() {
+            return Err(ConfigError::Invalid {
+                path: format!("{section}[{index}]"),
+                message: "nom de hook vide".to_owned(),
+            });
+        }
+        if !seen.insert(name.as_str()) {
+            return Err(ConfigError::Invalid {
+                path: format!("{section}[{index}]"),
+                message: "hook en double".to_owned(),
+            });
+        }
+    }
+    Ok(())
 }
