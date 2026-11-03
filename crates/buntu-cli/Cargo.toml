@@ -12,6 +12,7 @@ name = "buntu"
 path = "src/main.rs"
 
 [dependencies]
+buntu-core.workspace = true
 buntu-gateway.workspace = true
 tokio.workspace = true
 
