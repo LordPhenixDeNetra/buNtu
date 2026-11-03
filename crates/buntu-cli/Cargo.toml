@@ -1,0 +1,15 @@
+[package]
+name = "buntu-cli"
+description = "Binaire `buntu` : serve, import, bench, doctor, config validate."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "buntu"
+path = "src/main.rs"
+
+[lints]
+workspace = true

@@ -34,12 +34,13 @@ machine le prouve. Une seule tâche en cours à la fois.
 ## Commande unique
 
 ```sh
-cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo nextest run && cargo deny check
+cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo nextest run --no-tests=pass && cargo deny check
 ```
 
-La CI ajoute `cargo audit` et la couverture (`cargo llvm-cov`). Prérequis : Rust stable
-(MSRV fixée dans `rust-toolchain.toml`), `cargo-nextest`, `cargo-deny`. Ces commandes ne
-s'appliquent qu'à partir de T0.2, quand le workspace Cargo existe.
+`--no-tests=pass` reste nécessaire tant qu'aucun test n'existe : `cargo nextest run` échoue
+avec zéro test. La CI ajoute `cargo audit` et la couverture (`cargo llvm-cov`). Prérequis :
+Rust stable (`rust-toolchain.toml`), `cargo-nextest`, `cargo-deny`, `cargo-audit` et le
+composant `llvm-tools-preview`.
 
 ## Règles
 
@@ -101,9 +102,11 @@ Les documents du dépôt sont rédigés en français.
 
 ## État et périmètre
 
-**Le code n'a pas commencé.** Le dépôt ne contient que les deux documents de référence : le
-cahier des charges et le guide d'exécution. Les prochains travaux sont **T0.1** (validation du
-nom), **T0.2** (workspace Cargo, CI), **T0.3** (simulateur de fournisseur), **T0.4** (banc de
-benchmark) et **T0.5** (schéma canonique v0).
+**Le code s'arrête au squelette (T0.2).** Le workspace Cargo existe avec ses 13 crates vides,
+les lints et le profil release sont posés, et la CI (`fmt`, `clippy`, `nextest`, `deny`,
+`audit`, couverture) tourne. Aucune logique métier n'est écrite : `buntu-cli` affiche seulement
+sa version. Les prochains travaux sont **T0.1** (preuve de disponibilité du nom, côté humain),
+**T0.3** (simulateur de fournisseur), **T0.4** (banc de benchmark) et **T0.5** (schéma
+canonique v0).
 
 Toute ligne de code écrite avant sa tâche est hors périmètre.

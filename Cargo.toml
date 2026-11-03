@@ -1,0 +1,52 @@
+# Workspace buNtu — voir AGENTS.md et le cahier des charges §6.2.
+[workspace]
+resolver = "3"
+members = [
+    "crates/buntu-schema",
+    "crates/buntu-core",
+    "crates/buntu-providers",
+    "crates/buntu-gateway",
+    "crates/buntu-store",
+    "crates/buntu-governance",
+    "crates/buntu-cache",
+    "crates/buntu-mcp",
+    "crates/buntu-security",
+    "crates/buntu-observe",
+    "crates/buntu-plugin-wasm",
+    "crates/buntu-cluster",
+    "crates/buntu-cli",
+]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2024"
+license = "Apache-2.0"
+rust-version = "1.90"
+repository = "https://github.com/LordPhenixDeNetra/buNtu"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+
+[workspace.dependencies]
+buntu-schema = { path = "crates/buntu-schema" }
+buntu-core = { path = "crates/buntu-core" }
+buntu-providers = { path = "crates/buntu-providers" }
+buntu-gateway = { path = "crates/buntu-gateway" }
+buntu-store = { path = "crates/buntu-store" }
+buntu-governance = { path = "crates/buntu-governance" }
+buntu-cache = { path = "crates/buntu-cache" }
+buntu-mcp = { path = "crates/buntu-mcp" }
+buntu-security = { path = "crates/buntu-security" }
+buntu-observe = { path = "crates/buntu-observe" }
+buntu-plugin-wasm = { path = "crates/buntu-plugin-wasm" }
+buntu-cluster = { path = "crates/buntu-cluster" }
+buntu-cli = { path = "crates/buntu-cli" }
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "abort"
