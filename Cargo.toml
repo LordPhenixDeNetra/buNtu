@@ -33,28 +33,35 @@ unwrap_used = "deny"
 expect_used = "deny"
 
 [workspace.dependencies]
-buntu-schema = { path = "crates/buntu-schema" }
-buntu-core = { path = "crates/buntu-core" }
-buntu-providers = { path = "crates/buntu-providers" }
-buntu-gateway = { path = "crates/buntu-gateway" }
-buntu-store = { path = "crates/buntu-store" }
-buntu-governance = { path = "crates/buntu-governance" }
-buntu-cache = { path = "crates/buntu-cache" }
-buntu-mcp = { path = "crates/buntu-mcp" }
-buntu-security = { path = "crates/buntu-security" }
-buntu-observe = { path = "crates/buntu-observe" }
-buntu-plugin-wasm = { path = "crates/buntu-plugin-wasm" }
-buntu-cluster = { path = "crates/buntu-cluster" }
-buntu-cli = { path = "crates/buntu-cli" }
+# Crates internes : la version explicite évite que cargo-deny les traite comme des
+# dépendances « wildcard » (règle `bans.wildcards`). Elles seront publiées ensemble ensuite.
+buntu-schema = { version = "0.0.0", path = "crates/buntu-schema" }
+buntu-core = { version = "0.0.0", path = "crates/buntu-core" }
+buntu-providers = { version = "0.0.0", path = "crates/buntu-providers" }
+buntu-gateway = { version = "0.0.0", path = "crates/buntu-gateway" }
+buntu-store = { version = "0.0.0", path = "crates/buntu-store" }
+buntu-governance = { version = "0.0.0", path = "crates/buntu-governance" }
+buntu-cache = { version = "0.0.0", path = "crates/buntu-cache" }
+buntu-mcp = { version = "0.0.0", path = "crates/buntu-mcp" }
+buntu-security = { version = "0.0.0", path = "crates/buntu-security" }
+buntu-observe = { version = "0.0.0", path = "crates/buntu-observe" }
+buntu-plugin-wasm = { version = "0.0.0", path = "crates/buntu-plugin-wasm" }
+buntu-cluster = { version = "0.0.0", path = "crates/buntu-cluster" }
+buntu-cli = { version = "0.0.0", path = "crates/buntu-cli" }
 
 # Dépendances du simulateur de fournisseur (T0.3) ; aucune crate produit ne les utilise.
 async-stream = "0.3"
-axum = "0.8"
 bytes = "1"
 reqwest = { version = "0.12", default-features = false, features = ["json", "stream"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-tokio = { version = "1", features = ["macros", "net", "rt-multi-thread", "time"] }
+
+# Socle produit : serveur HTTP et runtime (T1.1), schéma canonique (T0.5).
+axum = "0.8"
+hyper = { version = "1", features = ["server", "http1"] }
+hyper-util = { version = "0.1", features = ["service", "tokio"] }
+tokio = { version = "1", features = ["macros", "net", "rt-multi-thread", "time", "signal", "sync", "io-util"] }
+tower-http = { version = "0.6", features = ["limit"] }
 
 # Schéma canonique (T0.5).
 proptest = "1"
