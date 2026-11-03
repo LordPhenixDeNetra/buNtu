@@ -6,3 +6,4 @@ pub mod context;
 pub mod hooks;
 pub mod keys;
 pub mod pipeline;
+pub mod retry;
