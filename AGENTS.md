@@ -9,6 +9,8 @@ cache sémantique, budgets et passerelle MCP. Décisions : `docs/adr/`.
 - `buNtu — Cahier des charges et cahier des tâches.md` : périmètre, exigences `FR-*`/`NFR-*`,
   architecture, plan de quatre phases.
 - `Guide d'exécution (agents IA).md` : règles, fiches de tâches, définition de « fait ».
+- `docs/status.md` : suivi des tâches (statut, PR, preuve), mis à jour dans le même commit que
+  la tâche ; la case correspondante du cahier des charges est cochée en même temps.
 
 Chaque tâche porte un identifiant `T<phase>.<n>` (`T0.2`, `T1.4`…) et n'est faite que si la
 machine le prouve. Une seule tâche en cours à la fois.
@@ -102,11 +104,13 @@ Les documents du dépôt sont rédigés en français.
 
 ## État et périmètre
 
-**Le socle est en place (T0.2, T0.3, T0.5, T0.6/T0.7).** Le workspace Cargo (13 crates), la CI
-complète, le simulateur de fournisseur (`tools/mock-provider`) et le schéma canonique v0
-(`buntu-schema`) existent, ainsi que les ADR et les fichiers du projet. Aucune logique métier :
-`buntu-cli` affiche seulement sa version. Les prochains travaux sont **T0.1** (preuve de
-disponibilité du nom, côté humain), puis **T1.1** (serveur HTTP), **T0.4** (banc complet, une
-fois la passerelle présente), **T1.3** (pipeline) et **T1.8–T1.11** (fournisseurs).
+**Le socle est en place (T0.2, T0.3, T0.5, T0.6/T0.7, T1.1).** Le workspace Cargo (13 crates),
+la CI complète, le simulateur de fournisseur (`tools/mock-provider`), le schéma canonique v0
+(`buntu-schema`), les ADR et les fichiers du projet existent, et `buntu serve` démarre un
+serveur HTTP avec `/health`, `/ready` et arrêt gracieux. Aucune logique métier n'est encore
+écrite. Les prochains travaux sont **T0.1** (preuve de disponibilité du nom, côté humain),
+**T0.4** (banc de benchmark complet, débloqué par T1.1), **T1.2** (configuration et
+rechargement à chaud), puis **T1.3** (pipeline) et **T1.8–T1.11** (fournisseurs). Le suivi est
+tenu dans `docs/status.md`.
 
 Toute ligne de code écrite avant sa tâche est hors périmètre.
