@@ -11,5 +11,9 @@ repository.workspace = true
 name = "buntu"
 path = "src/main.rs"
 
+[dependencies]
+buntu-gateway.workspace = true
+tokio.workspace = true
+
 [lints]
 workspace = true
