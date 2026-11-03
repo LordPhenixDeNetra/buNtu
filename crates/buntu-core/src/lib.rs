@@ -1,3 +1,6 @@
-//! Cœur de buNtu : configuration compilée et, à venir, pipeline de requête.
+//! Cœur de buNtu : configuration compilée, contexte de requête, hooks et pipeline.
 
 pub mod config;
+pub mod context;
+pub mod hooks;
+pub mod pipeline;

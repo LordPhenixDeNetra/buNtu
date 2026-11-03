@@ -16,6 +16,17 @@ pub struct RawConfig {
     pub providers: Vec<RawProvider>,
     #[serde(default)]
     pub routes: Vec<RawRoute>,
+    #[serde(default)]
+    pub hooks: RawHooks,
+}
+
+/// Hooks déclarés, dans l'ordre d'exécution.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct RawHooks {
+    #[serde(default)]
+    pub pre: Vec<String>,
+    #[serde(default)]
+    pub post: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
