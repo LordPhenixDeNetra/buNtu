@@ -1,0 +1,11 @@
+[package]
+name = "buntu-schema"
+description = "Types canoniques de buNtu : messages, contenus, outils, usage et erreurs."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
