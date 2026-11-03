@@ -68,6 +68,11 @@ tower-http = { version = "0.6", features = ["limit"] }
 proptest = "1"
 thiserror = "2"
 
+# Configuration et rechargement à chaud (T1.2).
+arc-swap = "1.9"
+notify = "8.2"
+toml = "1.1"
+
 [profile.release]
 lto = "fat"
 codegen-units = 1
