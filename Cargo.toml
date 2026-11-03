@@ -16,6 +16,7 @@ members = [
     "crates/buntu-cluster",
     "crates/buntu-cli",
     "tools/mock-provider",
+    "xtask",
 ]
 
 [workspace.package]

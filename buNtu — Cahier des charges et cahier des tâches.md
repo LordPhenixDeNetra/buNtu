@@ -525,7 +525,7 @@ Le projet compte environ 395 jours de travail estimés, soit environ 2 ans et 3 
 - [ ] **T0.1** Valider le nom : marques EUIPO/USPTO, crates.io, GitHub, npm, Docker Hub, domaine — 1 j — *Acceptation :* nom réservé partout ou nom de rechange choisi.
 - [x] **T0.2** Workspace Cargo avec les 13 crates vides, CI (fmt, clippy, nextest, deny, audit, couverture) — 2 j — *Acceptation :* PR d'exemple bloquée par un warning clippy.
 - [x] **T0.3** Simulateur de fournisseur en Rust : latence, flux, erreurs 429/5xx, coupures injectables — 3 j — *Acceptation :* tient 50 000 req/s seul sur 4 vCPU.
-- [ ] **T0.4** Banc de benchmark scripté (section 11.2) + mesure de référence d'une passerelle existante — 3 j — *Acceptation :* rapport reproductible en une commande.
+- [x] **T0.4** Banc de benchmark scripté (section 11.2) + mesure de référence d'une passerelle existante — 3 j — *Acceptation :* rapport reproductible en une commande.
 - [x] **T0.5** Schéma canonique v0 : messages, contenus multimodaux, outils, usage, erreurs — 4 j — *Acceptation :* aller-retour OpenAI → canonique → OpenAI sans perte sur 200 cas (`proptest`).
 - [x] **T0.6** ADR initiales : runtime, HTTP, stockage, UI, licence — 1 j.
 - [x] **T0.7** README, CONTRIBUTING, SECURITY, CODE\_OF\_CONDUCT, LICENSE Apache 2.0, modèles d'issues — 1 j.
