@@ -1,0 +1,1 @@
+{"status":200,"headers":{"content-type":"application/json"},"body":{"id":"fake-5","object":"chat.completion","model":"fake-model","choices":[{"index":0,"message":{"role":"assistant","content":"Il fait beau"},"finish_reason":"stop"}],"usage":{"prompt_tokens":8,"completion_tokens":3,"total_tokens":11}}}

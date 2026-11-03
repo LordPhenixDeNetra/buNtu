@@ -1,0 +1,1 @@
+{"status":200,"headers":{"content-type":"application/json"},"body":{"id":"fake-6","object":"chat.completion","model":"fake-model","choices":[{"index":0,"message":{"role":"assistant","content":"Une image"},"finish_reason":"stop"}],"usage":{"prompt_tokens":11,"completion_tokens":2,"total_tokens":13}}}
