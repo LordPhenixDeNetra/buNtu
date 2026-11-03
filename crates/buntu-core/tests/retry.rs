@@ -48,6 +48,7 @@ fn errors_are_classified_by_variant() {
         GatewayError::BudgetExceeded,
         GatewayError::AllTargetsFailed {
             attempts: vec!["openai/gpt-4o-mini".to_owned()],
+            last: Box::new(GatewayError::Timeout),
         },
         GatewayError::Internal {
             message: "bug".to_owned(),

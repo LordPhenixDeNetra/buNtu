@@ -22,7 +22,12 @@ pub enum GatewayError {
     #[error("budget exceeded")]
     BudgetExceeded,
     #[error("all targets failed")]
-    AllTargetsFailed { attempts: Vec<String> },
+    AllTargetsFailed {
+        /// Description de chaque tentative, dans l'ordre.
+        attempts: Vec<String>,
+        /// Dernière erreur rencontrée.
+        last: Box<GatewayError>,
+    },
     #[error("internal error: {message}")]
     Internal { message: String },
 }

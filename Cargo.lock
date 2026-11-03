@@ -216,10 +216,13 @@ name = "buntu-core"
 version = "0.0.0"
 dependencies = [
  "arc-swap",
+ "axum",
+ "buntu-mock-provider",
  "buntu-schema",
  "criterion",
  "fastrand",
  "notify",
+ "reqwest",
  "serde",
  "serde_json",
  "thiserror",
