@@ -537,7 +537,7 @@ Le projet compte environ 395 jours de travail estimés, soit environ 2 ans et 3 
 - [x] **T1.1** Serveur hyper/axum, `/health`, `/ready`, arrêt gracieux, limites de taille et de connexions — 3 j — FR-API-10, NFR-REL-3.
 - [x] **T1.2** Configuration fichier + environnement, instantané `ArcSwap`, rechargement à chaud, `config validate` — 4 j — NFR-REL-4 — *Acceptation :* rechargement sous 5 000 req/s sans erreur.
 - [x] **T1.3** Pipeline de requête et chaîne de hooks `PreHook`/`PostHook` — 4 j — FR-EXT-1.
-- [ ] **T1.4** Sélection pondérée des clés (alias O(1)) — 2 j — FR-RTE-1 — *Acceptation :* < 50 ns par sélection (criterion).
+- [x] **T1.4** Sélection pondérée des clés (alias O(1)) — 2 j — FR-RTE-1 — *Acceptation :* < 50 ns par sélection (criterion).
 - [ ] **T1.5** Réessais avec backoff + gigue, budget global de réessais — 3 j — FR-RTE-3.
 - [ ] **T1.6** Chaîne de repli et alias de modèles — 3 j — FR-RTE-2, FR-API-7 — *Acceptation :* scénario chaos UC2 sans erreur client.
 - [ ] **T1.7** Quatre timeouts (connexion, premier token, inter-tokens, total) — 2 j — FR-RTE-4.
