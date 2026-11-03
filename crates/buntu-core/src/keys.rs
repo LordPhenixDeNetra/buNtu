@@ -209,11 +209,24 @@ impl KeySelector {
             })?;
         let previous = entry.pause_until_ms.swap(0, Ordering::AcqRel);
         if previous != 0 {
-            let _ = self
-                .paused_count
-                .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |count| {
-                    Some(count.saturating_sub(1))
-                });
+            // Décrément saturant sans `fetch_update`/`try_update` (déprécié selon les versions) :
+            // boucle de comparaison-échange, sans risque de passage sous zéro.
+            let mut current = self.paused_count.load(Ordering::Relaxed);
+            loop {
+                let next = current.saturating_sub(1);
+                if next == current {
+                    break;
+                }
+                match self.paused_count.compare_exchange_weak(
+                    current,
+                    next,
+                    Ordering::Relaxed,
+                    Ordering::Relaxed,
+                ) {
+                    Ok(_) => break,
+                    Err(observed) => current = observed,
+                }
+            }
         }
         Ok(())
     }
