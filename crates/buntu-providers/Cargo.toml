@@ -1,11 +1,17 @@
 [package]
 name = "buntu-providers"
-description = "Traduction requête/réponse/flux vers chaque fournisseur de modèles."
+description = "Un module par fournisseur : requête, réponse, flux et erreurs."
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 repository.workspace = true
+
+[dependencies]
+buntu-schema.workspace = true
+bytes.workspace = true
+hyper.workspace = true
+serde_json.workspace = true
 
 [lints]
 workspace = true
