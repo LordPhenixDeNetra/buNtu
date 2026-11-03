@@ -18,7 +18,7 @@ dans la PR.
 
 ## Tâche en cours
 
-Aucune. Prochaine : **T1.9** (fournisseur OpenAI).
+Aucune. Prochaine : **T1.10** (fournisseur Anthropic).
 
 ## Phase 0 — Fondations (15 j)
 
@@ -47,6 +47,10 @@ Aucune. Prochaine : **T1.9** (fournisseur OpenAI).
 
 ## Phase 1 — E2 Fournisseurs
 
+| ID | Tâche | Statut | PR | Date | Preuve |
+| --- | --- | --- | --- | --- | --- |
+| T1.9 | OpenAI (Chat Completions) | fait (réserve) | #17 | 2026-11-03 | traduction requête/réponse/flux/erreurs ; **14/14 cas de conformité** + 6 tests unitaires ; doc `docs/providers/openai.md` ; réserve : fixtures synthétiques et contrôle `BUNTU_LIVE` en attente d'une clé API |
+
 ## Phases suivantes
 
 Le détail des tâches des phases 2 à 4 reste dans le cahier des charges. Chaque phase sera
@@ -71,4 +75,5 @@ ajoutée à ce tableau au début de l'epic, en même temps que la rédaction de 
 | 2026-11-03 | #13 | T1.5 Réessais, backoff et budget | verte (1 min 05) |
 | 2026-11-03 | #14 | T1.6 Chaîne de repli et alias | verte (1 min 28) |
 | 2026-11-03 | #15 | T1.7 Quatre timeouts | verte (51 s) |
-| 2026-11-03 | #16 | T1.8 Kit de conformité | à confirmer |
+| 2026-11-03 | #16 | T1.8 Kit de conformité | verte (1 min 37) |
+| 2026-11-03 | #17 | T1.9 OpenAI | à confirmer |

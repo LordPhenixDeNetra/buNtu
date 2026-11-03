@@ -105,7 +105,7 @@ Les documents du dépôt sont rédigés en français.
 
 ## État et périmètre
 
-**Le socle est en place (T0.2–T0.7, T1.1–T1.8).** Le workspace Cargo (14 crates), la CI
+**Le socle est en place (T0.2–T0.7, T1.1–T1.9).** Le workspace Cargo (14 crates), la CI
 complète, le simulateur de fournisseur (`tools/mock-provider`), le banc de benchmark
 (`cargo xtask bench`), le schéma canonique v0 (`buntu-schema`), les ADR et les fichiers du projet
 existent. `buntu serve` démarre un serveur HTTP avec `/health`, `/ready` et arrêt gracieux ;
@@ -115,14 +115,16 @@ hooks (`buntu-core::pipeline`), sélection pondérée des clés (`keys`), politi
 (`retry`), résolution des alias et filtrage de capacités (`routing`), chaîne de repli avec
 en-têtes `x-buntu-*` (`fallback`, scénario UC2 prouvé avec deux simulateurs) et les quatre
 timeouts (`timeouts`, premier octet et total appliqués par `TimedExecutor`, budgets de flux
-testés). Côté fournisseurs : trait `Provider` (`buntu-providers::provider`) et kit de conformité
+testés). Côté fournisseurs : trait `Provider` (`buntu-providers::provider`), kit de conformité
 (`buntu-conformance`, 14 cas rejoués par `wiremock`, macro `conformance_suite!`, mode
-`BUNTU_LIVE`). Aucun fournisseur réel, client amont ni endpoint public n'est encore branché.
-T0.4 est livré **avec réserve** : le critère ± 10 % de P99 n'est pas atteignable sur un poste où
-le générateur est colocalisé ; il sera vérifié par la campagne §11.2 (T1.26). T1.7 est livré
-**avec réserve** : la connexion et l'inter-morceaux seront branchés dans le client hyper-util
-(T1.9+). Les prochains travaux sont **T0.1** (preuve de disponibilité du nom, côté humain),
-**T1.9** (OpenAI), puis **T1.10–T1.11** (Anthropic, Gemini) et **T1.13** (endpoints publics).
-Le suivi est tenu dans `docs/status.md`.
+`BUNTU_LIVE`) et traduction **OpenAI Chat Completions** (`buntu-providers::openai`, 14/14 cas de
+conformité, doc `docs/providers/openai.md`). Aucun client amont ni endpoint public n'est encore
+branché. T0.4 est livré **avec réserve** : le critère ± 10 % de P99 n'est pas atteignable sur un
+poste où le générateur est colocalisé ; il sera vérifié par la campagne §11.2 (T1.26). T1.7 est
+livré **avec réserve** : la connexion et l'inter-morceaux seront branchés dans le client
+hyper-util. T1.9 est livré **avec réserve** : fixtures synthétiques et contrôle `BUNTU_LIVE` en
+attente d'une clé API. Les prochains travaux sont **T0.1** (preuve de disponibilité du nom, côté
+humain), **T1.10** (Anthropic), **T1.11** (Gemini) et **T1.12** (compatible OpenAI + Ollama),
+puis **T1.13** (endpoints publics). Le suivi est tenu dans `docs/status.md`.
 
 Toute ligne de code écrite avant sa tâche est hors périmètre.
