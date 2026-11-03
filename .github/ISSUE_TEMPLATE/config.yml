@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Vulnérabilité de sécurité
+    url: https://github.com/LordPhenixDeNetra/buNtu/security/advisories/new
+    about: Ne signalez jamais une vulnérabilité en issue publique ; utilisez la divulgation privée.
+  - name: Décisions d'architecture
+    url: https://github.com/LordPhenixDeNetra/buNtu/tree/main/docs/adr
+    about: Une décision structurante se discute d'abord dans un ADR, pas dans une issue.

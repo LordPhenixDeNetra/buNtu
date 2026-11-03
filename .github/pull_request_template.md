@@ -1,4 +1,4 @@
-<!-- buNtu pull request template. Keep it short: one pull request, one task. -->
+<!-- buNtu pull request template. One pull request, one task. -->
 
 ## Task and requirements
 
@@ -12,12 +12,17 @@
 
 <!-- Exact commands run and their result; paste the output. -->
 
-## Checklist
+## Definition of done (guide §5)
 
-- [ ] Scope limited to the task's listed files
-- [ ] New or changed behaviour covered by a test that failed before and passes now
-- [ ] `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, `cargo nextest run`, `cargo deny check` pass (from T0.2)
-- [ ] No secret, key or personal data added
-- [ ] Documentation updated when behaviour or configuration changed
-- [ ] Commits signed off (`git commit -s`, DCO)
-- [ ] One pull request, one task: the task's acceptance criterion is demonstrated above
+- [ ] CI verte : `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`,
+      `cargo nextest run`, `cargo deny check`, `cargo audit`, couverture
+- [ ] Chaque critère d'acceptation de la fiche a un test nommé qui le vérifie
+- [ ] Les commandes spécifiques de la fiche ont été exécutées, sortie collée ci-dessus
+- [ ] Benchmarks micro sans régression > 10 % (si la tâche touche un chemin chaud)
+- [ ] Aucun test supprimé, ignoré (`#[ignore]`) ou affaibli ; aucun lint désactivé
+- [ ] Aucun `unwrap()` / `expect()` / `panic!` / `unsafe` ajouté hors tests et invariants documentés
+- [ ] Aucune dépendance ajoutée sans accord explicite
+- [ ] Fichiers limités à la fiche ; aucune API de fournisseur sans source officielle citée
+- [ ] Aucun secret, clé ou donnée personnelle ajouté
+- [ ] Commits signés (`git commit -s`, DCO) et co-auteur requis
+- [ ] Une pull request, une tâche : le critère d'acceptation est démontré ci-dessus
