@@ -1,0 +1,29 @@
+{
+    "status": 200,
+    "headers": {
+        "content-type": "application/json"
+    },
+    "body": {
+        "id": "fake-9",
+        "model": "fake-model",
+        "choices": [
+            {
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": ""
+                        }
+                    ]
+                },
+                "finish_reason": "content_filter"
+            }
+        ],
+        "usage": {
+            "input_tokens": 2,
+            "output_tokens": 0
+        }
+    }
+}

@@ -544,7 +544,7 @@ Le projet compte environ 395 jours de travail estimés, soit environ 2 ans et 3 
 
 **E2 — Fournisseurs (22 j)**
 
-- [ ] **T1.8** Kit de conformité partagé (texte, flux, outils, vision, JSON structuré, erreurs) — 4 j — FR-PRV-4.
+- [x] **T1.8** Kit de conformité partagé (texte, flux, outils, vision, JSON structuré, erreurs) — 4 j — FR-PRV-4.
 - [ ] **T1.9** OpenAI : chat, embeddings, outils, vision, flux — 5 j — *Acceptation :* kit 100 % vert + contrôle réel nocturne.
 - [ ] **T1.10** Anthropic : messages, outils, vision, cache de prompt, réflexion étendue — 5 j.
 - [ ] **T1.11** Google Gemini (AI Studio) — 5 j.

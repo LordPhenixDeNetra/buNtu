@@ -15,6 +15,7 @@ members = [
     "crates/buntu-plugin-wasm",
     "crates/buntu-cluster",
     "crates/buntu-cli",
+    "crates/buntu-conformance",
     "tools/mock-provider",
     "xtask",
 ]
@@ -76,6 +77,9 @@ toml = "1.1"
 # Sélection pondérée des clés (T1.4) ; criterion est réservé aux benchmarks.
 criterion = { version = "0.8", default-features = false, features = ["cargo_bench_support"] }
 fastrand = "2.5"
+
+# Kit de conformité des fournisseurs (T1.8) : crate de test non publiée uniquement.
+wiremock = "0.6"
 
 [profile.release]
 lto = "fat"

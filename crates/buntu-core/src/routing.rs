@@ -7,26 +7,9 @@
 
 use buntu_schema::{ContentPart, GatewayError, Request};
 
+pub use buntu_schema::Capabilities;
+
 use crate::config::CompiledConfig;
-
-/// Capacités qu'un modèle peut supporter.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub struct Capabilities {
-    pub tools: bool,
-    pub vision: bool,
-}
-
-impl Capabilities {
-    pub const NONE: Self = Self {
-        tools: false,
-        vision: false,
-    };
-
-    /// Vrai si `self` couvre toutes les capacités exigées.
-    pub fn supports(self, required: Self) -> bool {
-        (!required.tools || self.tools) && (!required.vision || self.vision)
-    }
-}
 
 /// Une cible de routage : un fournisseur et un modèle.
 #[derive(Debug, Clone, PartialEq, Eq)]

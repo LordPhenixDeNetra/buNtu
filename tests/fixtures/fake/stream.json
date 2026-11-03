@@ -1,0 +1,1 @@
+{"status":200,"headers":{"content-type":"text/event-stream"},"body":"data: {\"event\":\"start\",\"id\":\"fake-1\",\"model\":\"fake-model\"}\n\ndata: {\"event\":\"delta\",\"index\":0,\"text\":\"Bon\"}\n\ndata: {\"event\":\"delta\",\"index\":0,\"text\":\"jour\"}\n\ndata: {\"event\":\"stop\",\"reason\":\"end_turn\"}\n\ndata: [DONE]\n\n"}

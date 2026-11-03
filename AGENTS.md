@@ -105,7 +105,7 @@ Les documents du dépôt sont rédigés en français.
 
 ## État et périmètre
 
-**Le socle est en place (T0.2–T0.7, T1.1–T1.7).** Le workspace Cargo (13 crates), la CI
+**Le socle est en place (T0.2–T0.7, T1.1–T1.8).** Le workspace Cargo (14 crates), la CI
 complète, le simulateur de fournisseur (`tools/mock-provider`), le banc de benchmark
 (`cargo xtask bench`), le schéma canonique v0 (`buntu-schema`), les ADR et les fichiers du projet
 existent. `buntu serve` démarre un serveur HTTP avec `/health`, `/ready` et arrêt gracieux ;
@@ -115,12 +115,14 @@ hooks (`buntu-core::pipeline`), sélection pondérée des clés (`keys`), politi
 (`retry`), résolution des alias et filtrage de capacités (`routing`), chaîne de repli avec
 en-têtes `x-buntu-*` (`fallback`, scénario UC2 prouvé avec deux simulateurs) et les quatre
 timeouts (`timeouts`, premier octet et total appliqués par `TimedExecutor`, budgets de flux
-testés). Aucun client fournisseur ni endpoint public n'est encore branché. T0.4 est livré **avec
-réserve** : le critère ± 10 % de P99 n'est pas atteignable sur un poste où le générateur est
-colocalisé ; il sera vérifié par la campagne §11.2 (T1.26). T1.7 est livré **avec réserve** : la
-connexion et l'inter-morceaux seront branchés dans le client hyper-util (T1.8+). Les prochains
-travaux sont **T0.1** (preuve de disponibilité du nom, côté humain), **T1.8** (kit de conformité
-des fournisseurs), puis **T1.9–T1.11** (OpenAI, Anthropic, Gemini) et **T1.13** (endpoints
-publics). Le suivi est tenu dans `docs/status.md`.
+testés). Côté fournisseurs : trait `Provider` (`buntu-providers::provider`) et kit de conformité
+(`buntu-conformance`, 14 cas rejoués par `wiremock`, macro `conformance_suite!`, mode
+`BUNTU_LIVE`). Aucun fournisseur réel, client amont ni endpoint public n'est encore branché.
+T0.4 est livré **avec réserve** : le critère ± 10 % de P99 n'est pas atteignable sur un poste où
+le générateur est colocalisé ; il sera vérifié par la campagne §11.2 (T1.26). T1.7 est livré
+**avec réserve** : la connexion et l'inter-morceaux seront branchés dans le client hyper-util
+(T1.9+). Les prochains travaux sont **T0.1** (preuve de disponibilité du nom, côté humain),
+**T1.9** (OpenAI), puis **T1.10–T1.11** (Anthropic, Gemini) et **T1.13** (endpoints publics).
+Le suivi est tenu dans `docs/status.md`.
 
 Toute ligne de code écrite avant sa tâche est hors périmètre.

@@ -1,0 +1,1 @@
+{"status":200,"headers":{"content-type":"application/json"},"body":{"id":"fake-3","model":"fake-model","choices":[{"index":0,"message":{"role":"assistant","content":[{"type":"tool_call","id":"call-1","name":"meteo","arguments":{"ville":"Dakar"}}]},"finish_reason":"tool_calls"}],"usage":{"input_tokens":4,"output_tokens":6}}}

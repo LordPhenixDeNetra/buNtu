@@ -7,6 +7,7 @@
 //! Aucun code fournisseur ne vit ici : seulement les types partagés. Les tableaux de
 //! correspondance et les sources officielles sont dans `docs/adr/0002-schema.md`.
 
+pub mod capabilities;
 pub mod content;
 pub mod error;
 pub mod message;
@@ -17,6 +18,7 @@ pub mod stream;
 pub mod tool;
 pub mod usage;
 
+pub use capabilities::Capabilities;
 pub use content::{ContentPart, ImageDetail, ImageSource};
 pub use error::GatewayError;
 pub use message::{Message, Role};

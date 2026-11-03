@@ -1,0 +1,1 @@
+{"status":200,"headers":{"content-type":"application/json"},"body":{"id":"fake-8","model":"fake-model","choices":[{"index":0,"message":{"role":"assistant","content":[{"type":"text","text":"long"}]},"finish_reason":"max_tokens"}],"usage":{"input_tokens":2,"output_tokens":1}}}

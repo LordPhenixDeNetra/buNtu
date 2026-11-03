@@ -18,7 +18,7 @@ dans la PR.
 
 ## Tâche en cours
 
-Aucune. Prochaine : **T1.8** (kit de conformité des fournisseurs).
+Aucune. Prochaine : **T1.9** (fournisseur OpenAI).
 
 ## Phase 0 — Fondations (15 j)
 
@@ -43,6 +43,9 @@ Aucune. Prochaine : **T1.8** (kit de conformité des fournisseurs).
 | T1.5 | Réessais | fait | #13 | 2026-11-03 | 6 tests : classification par statut (429/500/502/503/504 vs 400/401/403/404/422), flux déjà commencé jamais réessayé, gigue complète plafonnée ; 100 % de 503 → **taux de réessai 20,095 %** |
 | T1.6 | Chaîne de repli et alias | fait | #14 | 2026-11-03 | 11 tests : alias dans l'ordre, cible directe, erreurs, filtre de capacités ; **UC2 avec deux vrais simulateurs** (503 puis 200) → 200, en-têtes `x-buntu-provider`/`x-buntu-model`/`x-buntu-attempts` = 3 ; toutes cibles en échec → dernière erreur + liste |
 | T1.7 | Quatre timeouts | fait (réserve) | #15 | 2026-11-03 | 10 tests : défauts, surcharges globales et par route, premier octet et total via `TimedExecutor`, budgets de flux premier/inter/total, **abandon du futur amont prouvé**, timeout réel sur simulateur (200 ms coupé à 50 ms) ; réserve : connexion et inter-morceaux branchés dans le client hyper-util (T1.8+) |
+| T1.8 | Kit de conformité | fait | #16 | 2026-11-03 | trait `Provider` + crate `buntu-conformance` : 14 cas rejoués par `wiremock`, macro `conformance_suite!` ; **15/15 verts** dont le fournisseur volontairement cassé détecté ; mode `BUNTU_LIVE` prêt |
+
+## Phase 1 — E2 Fournisseurs
 
 ## Phases suivantes
 
@@ -67,4 +70,5 @@ ajoutée à ce tableau au début de l'epic, en même temps que la rédaction de 
 | 2026-11-03 | #12 | T1.4 Sélection pondérée des clés | verte (1 min 07) |
 | 2026-11-03 | #13 | T1.5 Réessais, backoff et budget | verte (1 min 05) |
 | 2026-11-03 | #14 | T1.6 Chaîne de repli et alias | verte (1 min 28) |
-| 2026-11-03 | #15 | T1.7 Quatre timeouts | à confirmer |
+| 2026-11-03 | #15 | T1.7 Quatre timeouts | verte (51 s) |
+| 2026-11-03 | #16 | T1.8 Kit de conformité | à confirmer |
