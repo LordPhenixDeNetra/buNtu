@@ -523,18 +523,18 @@ Le projet compte environ 395 jours de travail estimés, soit environ 2 ans et 3 
 ### Phase 0 — Fondations (15 j, v0.0)
 
 - [ ] **T0.1** Valider le nom : marques EUIPO/USPTO, crates.io, GitHub, npm, Docker Hub, domaine — 1 j — *Acceptation :* nom réservé partout ou nom de rechange choisi.
-- [ ] **T0.2** Workspace Cargo avec les 13 crates vides, CI (fmt, clippy, nextest, deny, audit, couverture) — 2 j — *Acceptation :* PR d'exemple bloquée par un warning clippy.
-- [ ] **T0.3** Simulateur de fournisseur en Rust : latence, flux, erreurs 429/5xx, coupures injectables — 3 j — *Acceptation :* tient 50 000 req/s seul sur 4 vCPU.
+- [x] **T0.2** Workspace Cargo avec les 13 crates vides, CI (fmt, clippy, nextest, deny, audit, couverture) — 2 j — *Acceptation :* PR d'exemple bloquée par un warning clippy.
+- [x] **T0.3** Simulateur de fournisseur en Rust : latence, flux, erreurs 429/5xx, coupures injectables — 3 j — *Acceptation :* tient 50 000 req/s seul sur 4 vCPU.
 - [ ] **T0.4** Banc de benchmark scripté (section 11.2) + mesure de référence d'une passerelle existante — 3 j — *Acceptation :* rapport reproductible en une commande.
-- [ ] **T0.5** Schéma canonique v0 : messages, contenus multimodaux, outils, usage, erreurs — 4 j — *Acceptation :* aller-retour OpenAI → canonique → OpenAI sans perte sur 200 cas (`proptest`).
-- [ ] **T0.6** ADR initiales : runtime, HTTP, stockage, UI, licence — 1 j.
-- [ ] **T0.7** README, CONTRIBUTING, SECURITY, CODE\_OF\_CONDUCT, LICENSE Apache 2.0, modèles d'issues — 1 j.
+- [x] **T0.5** Schéma canonique v0 : messages, contenus multimodaux, outils, usage, erreurs — 4 j — *Acceptation :* aller-retour OpenAI → canonique → OpenAI sans perte sur 200 cas (`proptest`).
+- [x] **T0.6** ADR initiales : runtime, HTTP, stockage, UI, licence — 1 j.
+- [x] **T0.7** README, CONTRIBUTING, SECURITY, CODE\_OF\_CONDUCT, LICENSE Apache 2.0, modèles d'issues — 1 j.
 
 ### Phase 1 — MVP utilisable en production (95 j, v0.1 → v0.5)
 
 **E1 — Moteur (21 j)**
 
-- [ ] **T1.1** Serveur hyper/axum, `/health`, `/ready`, arrêt gracieux, limites de taille et de connexions — 3 j — FR-API-10, NFR-REL-3.
+- [x] **T1.1** Serveur hyper/axum, `/health`, `/ready`, arrêt gracieux, limites de taille et de connexions — 3 j — FR-API-10, NFR-REL-3.
 - [ ] **T1.2** Configuration fichier + environnement, instantané `ArcSwap`, rechargement à chaud, `config validate` — 4 j — NFR-REL-4 — *Acceptation :* rechargement sous 5 000 req/s sans erreur.
 - [ ] **T1.3** Pipeline de requête et chaîne de hooks `PreHook`/`PostHook` — 4 j — FR-EXT-1.
 - [ ] **T1.4** Sélection pondérée des clés (alias O(1)) — 2 j — FR-RTE-1 — *Acceptation :* < 50 ns par sélection (criterion).
