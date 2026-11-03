@@ -13,6 +13,11 @@ entreprise (SSO, RBAC, audit, clustering, guardrails).
 > de référence. Les fonctions listées ci-dessus sont des objectifs du cahier des charges, pas des
 > fonctionnalités disponibles.
 
+## Le nom
+
+« buNtu » vient de **« Buntu »**, qui signifie **« porte » en wolof** : une porte d'entrée unique
+vers les modèles, plutôt qu'une API par fournisseur.
+
 ## Ce qui existe aujourd'hui
 
 | Élément | État |
