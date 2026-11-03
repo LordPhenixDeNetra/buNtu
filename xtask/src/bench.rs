@@ -150,7 +150,7 @@ fn build() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn target_directory() -> Result<PathBuf, Box<dyn Error>> {
+pub(crate) fn target_directory() -> Result<PathBuf, Box<dyn Error>> {
     let output = Command::new("cargo")
         .args(["metadata", "--format-version", "1", "--no-deps"])
         .output()?;
@@ -178,7 +178,7 @@ fn binary(target_directory: &Path, name: &str) -> PathBuf {
         .join(format!("{name}{}", std::env::consts::EXE_SUFFIX))
 }
 
-fn free_port() -> Result<u16, Box<dyn Error>> {
+pub(crate) fn free_port() -> Result<u16, Box<dyn Error>> {
     let listener = std::net::TcpListener::bind("127.0.0.1:0")?;
     Ok(listener.local_addr()?.port())
 }
@@ -218,7 +218,11 @@ fn wait_tcp(port: u16, timeout: Duration) -> Result<(), Box<dyn Error>> {
     Err(format!("aucun service sur le port {port} après {timeout:?}").into())
 }
 
-fn wait_http_ready(port: u16, path: &str, timeout: Duration) -> Result<(), Box<dyn Error>> {
+pub(crate) fn wait_http_ready(
+    port: u16,
+    path: &str,
+    timeout: Duration,
+) -> Result<(), Box<dyn Error>> {
     let started = Instant::now();
     while started.elapsed() < timeout {
         if let Ok(mut stream) = TcpStream::connect(("127.0.0.1", port)) {
