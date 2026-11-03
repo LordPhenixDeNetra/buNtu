@@ -18,6 +18,21 @@ pub struct RawConfig {
     pub routes: Vec<RawRoute>,
     #[serde(default)]
     pub hooks: RawHooks,
+    #[serde(default)]
+    pub timeouts: RawTimeouts,
+}
+
+/// Surcharges de timeouts, en millisecondes ; `None` = valeur héritée.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct RawTimeouts {
+    #[serde(default)]
+    pub connect_ms: Option<u64>,
+    #[serde(default)]
+    pub first_byte_ms: Option<u64>,
+    #[serde(default)]
+    pub inter_chunk_ms: Option<u64>,
+    #[serde(default)]
+    pub total_ms: Option<u64>,
 }
 
 /// Hooks déclarés, dans l'ordre d'exécution.
@@ -73,6 +88,8 @@ pub struct RawRoute {
     pub alias: String,
     #[serde(default)]
     pub fallbacks: Vec<String>,
+    #[serde(default)]
+    pub timeouts: RawTimeouts,
 }
 
 /// Lit et désérialise un fichier TOML.

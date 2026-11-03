@@ -3,10 +3,12 @@
 use std::collections::HashMap;
 use std::fmt;
 use std::net::SocketAddr;
+use std::time::Duration;
 
-use crate::config::file::{RawConfig, RawHooks, RawProvider, RawRoute};
+use crate::config::file::{RawConfig, RawHooks, RawProvider, RawRoute, RawTimeouts};
 use crate::config::{ConfigError, Environment};
 use crate::keys::KeySelector;
+use crate::timeouts::Timeouts;
 
 #[derive(Debug, Clone)]
 pub struct CompiledConfig {
@@ -14,6 +16,7 @@ pub struct CompiledConfig {
     pub providers: HashMap<String, CompiledProvider>,
     pub routes: HashMap<String, CompiledRoute>,
     pub hooks: CompiledHooks,
+    pub timeouts: Timeouts,
 }
 
 impl Default for CompiledConfig {
@@ -25,6 +28,7 @@ impl Default for CompiledConfig {
             providers: HashMap::new(),
             routes: HashMap::new(),
             hooks: CompiledHooks::default(),
+            timeouts: Timeouts::default(),
         }
     }
 }
@@ -66,6 +70,7 @@ pub struct CompiledTarget {
 pub struct CompiledRoute {
     pub alias: String,
     pub fallbacks: Vec<CompiledTarget>,
+    pub timeouts: Timeouts,
 }
 
 /// Valeur secrète : `Debug` affiche `***`, jamais la valeur.
@@ -104,6 +109,8 @@ pub fn compile(
             message: format!("adresse invalide : {error}"),
         })?;
 
+    let timeouts = compile_timeouts(&raw.timeouts, "timeouts", Timeouts::default())?;
+
     let mut providers: HashMap<String, CompiledProvider> = HashMap::new();
     for (index, provider) in raw.providers.iter().enumerate() {
         let compiled = compile_provider(provider, index, environment)?;
@@ -117,7 +124,7 @@ pub fn compile(
 
     let mut routes: HashMap<String, CompiledRoute> = HashMap::new();
     for (index, route) in raw.routes.iter().enumerate() {
-        let compiled = compile_route(route, index, &providers)?;
+        let compiled = compile_route(route, index, &providers, timeouts)?;
         if routes.insert(compiled.alias.clone(), compiled).is_some() {
             return Err(ConfigError::Invalid {
                 path: format!("routes[{index}].alias"),
@@ -133,6 +140,7 @@ pub fn compile(
         providers,
         routes,
         hooks,
+        timeouts,
     })
 }
 
@@ -218,6 +226,7 @@ fn compile_route(
     route: &RawRoute,
     index: usize,
     providers: &HashMap<String, CompiledProvider>,
+    global_timeouts: Timeouts,
 ) -> Result<CompiledRoute, ConfigError> {
     let alias = route.alias.trim();
     if alias.is_empty() {
@@ -239,9 +248,16 @@ fn compile_route(
         fallbacks.push(parse_target(target, &path, providers)?);
     }
 
+    let route_timeouts = compile_timeouts(
+        &route.timeouts,
+        &format!("routes[{index}].timeouts"),
+        global_timeouts,
+    )?;
+
     Ok(CompiledRoute {
         alias: alias.to_owned(),
         fallbacks,
+        timeouts: route_timeouts,
     })
 }
 
@@ -270,6 +286,33 @@ fn parse_target(
         provider: provider.to_owned(),
         model: model.to_owned(),
     })
+}
+
+fn compile_timeouts(
+    raw: &RawTimeouts,
+    path: &str,
+    base: Timeouts,
+) -> Result<Timeouts, ConfigError> {
+    let connect = duration_from_ms(raw.connect_ms, path, "connect_ms")?;
+    let first_byte = duration_from_ms(raw.first_byte_ms, path, "first_byte_ms")?;
+    let inter_chunk = duration_from_ms(raw.inter_chunk_ms, path, "inter_chunk_ms")?;
+    let total = duration_from_ms(raw.total_ms, path, "total_ms")?;
+    Ok(base.apply(connect, first_byte, inter_chunk, total))
+}
+
+fn duration_from_ms(
+    value: Option<u64>,
+    path: &str,
+    field: &str,
+) -> Result<Option<Duration>, ConfigError> {
+    match value {
+        None => Ok(None),
+        Some(0) => Err(ConfigError::Invalid {
+            path: format!("{path}.{field}"),
+            message: "le délai doit être supérieur à zéro".to_owned(),
+        }),
+        Some(millis) => Ok(Some(Duration::from_millis(millis))),
+    }
 }
 
 fn compile_hooks(hooks: &RawHooks) -> Result<CompiledHooks, ConfigError> {
