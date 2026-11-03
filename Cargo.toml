@@ -73,6 +73,10 @@ arc-swap = "1.9"
 notify = "8.2"
 toml = "1.1"
 
+# Sélection pondérée des clés (T1.4) ; criterion est réservé aux benchmarks.
+criterion = { version = "0.8", default-features = false, features = ["cargo_bench_support"] }
+fastrand = "2.5"
+
 [profile.release]
 lto = "fat"
 codegen-units = 1
