@@ -18,7 +18,7 @@ dans la PR.
 
 ## Tâche en cours
 
-Aucune. Prochaine : **T0.4** (banc de benchmark, débloqué par T1.1), puis **T1.2**.
+Aucune. Prochaine : **T1.2** (configuration et rechargement à chaud).
 
 ## Phase 0 — Fondations (15 j)
 
@@ -27,7 +27,7 @@ Aucune. Prochaine : **T0.4** (banc de benchmark, débloqué par T1.1), puis **T1
 | T0.1 | Valider le nom (marques EUIPO/USPTO, réservations) | à faire (humain) | — | — | `docs/adr/0001-nom.md` attendu |
 | T0.2 | Workspace Cargo + CI | fait | #2 | 2026-11-03 | 13 crates, lints, CI verte ; PR volontairement fautive rouge |
 | T0.3 | Simulateur de fournisseur | fait | #4 | 2026-11-03 | 9 tests ; plafond 30 024 req/s noté dans `benchmarks/README.md` |
-| T0.4 | Banc de benchmark scripté | à faire | — | — | acceptation : rapport reproductible en une commande |
+| T0.4 | Banc de benchmark scripté | fait (réserve) | #9 | 2026-11-03 | `cargo xtask bench` → JSON + Markdown ; ±10 % P99 non atteignable sur poste colocalisé, mesuré et documenté dans `benchmarks/README.md`, à vérifier en T1.26 (§11.2) |
 | T0.5 | Schéma canonique v0 | fait | #5 | 2026-11-03 | 2 propriétés proptest × 200 cas ; ADR-0002 |
 | T0.6 | ADR initiales | fait | #6 | 2026-11-03 | ADR-0003 à 0007 |
 | T0.7 | Fichiers du projet | fait | #6 | 2026-11-03 | README, CONTRIBUTING, SECURITY, code de conduite, LICENSE, NOTICE, modèles d'issues et de PR |
@@ -61,3 +61,4 @@ ajoutée à ce tableau au début de l'epic, en même temps que la rédaction de 
 | 2026-11-03 | #5 | T0.5 Schéma canonique v0 | verte (1 min 10) |
 | 2026-11-03 | #6 | T0.6 + T0.7 ADR et fichiers du projet | verte (1 min 07) |
 | 2026-11-03 | #7 | T1.1 Serveur HTTP, santé, arrêt gracieux | verte (1 min 23) |
+| 2026-11-03 | #9 | T0.4 Banc de benchmark scripté | à confirmer |

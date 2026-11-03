@@ -31,6 +31,7 @@ machine le prouve. Une seule tâche en cours à la fois.
 - `crates/buntu-cluster` — appartenance au cluster, compteurs partagés, diffusion de config.
 - `crates/buntu-cli` — binaire `buntu` : `serve`, `import`, `bench`, `doctor`, `config validate`.
 - `tools/mock-provider` — fournisseur simulé (T0.3), hors des crates publiées.
+- `xtask/` — `cargo xtask bench` : banc de benchmark scripté (T0.4).
 - `ui/` — interface SvelteKit statique ; `benchmarks/` — banc et résultats ; `docs/adr/`.
 
 ## Commande unique
@@ -104,13 +105,14 @@ Les documents du dépôt sont rédigés en français.
 
 ## État et périmètre
 
-**Le socle est en place (T0.2, T0.3, T0.5, T0.6/T0.7, T1.1).** Le workspace Cargo (13 crates),
-la CI complète, le simulateur de fournisseur (`tools/mock-provider`), le schéma canonique v0
-(`buntu-schema`), les ADR et les fichiers du projet existent, et `buntu serve` démarre un
-serveur HTTP avec `/health`, `/ready` et arrêt gracieux. Aucune logique métier n'est encore
-écrite. Les prochains travaux sont **T0.1** (preuve de disponibilité du nom, côté humain),
-**T0.4** (banc de benchmark complet, débloqué par T1.1), **T1.2** (configuration et
-rechargement à chaud), puis **T1.3** (pipeline) et **T1.8–T1.11** (fournisseurs). Le suivi est
-tenu dans `docs/status.md`.
+**Le socle est en place (T0.2, T0.3, T0.4, T0.5, T0.6/T0.7, T1.1).** Le workspace Cargo
+(13 crates), la CI complète, le simulateur de fournisseur (`tools/mock-provider`), le banc de
+benchmark (`cargo xtask bench`), le schéma canonique v0 (`buntu-schema`), les ADR et les
+fichiers du projet existent, et `buntu serve` démarre un serveur HTTP avec `/health`, `/ready`
+et arrêt gracieux. Aucune logique métier n'est encore écrite. T0.4 est livré **avec réserve** :
+le critère ± 10 % de P99 n'est pas atteignable sur un poste où le générateur est colocalisé ; il
+sera vérifié par la campagne §11.2 (T1.26). Les prochains travaux sont **T0.1** (preuve de
+disponibilité du nom, côté humain), **T1.2** (configuration et rechargement à chaud), puis
+**T1.3** (pipeline) et **T1.8–T1.11** (fournisseurs). Le suivi est tenu dans `docs/status.md`.
 
 Toute ligne de code écrite avant sa tâche est hors périmètre.
