@@ -105,7 +105,7 @@ Les documents du dépôt sont rédigés en français.
 
 ## État et périmètre
 
-**Le socle est en place (T0.2, T0.3, T0.4, T0.5, T0.6/T0.7, T1.1, T1.2, T1.3, T1.4).** Le
+**Le socle est en place (T0.2, T0.3, T0.4, T0.5, T0.6/T0.7, T1.1, T1.2, T1.3, T1.4, T1.5).** Le
 workspace Cargo (13 crates), la CI complète, le simulateur de fournisseur (`tools/mock-provider`),
 le banc de benchmark (`cargo xtask bench`), le schéma canonique v0 (`buntu-schema`), les ADR et
 les fichiers du projet existent. `buntu serve` démarre un serveur HTTP avec `/health`, `/ready` et
@@ -113,11 +113,11 @@ arrêt gracieux ; `buntu serve --config` charge une configuration TOML validée,
 la recharge à chaud (fichier surveillé + SIGHUP), `buntu config validate` la vérifie. Le pipeline
 de requête (`buntu-core::pipeline`) exécute les hooks pré, l'appel puis les hooks post, avec
 court-circuit et erreurs propres ; la sélection pondérée des clés (`buntu-core::keys`, table
-d'alias, pauses 429) est prête. Aucun routage ni fournisseur n'est encore branché. T0.4 est livré
-**avec réserve** : le critère ± 10 % de P99 n'est pas atteignable sur un poste où le générateur
-est colocalisé ; il sera vérifié par la campagne §11.2 (T1.26). Les prochains travaux sont
-**T0.1** (preuve de disponibilité du nom, côté humain), **T1.5** (réessais et budget), puis
-**T1.6–T1.7** (repli, timeouts) et **T1.8–T1.11** (fournisseurs). Le suivi est tenu dans
-`docs/status.md`.
+d'alias, pauses 429) et la politique de réessais (`buntu-core::retry`, classification, backoff
+avec gigue, budget global) sont prêtes. Aucun routage ni fournisseur n'est encore branché. T0.4
+est livré **avec réserve** : le critère ± 10 % de P99 n'est pas atteignable sur un poste où le
+générateur est colocalisé ; il sera vérifié par la campagne §11.2 (T1.26). Les prochains travaux
+sont **T0.1** (preuve de disponibilité du nom, côté humain), **T1.6** (repli et alias), puis
+**T1.7** (timeouts) et **T1.8–T1.11** (fournisseurs). Le suivi est tenu dans `docs/status.md`.
 
 Toute ligne de code écrite avant sa tâche est hors périmètre.
