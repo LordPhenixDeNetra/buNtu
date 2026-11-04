@@ -127,6 +127,16 @@ jobs:
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
             echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           fi
+      - name: "Setup Node for the embedded console"
+        uses: "actions/setup-node@v4"
+        with:
+          "cache": "npm"
+          "cache-dependency-path": "ui/package-lock.json"
+          "node-version": "22"
+      - name: "Build the embedded console"
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
       - name: Install dist
         run: ${{ matrix.install_dist.run }}
       # Get the dist-manifest
@@ -139,22 +149,9 @@ jobs:
       - name: Install dependencies
         run: |
           ${{ matrix.packages_install }}
-      # buNtu (T1.22) : la console est embarquée par rust-embed, elle doit être construite avant dist build.
-      - name: Setup Node for the embedded console
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: ui/package-lock.json
-      - name: Build the embedded console
-        working-directory: ui
-        run: |
-          npm ci --no-audit --no-fund
-          npm run build
       - name: Build artifacts
         run: |
           # Actually do builds and make zips and whatnot
-
           dist build ${{ needs.plan.outputs.tag-flag }} --print=linkage --output-format=json ${{ matrix.dist_args }} > dist-manifest.json
           echo "dist ran successfully"
       - id: cargo-dist
