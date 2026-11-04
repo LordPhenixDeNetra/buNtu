@@ -17,6 +17,8 @@ fn record(index: usize) -> RequestLogRecord {
         input_tokens: 1,
         output_tokens: 1,
         created_at: 1_700_000_000,
+        attempts: 1,
+        rowid: 0,
     }
 }
 

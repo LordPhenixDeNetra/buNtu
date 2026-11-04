@@ -9,6 +9,7 @@ pub mod routes;
 pub mod server;
 pub mod shutdown;
 pub mod state;
+pub mod ui;
 pub mod upstream;
 
 use axum::Router;
@@ -100,6 +101,10 @@ pub fn app_with_state(state: GatewayState) -> Router {
                 .delete(admin::handlers::delete_route),
         )
         .route("/admin/v1/openapi.json", get(admin::handlers::openapi_json))
+        .route("/admin/v1/requests", get(admin::handlers::list_requests))
+        .route("/admin/v1/requests/{id}", get(admin::handlers::get_request))
+        .route("/", get(ui::index))
+        .route("/{*path}", get(ui::asset))
         .with_state(state);
     health_router
         .merge(api_router)

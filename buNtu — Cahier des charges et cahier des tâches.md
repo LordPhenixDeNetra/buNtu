@@ -567,9 +567,9 @@ Le projet compte environ 395 jours de travail estimés, soit environ 2 ans et 3 
 
 **E5 — Interface web (12 j)**
 
-- [ ] **T1.22** Squelette SvelteKit statique embarqué, i18n FR/EN, thème clair/sombre — 3 j — FR-UI-6.
-- [ ] **T1.23** Pages fournisseurs, clés, routes et alias — 5 j — FR-UI-1.
-- [ ] **T1.24** Journal des requêtes filtrable + détail — 4 j — FR-UI-2.
+- [x] **T1.22** Squelette SvelteKit statique embarqué, i18n FR/EN, thème clair/sombre — 3 j — FR-UI-6.
+- [x] **T1.23** Pages fournisseurs, clés, routes et alias — 5 j — FR-UI-1.
+- [x] **T1.24** Journal des requêtes filtrable + détail — 4 j — FR-UI-2.
 
 **E6 — Livraison (12 j)**
 

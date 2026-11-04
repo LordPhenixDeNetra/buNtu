@@ -1,0 +1,31 @@
+{
+  "name": "buntu-ui",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "prepare": "svelte-kit sync",
+    "build": "npm run gen:api && vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "gen:api": "openapi-typescript ../openapi.json -o src/lib/api/schema.d.ts",
+    "size": "node scripts/size-check.mjs",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.0",
+    "@playwright/test": "^1.50.0",
+    "@sveltejs/adapter-static": "^3.0.0",
+    "@sveltejs/kit": "^2.20.0",
+    "@sveltejs/vite-plugin-svelte": "^5.0.0",
+    "openapi-typescript": "^7.5.0",
+    "svelte": "^5.20.0",
+    "svelte-check": "^4.1.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.1.0"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.13.0"
+  }
+}

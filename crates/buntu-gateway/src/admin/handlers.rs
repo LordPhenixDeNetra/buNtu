@@ -9,6 +9,7 @@ use axum::extract::{Path, Query, State};
 use axum::response::{IntoResponse, Response};
 use buntu_core::config::{RawKey, RawProvider, RawRoute};
 use buntu_schema::GatewayError;
+use buntu_store::{RequestLogQuery, RequestLogRecord};
 use serde::{Deserialize, Serialize};
 use utoipa::OpenApi;
 
@@ -503,6 +504,116 @@ pub async fn delete_route(
     };
     published(&state, compiled);
     no_content()
+}
+
+// ---------------------------------------------------------------------------------------------
+// Journal des requêtes (T1.24)
+// ---------------------------------------------------------------------------------------------
+
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+pub struct RequestLogView {
+    pub id: String,
+    pub model: String,
+    pub provider: String,
+    pub status: u16,
+    pub latency_ms: u64,
+    pub input_tokens: u32,
+    pub output_tokens: u32,
+    pub attempts: u32,
+    pub created_at: i64,
+}
+
+impl From<&RequestLogRecord> for RequestLogView {
+    fn from(record: &RequestLogRecord) -> Self {
+        Self {
+            id: record.id.clone(),
+            model: record.model.clone(),
+            provider: record.provider.clone(),
+            status: record.status,
+            latency_ms: record.latency_ms,
+            input_tokens: record.input_tokens,
+            output_tokens: record.output_tokens,
+            attempts: record.attempts,
+            created_at: record.created_at,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+pub struct RequestLogPage {
+    pub object: String,
+    pub data: Vec<RequestLogView>,
+    pub next_cursor: Option<i64>,
+}
+
+#[derive(Debug, Clone, Default, Deserialize, utoipa::IntoParams)]
+pub struct RequestFilters {
+    pub cursor: Option<i64>,
+    pub limit: Option<i64>,
+    pub provider: Option<String>,
+    pub status: Option<u16>,
+    pub model: Option<String>,
+}
+
+fn journal_unavailable() -> Response {
+    error_response::response(&GatewayError::Internal {
+        message: "journal non configuré (stockage indisponible)".to_owned(),
+    })
+}
+
+#[utoipa::path(get, path = "/admin/v1/requests",
+    params(
+        ("cursor" = Option<i64>, Query, description = "Curseur de pagination (rowid)"),
+        ("limit" = Option<i64>, Query, description = "Taille de page, 1 à 100 (défaut 20)"),
+        ("provider" = Option<String>, Query, description = "Filtrer par fournisseur"),
+        ("status" = Option<u16>, Query, description = "Filtrer par statut HTTP"),
+        ("model" = Option<String>, Query, description = "Filtrer par modèle")),
+    responses((status = 200, body = RequestLogPage), (status = 500, body = ErrorEnvelope)))]
+pub async fn list_requests(
+    State(state): State<GatewayState>,
+    Query(filters): Query<RequestFilters>,
+) -> Response {
+    let Some(store) = state.store.clone() else {
+        return journal_unavailable();
+    };
+    let limit = filters.limit.unwrap_or(20).clamp(1, 100);
+    let query = RequestLogQuery {
+        cursor: filters.cursor,
+        limit,
+        provider: filters.provider,
+        status: filters.status,
+        model: filters.model,
+    };
+    match store.query_request_logs(&query).await {
+        Ok(records) => {
+            let next_cursor = if i64::try_from(records.len()).unwrap_or(0) == limit {
+                records.last().map(|record| record.rowid)
+            } else {
+                None
+            };
+            ok(RequestLogPage {
+                object: "list".to_owned(),
+                data: records.iter().map(RequestLogView::from).collect(),
+                next_cursor,
+            })
+        }
+        Err(error) => error_response::response(&GatewayError::Internal {
+            message: error.to_string(),
+        }),
+    }
+}
+
+#[utoipa::path(get, path = "/admin/v1/requests/{id}",
+    params(("id" = String, Path, description = "Identifiant de la requête")),
+    responses((status = 200, body = RequestLogView), (status = 404, body = ErrorEnvelope)))]
+pub async fn get_request(State(state): State<GatewayState>, Path(id): Path<String>) -> Response {
+    let Some(store) = state.store.clone() else {
+        return journal_unavailable();
+    };
+    match store.request_log(&id).await {
+        Ok(record) => ok(RequestLogView::from(&record)),
+        Err(_) => not_found(&format!("requête `{id}` inconnue")),
+    }
 }
 
 // ---------------------------------------------------------------------------------------------
