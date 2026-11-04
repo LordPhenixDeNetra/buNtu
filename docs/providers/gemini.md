@@ -64,4 +64,8 @@ fonction (arguments en une fois), `Usage` si `usageMetadata` est présent, puis 
 - Images par URL refusées (seul `inlineData` base64 est produit).
 - `functionResponse.name` utilise `tool_call_id` : le schéma canonique ne transporte pas le nom
   de l'outil dans le résultat (à corriger si le besoin apparaît en T1.13).
+- Les `parameters` d'outils sont transmis tels quels : Gemini n'accepte qu'un **sous-ensemble
+  d'OpenAPI** ; le filtrage des mots-clés non supportés est laissé au client amont (réserve).
+- La clé API devra être envoyée en **en-tête** (`x-goog-api-key`), jamais en paramètre d'URL :
+  c'est le rôle du client amont (ADR-0004 / T1.13), pas du traducteur.
 - `capabilities()` provisoire en attendant T2.6.
