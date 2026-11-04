@@ -1,0 +1,1 @@
+{"status": 429, "headers": {"content-type": "application/json", "retry-after": "2"}, "body": {"type": "error", "error": {"type": "rate_limit_error", "message": "trop de requêtes"}}}

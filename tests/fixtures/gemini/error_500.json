@@ -1,0 +1,1 @@
+{"status": 500, "headers": {"content-type": "application/json"}, "body": {"error": {"code": 500, "message": "erreur interne", "status": "INTERNAL"}}}

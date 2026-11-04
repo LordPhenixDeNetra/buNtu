@@ -1,0 +1,1 @@
+{"status": 200, "headers": {"content-type": "application/json"}, "body": {"candidates": [{"content": {"role": "model", "parts": [{"text": "Deux tours"}]}, "finishReason": "STOP", "index": 0}], "usageMetadata": {"promptTokenCount": 7, "candidatesTokenCount": 4}, "modelVersion": "fake-model", "responseId": "fake-2"}}
