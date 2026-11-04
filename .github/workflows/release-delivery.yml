@@ -1,10 +1,22 @@
 name: Release delivery
 
 # Livraison complémentaire à cargo-dist (T1.25) : image multi-arch, binaires bruts pour le
-# lanceur npx, signatures cosign et SBOM. Déclenchée quand cargo-dist a publié la release.
+# lanceur npx, signatures cosign et SBOM.
+#
+# Déclenchement : workflow_run à la fin du workflow « Release ». Un déclenchement direct sur
+# l'événement `release: published` ne fonctionne pas ici, car la release est créée par
+# GITHUB_TOKEN (les événements produits par GITHUB_TOKEN ne démarrent pas de nouveau workflow).
+# `workflow_dispatch` permet de rattraper une release existante (rétro-remplissage).
 on:
-  release:
-    types: [published]
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to deliver (e.g. v0.0.1-rc.1)"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -21,10 +33,11 @@ jobs:
     name: container (linux/amd64, linux/arm64)
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ inputs.tag || github.event.workflow_run.head_branch }}
 
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
@@ -73,19 +86,20 @@ jobs:
         uses: anchore/sbom-action@v0
         with:
           image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
-          artifact-name: buntu-container-${{ github.event.release.tag_name }}.spdx.json
+          artifact-name: buntu-container-${{ inputs.tag || github.event.workflow_run.head_branch }}.spdx.json
           output-file: buntu-container.spdx.json
 
       - name: Attach the image SBOM to the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "${{ github.event.release.tag_name }}" buntu-container.spdx.json --clobber
+          gh release upload "${{ inputs.tag || github.event.workflow_run.head_branch }}" buntu-container.spdx.json --clobber
 
   binaries:
     name: raw binaries + signatures (${{ matrix.target }})
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     strategy:
       fail-fast: false
       matrix:
@@ -101,7 +115,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ inputs.tag || github.event.workflow_run.head_branch }}
 
       - uses: actions/setup-node@v4
         with:
@@ -145,19 +159,20 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${{ github.event.release.tag_name }}" "${ASSET}" "${ASSET}.sha256" --clobber
+        run: gh release upload "${{ inputs.tag || github.event.workflow_run.head_branch }}" "${ASSET}" "${ASSET}.sha256" --clobber
 
   smoke:
     name: smoke test (published linux binary)
     needs: binaries
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     steps:
       - name: Download the published binary and its checksum
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          tag="${{ github.event.release.tag_name }}"
+          tag="${{ inputs.tag || github.event.workflow_run.head_branch }}"
           gh release download "$tag" --pattern 'buntu-x86_64-unknown-linux-musl' --pattern 'buntu-x86_64-unknown-linux-musl.sha256' --dir .
           sha256sum -c buntu-x86_64-unknown-linux-musl.sha256
           chmod +x buntu-x86_64-unknown-linux-musl
@@ -179,7 +194,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COSIGN_EXPERIMENTAL: "1"
         run: |
-          tag="${{ github.event.release.tag_name }}"
+          tag="${{ inputs.tag || github.event.workflow_run.head_branch }}"
           tokens=$(gh release view "$tag" --json assets --jq '.assets[].name | select(endswith(".sha256"))')
           for name in $tokens; do
             cosign sign-blob --yes --bundle "${name}.sigstore.json" "${name}"
@@ -191,12 +206,13 @@ jobs:
     needs: [binaries]
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     env:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ inputs.tag || github.event.workflow_run.head_branch }}
 
       - uses: actions/setup-node@v4
         with:
@@ -205,7 +221,7 @@ jobs:
 
       - name: Align the package version with the release
         working-directory: npx
-        run: npm version --no-git-tag-version "${{ github.event.release.tag_name }}"
+        run: npm version --no-git-tag-version "${{ inputs.tag || github.event.workflow_run.head_branch }}"
 
       - name: Test the launcher
         working-directory: npx
@@ -216,7 +232,7 @@ jobs:
         working-directory: npx
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_TAG: ${{ inputs.tag || github.event.workflow_run.head_branch }}
         run: |
           version="${RELEASE_TAG#v}"
           if [[ "$version" == *-* ]]; then dist_tag=next; else dist_tag=latest; fi
