@@ -135,6 +135,7 @@ jobs:
           "node-version": "22"
       - name: "Build the embedded console"
         run: |
+          cd ui
           npm ci --no-audit --no-fund
           npm run build
       - name: Install dist
