@@ -119,14 +119,22 @@ testés). Côté fournisseurs : trait `Provider` (`buntu-providers::provider`), 
 (`buntu-conformance`, 14 cas rejoués par `wiremock`, macro `conformance_suite!`, mode
 `BUNTU_LIVE`) et quatre traductions : **OpenAI** (`openai`), **Anthropic** (`anthropic`),
 **Gemini** (`gemini`) et **compatible OpenAI** (`compatible`, préréglages vLLM/Groq/OpenRouter/
-Ollama), chacune avec 14/14 cas de conformité et sa doc dans `docs/providers/`. Aucun client
-amont ni endpoint public n'est encore branché. T0.4 est livré **avec réserve** : le critère
+Ollama), chacune avec 14/14 cas de conformité et sa doc dans `docs/providers/`. Côté API
+publique : **erreurs normalisées** (T1.15), **endpoints compatibles OpenAI** (T1.13 :
+`/v1/chat/completions` en JSON et SSE avec `[DONE]`, `/v1/embeddings`, `/v1/models`) et
+**endpoint natif Anthropic** (T1.14 : `/anthropic/v1/messages`, flux à événements nommés,
+traduction vers n'importe quel fournisseur), branchés sur un client amont hyper-util, avec
+preuves par les SDK Python, TypeScript et Anthropic en CI ; **API d'administration REST v1**
+(T1.16 : CRUD fournisseurs/clés/routes, pagination curseur, secrets masqués, `openapi.json`
+généré par `utoipa` et vérifié par test de diff). **E3 est complet.** T0.4 est livré **avec
+réserve** : le critère
 ± 10 % de P99 n'est pas atteignable sur un poste où le générateur est colocalisé ; il sera
 vérifié par la campagne §11.2 (T1.26). T1.7 est livré **avec réserve** : la connexion et
 l'inter-morceaux seront branchés dans le client hyper-util. T1.9–T1.12 sont livrés **avec
-réserve** : fixtures synthétiques et contrôle `BUNTU_LIVE` en attente de clés API. Les prochains
-travaux sont **T0.1** (preuve de disponibilité du nom, côté humain), puis **T1.13** (endpoints
-publics OpenAI), **T1.14** (endpoint natif Anthropic) et **T1.15–T1.26**. Le suivi est tenu dans
-`docs/status.md`.
+réserve** : fixtures synthétiques et contrôle `BUNTU_LIVE` en attente de clés API ; T1.13/T1.14
+le sont aussi (preuve SDK à confirmer en CI, TLS amont en T1.21) ; T1.16 l'est aussi (mutations
+en mémoire jusqu'à T1.17, authentification admin en T1.20). Les prochains travaux sont **T0.1**
+(preuve de disponibilité du nom, côté humain), puis **T1.17** (stockage SQLite et migrations)
+et **T1.18–T1.26**. Le suivi est tenu dans `docs/status.md`.
 
 Toute ligne de code écrite avant sa tâche est hors périmètre.

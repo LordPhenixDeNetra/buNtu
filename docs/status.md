@@ -54,6 +54,15 @@ Aucune. Prochaine : **T1.13** (endpoints compatibles OpenAI).
 | T1.11 | Gemini (AI Studio) | fait (réserve) | #18 | 2026-11-04 | rôles `user`/`model`, `systemInstruction`, `functionDeclarations`, `responseSchema`, flux SSE ; **14/14 cas** + 6 tests unitaires ; doc `docs/providers/gemini.md` ; réserve : fixtures synthétiques + live |
 | T1.12 | Compatible OpenAI + Ollama | fait (réserve) | #18 | 2026-11-04 | traduction OpenAI réutilisée et **paramétrée** (`path`, `base_url`, en-têtes, `Quirks` déclarés : `stream_usage`, `parallel_tools` → `parallel_tool_calls: false`) ; préréglages vLLM/Groq/OpenRouter/Ollama ; **14/14 cas** + 5 tests unitaires ; doc `docs/providers/compatible.md` ; réserve : endpoints réels non testés |
 
+## Phase 1 — E3 API publique et d'administration
+
+| ID | Tâche | Statut | PR | Date | Preuve |
+| --- | --- | --- | --- | --- | --- |
+| T1.13 | Endpoints OpenAI (`chat`, `embeddings`, `models`) | fait (réserve) | #22 | 2026-11-04 | client amont hyper-util + `base_url` par fournisseur ; `/v1/chat/completions` (JSON + SSE avec `[DONE]`), `/v1/embeddings`, `/v1/models` ; **6 tests d'intégration** contre le simulateur (texte, flux, vecteurs, modèles, erreurs 400/502) ; scripts SDK **Python + TypeScript** + job CI `sdk` ; réserve : preuve SDK à confirmer par la CI, TLS amont non branché (T1.21) |
+| T1.14 | Endpoint natif Anthropic | fait (réserve) | #22 | 2026-11-04 | `/anthropic/v1/messages` entrant (`max_tokens` requis, `system` extrait, blocs texte/image/tool_use/tool_result), routage vers **n'importe quel fournisseur**, réponse et flux à **événements nommés** (`message_start`, `content_block_delta`, `message_stop`) ; **4 tests d'intégration** (cible Anthropic, cible OpenAI traduite, flux, erreur normalisée) ; SDK **Anthropic** Python ajouté au job `sdk` ; réserve : preuve SDK à confirmer en CI |
+| T1.15 | Erreurs normalisées + en-têtes `x-buntu-*` | fait | #22 | 2026-11-04 | 8 codes stables + statut HTTP + type OpenAI ; `x-buntu-error-source` et `retry-after` ; **9 tests `insta`** (8 snapshots + anti-secret) ; aucun message ne contient clé, en-tête d'authentification ou corps de requête |
+| T1.16 | API d'administration + OpenAPI | fait (réserve) | #22 | 2026-11-04 | CRUD fournisseurs/clés/routes sur la configuration brute, **validation par le même code que `config validate`**, pagination par curseur (max 100), **aperçu de clé seulement** (`sk-…a1b2` / `env:VAR`) ; `openapi.json` généré par `utoipa` + **test de diff** (échec si obsolète) ; **5 tests** (CRUD, pagination, anti-fuite, validation, OpenAPI) ; réserve : mutations en mémoire (persistance avec T1.17), authentification admin en T1.20 |
+
 ## Phases suivantes
 
 Le détail des tâches des phases 2 à 4 reste dans le cahier des charges. Chaque phase sera
@@ -79,5 +88,9 @@ ajoutée à ce tableau au début de l'epic, en même temps que la rédaction de 
 | 2026-11-03 | #14 | T1.6 Chaîne de repli et alias | verte (1 min 28) |
 | 2026-11-03 | #15 | T1.7 Quatre timeouts | verte (51 s) |
 | 2026-11-03 | #16 | T1.8 Kit de conformité | verte (1 min 37) |
-| 2026-11-03 | #17 | T1.9 OpenAI | à confirmer |
-| 2026-11-04 | #18 | T1.10–T1.12 Anthropic, Gemini, compatible OpenAI | à confirmer |
+| 2026-11-03 | #17 | T1.9 OpenAI | verte (54 s) |
+| 2026-11-04 | #18 | T1.10–T1.12 Anthropic, Gemini, compatible OpenAI | verte (51 s) |
+| 2026-11-04 | #19 | Alignement du fournisseur compatible sur la fiche T1.12 | verte (1 min 18) |
+| 2026-11-04 | #20 | Intégration des fournisseurs dans `main` | verte (55 s, puis 1 min 08 sur `main`) |
+| 2026-11-04 | #21 | Règle « relire la fiche avant chaque tâche » | verte (1 min 01) |
+| 2026-11-04 | #22 | Lot E3 : T1.15 + T1.13 (erreurs, endpoints OpenAI) | à confirmer |
