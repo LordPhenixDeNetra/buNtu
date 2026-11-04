@@ -77,9 +77,9 @@ Aucune. Prochaine : **T1.13** (endpoints compatibles OpenAI).
 
 | ID | Tâche | Statut | PR | Date | Preuve |
 | --- | --- | --- | --- | --- | --- |
-| T1.22 | Squelette SvelteKit statique embarqué | fait | #24 | 2026-11-04 | `adapter-static` + TypeScript strict, client OpenAPI **généré** (`openapi-typescript` + `openapi-fetch`), i18n FR/EN, thème clair/sombre, `rust-embed` (cache immutable sur `_app/immutable/`, repli SPA), **3 tests Rust**, UI gzip **49,6 Kio** (< 1 Mio), job CI `ui` (check/build/size/Playwright+axe) ; réserve : preuve Playwright à confirmer en CI |
+| T1.22 | Squelette SvelteKit statique embarqué | fait | #24 | 2026-11-04 | `adapter-static` + TypeScript strict, client OpenAPI **généré** (`openapi-typescript` + `openapi-fetch`), i18n FR/EN, thème clair/sombre, `rust-embed` (cache immutable sur `_app/immutable/`, repli SPA), **3 tests Rust**, UI gzip **52,8 Kio** (< 1 Mio), job CI `ui` (check/build/size/Playwright+axe) |
 | T1.23 | Pages fournisseurs, clés, routes et alias | fait | #24 | 2026-11-04 | écrans `/providers` (création, URL de base, clés avec aperçu seul, suppression) et `/routes` (alias, chaîne de repli éditable, réordonnancement) ; **E2E Playwright vert** (création fournisseur/route, rechargement, axe) |
-| T1.24 | Journal des requêtes filtrable + détail | fait | #24 | 2026-11-04 | migration **0002** (`attempts` sur `request_log`, appliquée : 6/6 tests store) ; endpoints `GET /admin/v1/requests` (curseur/filtres) + détail, journal branché dans le chemin de requête, page `/logs` avec filtres URL et détail, **3 tests E2E verts (Playwright + axe)**
+| T1.24 | Journal des requêtes filtrable + détail | fait | #24 | 2026-11-04 | migration **0002** (`attempts` sur `request_log`, appliquée : 6/6 tests store) ; endpoints `GET /admin/v1/requests` (curseur/filtres) + détail, journal branché dans le chemin de requête, page `/logs` avec filtres URL et détail, **3 tests E2E verts (Playwright + axe)** |
 
 ## Phases suivantes
 
@@ -113,4 +113,4 @@ ajoutée à ce tableau au début de l'epic, en même temps que la rédaction de 
 | 2026-11-04 | #21 | Règle « relire la fiche avant chaque tâche » | verte (1 min 01) |
 | 2026-11-04 | #22 | Lot E3 : T1.13–T1.16 (API publique et d'administration) | verte (1 min 49 sur `main`) |
 | 2026-11-04 | #23 | Lot E4 : T1.17–T1.21 (stockage, journal, métriques, auth, secrets) | verte (1 min 26) |
-| 2026-11-04 | #24 | Lot E5 : T1.22–T1.24 (interface web) | à confirmer |
+| 2026-11-04 | #24 | Lot E5 : T1.22–T1.24 (interface web) | verte (2 min 20 sur `main`) |
