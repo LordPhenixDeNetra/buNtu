@@ -13,3 +13,5 @@ installers = ["shell", "powershell"]
 targets = ["aarch64-apple-darwin", "aarch64-unknown-linux-musl", "x86_64-unknown-linux-musl", "x86_64-pc-windows-msvc"]
 # Where to host releases
 hosting = "github"
+# Étapes de préparation des builds (console embarquée par rust-embed, T1.22).
+github-build-setup = "../build-setup.yml"
