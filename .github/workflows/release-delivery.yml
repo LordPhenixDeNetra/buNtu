@@ -80,7 +80,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "${{ github.event.release.tag_name }}" buntu-container.spdx.json sbom-action-* --clobber
+          gh release upload "${{ github.event.release.tag_name }}" buntu-container.spdx.json --clobber
 
   binaries:
     name: raw binaries + signatures (${{ matrix.target }})
@@ -96,8 +96,6 @@ jobs:
             target: aarch64-unknown-linux-musl
           - runner: macos-14
             target: aarch64-apple-darwin
-          - runner: macos-13
-            target: x86_64-apple-darwin
           - runner: windows-latest
             target: x86_64-pc-windows-msvc
     steps:
@@ -193,6 +191,8 @@ jobs:
     needs: [binaries]
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -212,7 +212,7 @@ jobs:
         run: npm test
 
       - name: Publish with provenance
-        if: ${{ secrets.NPM_TOKEN != '' }}
+        if: ${{ env.NPM_TOKEN != '' }}
         working-directory: npx
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

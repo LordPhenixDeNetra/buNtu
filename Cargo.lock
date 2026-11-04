@@ -304,11 +304,11 @@ checksum = "72f5acc6cb2ba439de613abc23857ec3d78374d8ed5ac84e9d11336e87da8649"
 
 [[package]]
 name = "buntu-cache"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 
 [[package]]
 name = "buntu-cli"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 dependencies = [
  "buntu-core",
  "buntu-gateway",
@@ -320,11 +320,11 @@ dependencies = [
 
 [[package]]
 name = "buntu-cluster"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 
 [[package]]
 name = "buntu-conformance"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 dependencies = [
  "buntu-providers",
  "buntu-schema",
@@ -339,7 +339,7 @@ dependencies = [
 
 [[package]]
 name = "buntu-core"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 dependencies = [
  "arc-swap",
  "axum",
@@ -359,7 +359,7 @@ dependencies = [
 
 [[package]]
 name = "buntu-gateway"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 dependencies = [
  "async-stream",
  "axum",
@@ -386,15 +386,15 @@ dependencies = [
 
 [[package]]
 name = "buntu-governance"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 
 [[package]]
 name = "buntu-mcp"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 
 [[package]]
 name = "buntu-mock-provider"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 dependencies = [
  "async-stream",
  "axum",
@@ -407,7 +407,7 @@ dependencies = [
 
 [[package]]
 name = "buntu-observe"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 dependencies = [
  "buntu-store",
  "metrics",
@@ -417,11 +417,11 @@ dependencies = [
 
 [[package]]
 name = "buntu-plugin-wasm"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 
 [[package]]
 name = "buntu-providers"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 dependencies = [
  "buntu-schema",
  "bytes",
@@ -431,7 +431,7 @@ dependencies = [
 
 [[package]]
 name = "buntu-schema"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 dependencies = [
  "proptest",
  "secrecy",
@@ -443,7 +443,7 @@ dependencies = [
 
 [[package]]
 name = "buntu-security"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 dependencies = [
  "aes-gcm",
  "argon2",
@@ -457,7 +457,7 @@ dependencies = [
 
 [[package]]
 name = "buntu-store"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 dependencies = [
  "buntu-security",
  "serde_json",
@@ -3594,7 +3594,7 @@ checksum = "3ad82d2a33cdc9674dc7465672f271e096168fcdbe0f799d9e6db8c5892679dc"
 
 [[package]]
 name = "xtask"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 dependencies = [
  "serde",
  "serde_json",
