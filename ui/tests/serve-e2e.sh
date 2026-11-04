@@ -19,7 +19,7 @@ listen = "127.0.0.1:19000"
 id = "e2e"
 type = "mock"
 base_url = "http://127.0.0.1:19001"
-keys = [{ secret = "sk-e2e-secret-0001", weight = 1 }]
+keys = [{ secret = "test-key-0001", weight = 1 }]
 
 [[routes]]
 alias = "chat-e2e"

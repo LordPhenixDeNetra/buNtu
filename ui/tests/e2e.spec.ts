@@ -16,12 +16,12 @@ test('create a provider, a route, then find the request in the journal', async (
   await createProvider.getByLabel('Identifiant').fill('e2e-ui');
   await createProvider.getByLabel('Type').selectOption('mock');
   await createProvider.getByLabel('URL de base').fill('http://127.0.0.1:19001');
-  await createProvider.getByLabel('Clé API (saisie unique)').fill('sk-e2e-secret-0001');
+  await createProvider.getByLabel('Clé API (saisie unique)').fill('test-key-0001');
   await createProvider.getByRole('button', { name: 'Enregistrer' }).click();
   await expect(page.getByRole('heading', { name: 'e2e-ui', exact: true })).toBeVisible();
   // La clé n'est jamais réaffichée en clair ; seul l'aperçu est visible.
-  await expect(page.getByText('sk-e2e-secret-0001')).toHaveCount(0);
-  await expect(page.getByText('sk-…0001').first()).toBeVisible();
+  await expect(page.getByText('test-key-0001')).toHaveCount(0);
+  await expect(page.getByText('tes…0001').first()).toBeVisible();
 
   // T1.23 — route avec chaîne de repli et réordonnancement.
   await page.goto('/routes');
