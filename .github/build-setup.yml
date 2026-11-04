@@ -10,7 +10,7 @@
     cache: npm
     cache-dependency-path: ui/package-lock.json
 - name: Build the embedded console
-  working-directory: ui
   run: |
+    cd ui
     npm ci --no-audit --no-fund
     npm run build
