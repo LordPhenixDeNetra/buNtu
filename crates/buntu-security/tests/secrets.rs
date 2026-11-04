@@ -54,6 +54,12 @@ fn master_key_rotation_reencrypts_the_value() -> Result<(), Box<dyn Error>> {
 fn master_key_file_must_contain_32_bytes() -> Result<(), Box<dyn Error>> {
     let path = std::env::temp_dir().join(format!("buntu-key-{}.bin", std::process::id()));
     std::fs::write(&path, [0x42_u8; MASTER_KEY_BYTES])?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        // La CI Linux crée les fichiers en 0644 : la clé doit être en 0600 pour être acceptée.
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600))?;
+    }
     let cipher = SecretCipher::from_file(&path)?;
     let blob = cipher.encrypt(b"valeur")?;
     assert_eq!(cipher.decrypt(&blob)?, b"valeur");
