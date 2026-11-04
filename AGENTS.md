@@ -47,6 +47,13 @@ composant `llvm-tools-preview`.
 
 ## Règles
 
+### Méthode
+
+0. **Avant chaque tâche, relire sa fiche dans `Guide d'exécution (agents IA).md`** (obligatoire,
+   à chaque tâche, pas seulement en début de phase) : points spécifiques, pièges, interdits.
+   Vérifier la conformité point par point et indiquer explicitement ce qui est fait, ce qui est
+   en réserve et tout écart avant de rendre la main.
+
 ### Périmètre
 
 1. Ne travaille que sur la tâche donnée (`Tx.y`). Aucun « au passage ».
