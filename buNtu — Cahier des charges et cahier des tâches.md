@@ -552,10 +552,10 @@ Le projet compte environ 395 jours de travail estimés, soit environ 2 ans et 3 
 
 **E3 — API publique et d'administration (14 j)**
 
-- [ ] **T1.13** `/v1/chat/completions`, `/v1/embeddings`, `/v1/models` — 4 j — FR-API-1, 2, 6.
-- [ ] **T1.14** Point d'entrée natif `/anthropic/v1/messages` — 3 j — FR-API-4 — *Acceptation :* SDK Anthropic officiel fonctionne en changeant l'URL.
-- [ ] **T1.15** Erreurs normalisées + en-têtes `x-buntu-*` — 2 j — FR-API-8.
-- [ ] **T1.16** API d'administration REST v1 + OpenAPI généré (`utoipa`) — 5 j — FR-API-9.
+- [x] **T1.13** `/v1/chat/completions`, `/v1/embeddings`, `/v1/models` — 4 j — FR-API-1, 2, 6.
+- [x] **T1.14** Point d'entrée natif `/anthropic/v1/messages` — 3 j — FR-API-4 — *Acceptation :* SDK Anthropic officiel fonctionne en changeant l'URL.
+- [x] **T1.15** Erreurs normalisées + en-têtes `x-buntu-*` — 2 j — FR-API-8.
+- [x] **T1.16** API d'administration REST v1 + OpenAPI généré (`utoipa`) — 5 j — FR-API-9.
 
 **E4 — Stockage, journaux, sécurité de base (14 j)**
 

@@ -1,4 +1,4 @@
-name: CI
+﻿name: CI
 
 on:
   push:
@@ -50,6 +50,23 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo nextest run --workspace --locked --no-tests=pass
 
+  sdk:
+    name: sdk (python + typescript)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: pip install openai anthropic pytest
+      - run: bash tests/sdk/run.sh
+
   deny:
     name: deny
     runs-on: ubuntu-latest
@@ -100,3 +117,4 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: cargo build --workspace --locked
+

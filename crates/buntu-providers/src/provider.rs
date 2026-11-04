@@ -5,7 +5,10 @@
 //! le client amont (hyper-util, ADR-0004) exécute la requête, le kit de conformité rejoue les
 //! fixtures.
 
-use buntu_schema::{Capabilities, GatewayError, Request, Response, StreamEvent};
+use buntu_schema::{
+    Capabilities, EmbeddingsRequest, EmbeddingsResponse, GatewayError, Request, Response,
+    StreamEvent,
+};
 use bytes::Bytes;
 use hyper::HeaderMap;
 
@@ -79,4 +82,22 @@ pub trait Provider: Send + Sync {
     fn map_error(&self, status: u16, headers: &HeaderMap, body: &[u8]) -> GatewayError;
 
     fn capabilities(&self, model: &str) -> Capabilities;
+
+    /// Construit une requête d'embeddings ; par défaut, le fournisseur ne les prend pas en
+    /// charge.
+    fn build_embeddings_request(
+        &self,
+        _request: &EmbeddingsRequest,
+    ) -> Result<HttpRequest, GatewayError> {
+        Err(GatewayError::InvalidRequest {
+            message: format!("{} ne prend pas en charge les embeddings", self.name()),
+        })
+    }
+
+    /// Traduit une réponse d'embeddings ; par défaut, non pris en charge.
+    fn parse_embeddings_response(&self, _body: Bytes) -> Result<EmbeddingsResponse, GatewayError> {
+        Err(GatewayError::InvalidRequest {
+            message: format!("{} ne prend pas en charge les embeddings", self.name()),
+        })
+    }
 }

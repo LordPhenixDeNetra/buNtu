@@ -1,0 +1,12 @@
+---
+source: crates/buntu-gateway/tests/error_response.rs
+assertion_line: 99
+expression: body
+---
+{
+  "error": {
+    "code": "all_targets_failed",
+    "message": "all targets failed (provider unavailable: statut 503) after attempts: [\"openai/gpt-4o-mini (2 tentative(s))\"]",
+    "type": "api_error"
+  }
+}

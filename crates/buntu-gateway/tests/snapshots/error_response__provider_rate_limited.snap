@@ -1,0 +1,12 @@
+---
+source: crates/buntu-gateway/tests/error_response.rs
+assertion_line: 39
+expression: body
+---
+{
+  "error": {
+    "code": "provider_rate_limited",
+    "message": "provider rate limited",
+    "type": "rate_limit_error"
+  }
+}

@@ -8,7 +8,10 @@
 //! 2026-11-04) — Ollama expose la compatibilité OpenAI ; l'API native `/api/chat` n'est pas
 //! traduite dans cette tâche.
 
-use buntu_schema::{Capabilities, GatewayError, Request, Response, StreamEvent};
+use buntu_schema::{
+    Capabilities, EmbeddingsRequest, EmbeddingsResponse, GatewayError, Request, Response,
+    StreamEvent,
+};
 use bytes::Bytes;
 use hyper::HeaderMap;
 use serde_json::Value;
@@ -204,5 +207,16 @@ impl Provider for OpenAiCompatibleProvider {
 
     fn capabilities(&self, model: &str) -> Capabilities {
         self.openai().capabilities(model)
+    }
+
+    fn build_embeddings_request(
+        &self,
+        request: &EmbeddingsRequest,
+    ) -> Result<HttpRequest, GatewayError> {
+        self.openai().build_embeddings_request(request)
+    }
+
+    fn parse_embeddings_response(&self, body: Bytes) -> Result<EmbeddingsResponse, GatewayError> {
+        self.openai().parse_embeddings_response(body)
     }
 }

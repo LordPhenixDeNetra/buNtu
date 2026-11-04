@@ -1,0 +1,8 @@
+{
+  "name": "buntu-sdk-tests",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "openai": "^6.0.0"
+  }
+}

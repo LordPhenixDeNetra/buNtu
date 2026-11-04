@@ -1,0 +1,12 @@
+---
+source: crates/buntu-gateway/tests/error_response.rs
+assertion_line: 58
+expression: body
+---
+{
+  "error": {
+    "code": "timeout",
+    "message": "upstream timeout",
+    "type": "api_error"
+  }
+}

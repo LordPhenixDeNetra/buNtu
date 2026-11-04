@@ -5,11 +5,13 @@ mod config_cmd;
 use std::error::Error;
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::Duration;
 
 use buntu_core::config::{ConfigHandle, ProcessEnv, spawn_file_watcher};
+use buntu_gateway::admin::AdminStore;
 use buntu_gateway::server::ServerConfig;
-use buntu_gateway::{Readiness, app, serve, shutdown};
+use buntu_gateway::{GatewayState, Readiness, app_with_state, serve, shutdown};
 
 const USAGE: &str = "\
 usage: buntu <commande>
@@ -74,26 +76,33 @@ fn serve_command(options: ServeOptions) -> Result<(), Box<dyn Error>> {
         .enable_all()
         .build()?;
     runtime.block_on(async move {
-        let listen = match &options.config {
+        let (listen, handle, raw_config) = match &options.config {
             Some(path) => {
                 let config = buntu_core::config::load(path, &ProcessEnv)?;
+                let raw = buntu_core::config::file::read(path)?;
                 let listen = options.listen.unwrap_or(config.server.listen);
                 let handle = ConfigHandle::new(config);
-                spawn_watchers(handle, path.clone())?;
-                listen
+                spawn_watchers(handle.clone(), path.clone())?;
+                (listen, handle, raw)
             }
-            None => options
-                .listen
-                .unwrap_or_else(|| SocketAddr::from(([0, 0, 0, 0], 8080))),
+            None => (
+                options
+                    .listen
+                    .unwrap_or_else(|| SocketAddr::from(([0, 0, 0, 0], 8080))),
+                ConfigHandle::new(buntu_core::config::CompiledConfig::default()),
+                buntu_core::config::RawConfig::default(),
+            ),
         };
 
         let listener = tokio::net::TcpListener::bind(listen).await?;
         let address = listener.local_addr()?;
         println!("buntu listening on {address}");
         let readiness = Readiness::new(true);
+        let state = GatewayState::new(readiness.clone(), handle)
+            .with_admin(Arc::new(AdminStore::new(raw_config)));
         serve(
             listener,
-            app(readiness.clone()),
+            app_with_state(state),
             readiness,
             shutdown::signal(),
             ServerConfig::default(),
