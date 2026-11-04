@@ -1,0 +1,1 @@
+{"status": 200, "headers": {"content-type": "application/json"}, "body": {"id": "fake-1", "type": "message", "role": "assistant", "model": "fake-model", "content": [{"type": "text", "text": "Bonjour"}], "stop_reason": "end_turn", "usage": {"input_tokens": 3, "output_tokens": 5}}}

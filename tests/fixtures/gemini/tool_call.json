@@ -1,0 +1,1 @@
+{"status": 200, "headers": {"content-type": "application/json"}, "body": {"candidates": [{"content": {"role": "model", "parts": [{"functionCall": {"name": "meteo", "args": {"ville": "Dakar"}}}]}, "finishReason": "STOP", "index": 0}], "usageMetadata": {"promptTokenCount": 4, "candidatesTokenCount": 6}, "modelVersion": "fake-model", "responseId": "fake-3"}}

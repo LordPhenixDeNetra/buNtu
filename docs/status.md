@@ -18,7 +18,7 @@ dans la PR.
 
 ## Tâche en cours
 
-Aucune. Prochaine : **T1.9** (fournisseur OpenAI).
+Aucune. Prochaine : **T1.13** (endpoints compatibles OpenAI).
 
 ## Phase 0 — Fondations (15 j)
 
@@ -47,6 +47,13 @@ Aucune. Prochaine : **T1.9** (fournisseur OpenAI).
 
 ## Phase 1 — E2 Fournisseurs
 
+| ID | Tâche | Statut | PR | Date | Preuve |
+| --- | --- | --- | --- | --- | --- |
+| T1.9 | OpenAI (Chat Completions) | fait (réserve) | #17 | 2026-11-03 | traduction requête/réponse/flux/erreurs ; **14/14 cas de conformité** + 6 tests unitaires ; doc `docs/providers/openai.md` ; réserve : fixtures synthétiques et contrôle `BUNTU_LIVE` en attente d'une clé API |
+| T1.10 | Anthropic (Messages) | fait (réserve) | #18 | 2026-11-04 | `system` extrait, `max_tokens` obligatoire (défaut 4096), blocs `tool_use`/`tool_result`/`thinking`, flux à événements nommés ; **14/14 cas** + 5 tests unitaires ; doc `docs/providers/anthropic.md` ; réserve : fixtures synthétiques + live |
+| T1.11 | Gemini (AI Studio) | fait (réserve) | #18 | 2026-11-04 | rôles `user`/`model`, `systemInstruction`, `functionDeclarations`, `responseSchema`, flux SSE ; **14/14 cas** + 6 tests unitaires ; doc `docs/providers/gemini.md` ; réserve : fixtures synthétiques + live |
+| T1.12 | Compatible OpenAI + Ollama | fait (réserve) | #18 | 2026-11-04 | traduction OpenAI réutilisée et **paramétrée** (`path`, `base_url`, en-têtes, `Quirks` déclarés : `stream_usage`, `parallel_tools` → `parallel_tool_calls: false`) ; préréglages vLLM/Groq/OpenRouter/Ollama ; **14/14 cas** + 5 tests unitaires ; doc `docs/providers/compatible.md` ; réserve : endpoints réels non testés |
+
 ## Phases suivantes
 
 Le détail des tâches des phases 2 à 4 reste dans le cahier des charges. Chaque phase sera
@@ -71,4 +78,6 @@ ajoutée à ce tableau au début de l'epic, en même temps que la rédaction de 
 | 2026-11-03 | #13 | T1.5 Réessais, backoff et budget | verte (1 min 05) |
 | 2026-11-03 | #14 | T1.6 Chaîne de repli et alias | verte (1 min 28) |
 | 2026-11-03 | #15 | T1.7 Quatre timeouts | verte (51 s) |
-| 2026-11-03 | #16 | T1.8 Kit de conformité | à confirmer |
+| 2026-11-03 | #16 | T1.8 Kit de conformité | verte (1 min 37) |
+| 2026-11-03 | #17 | T1.9 OpenAI | à confirmer |
+| 2026-11-04 | #18 | T1.10–T1.12 Anthropic, Gemini, compatible OpenAI | à confirmer |

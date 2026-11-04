@@ -1,0 +1,1 @@
+{"status": 200, "headers": {"content-type": "application/json"}, "body": {"candidates": [{"content": {"role": "model", "parts": [{"text": "{\"ok\":true}"}]}, "finishReason": "STOP", "index": 0}], "usageMetadata": {"promptTokenCount": 6, "candidatesTokenCount": 4}, "modelVersion": "fake-model", "responseId": "fake-7"}}

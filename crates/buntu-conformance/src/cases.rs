@@ -185,9 +185,12 @@ fn tool_result_request() -> Request {
 
 fn image_request() -> Request {
     let mut request = base_request();
+    // Image encodée en base64 : c'est la forme acceptée par les trois fournisseurs testés
+    // (OpenAI, Anthropic, Gemini). Les URL restent couvertes par les tests unitaires.
     request.messages[0].content.push(ContentPart::Image {
-        source: ImageSource::Url {
-            url: "https://exemple.test/photo.png".to_owned(),
+        source: ImageSource::Base64 {
+            media_type: "image/png".to_owned(),
+            data: "AAAA".to_owned(),
         },
         detail: ImageDetail::Auto,
     });
@@ -272,6 +275,13 @@ pub fn expect(name: &str, outcome: &Outcome) -> Result<(), String> {
             let Outcome::Stream(events) = outcome else {
                 return Err("flux attendu".to_owned());
             };
+            // Les événements d'usage varient selon le fournisseur (message_start Anthropic,
+            // usageMetadata Gemini…) : la séquence testée est celle du contenu.
+            let events: Vec<StreamEvent> = events
+                .iter()
+                .filter(|event| !matches!(event, StreamEvent::Usage { .. }))
+                .cloned()
+                .collect();
             let expected = [
                 StreamEvent::Start {
                     id: "fake-1".to_owned(),
@@ -373,7 +383,16 @@ pub fn expect(name: &str, outcome: &Outcome) -> Result<(), String> {
             let Outcome::Response(response) = outcome else {
                 return Err("réponse attendue".to_owned());
             };
-            assert_stop(response, &StopReason::ContentFilter)?;
+            // Selon le fournisseur, le refus de contenu s'exprime par `ContentFilter` ou
+            // `Refusal` : la batterie accepte les deux traductions canoniques.
+            match &response.stop_reason {
+                Some(StopReason::ContentFilter | StopReason::Refusal) => {}
+                other => {
+                    return Err(format!(
+                        "raison d'arrêt {other:?} au lieu de ContentFilter/Refusal"
+                    ));
+                }
+            }
             assert_usage(response, 2, 0)
         }
         "error_400" => match outcome {

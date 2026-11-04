@@ -1,0 +1,1 @@
+{"status": 200, "headers": {"content-type": "application/json"}, "body": {"id": "fake-9", "type": "message", "role": "assistant", "model": "fake-model", "content": [{"type": "text", "text": ""}], "stop_reason": "refusal", "usage": {"input_tokens": 2, "output_tokens": 0}}}
