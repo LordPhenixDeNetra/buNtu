@@ -1,0 +1,10 @@
+# Configuration de `cargo audit` (consultée par la CI et en local).
+#
+# RUSTSEC-2023-0071 (crate `rsa`, Marvin Attack) est présente dans `Cargo.lock` via
+# `sqlx-mysql`, une dépendance **optionnelle** de `sqlx` que nous n'activons pas (`sqlite`
+# seulement). `cargo tree -i rsa` ne la trouve dans aucun chemin compilé ; l'avis est donc
+# ignoré avec justification, voir docs/status.md (T1.17, réserve).
+[advisories]
+ignore = [
+    "RUSTSEC-2023-0071",
+]

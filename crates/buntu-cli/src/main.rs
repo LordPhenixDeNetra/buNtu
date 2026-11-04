@@ -97,6 +97,10 @@ fn serve_command(options: ServeOptions) -> Result<(), Box<dyn Error>> {
         let listener = tokio::net::TcpListener::bind(listen).await?;
         let address = listener.local_addr()?;
         println!("buntu listening on {address}");
+        // Exportateur Prometheus global (T1.19) : un échec n'empêche pas de servir.
+        if let Err(error) = buntu_observe::metrics::install_global() {
+            eprintln!("buNtu: métriques indisponibles ({error})");
+        }
         let readiness = Readiness::new(true);
         let state = GatewayState::new(readiness.clone(), handle)
             .with_admin(Arc::new(AdminStore::new(raw_config)));

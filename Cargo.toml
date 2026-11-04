@@ -88,6 +88,19 @@ insta = { version = "1", features = ["json"] }
 # API d'administration + OpenAPI (T1.16).
 utoipa = "6"
 
+# E4 — stockage, journal, métriques et sécurité (T1.17–T1.21).
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros"] }
+metrics = "0.24"
+metrics-exporter-prometheus = { version = "0.18", default-features = false }
+argon2 = "0.5"
+rand = "0.8"
+subtle = "2.6"
+sha2 = "0.10"
+secrecy = "0.10"
+aes-gcm = "0.10"
+base64 = "0.22"
+zeroize = "1"
+
 [profile.release]
 lto = "fat"
 codegen-units = 1

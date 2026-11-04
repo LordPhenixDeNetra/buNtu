@@ -7,5 +7,15 @@ license.workspace = true
 rust-version.workspace = true
 repository.workspace = true
 
+[dependencies]
+buntu-store.workspace = true
+metrics.workspace = true
+metrics-exporter-prometheus.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true
+metrics = { workspace = true }
+
 [lints]
 workspace = true

@@ -11,6 +11,7 @@ repository.workspace = true
 async-stream.workspace = true
 axum.workspace = true
 buntu-core.workspace = true
+buntu-observe.workspace = true
 buntu-providers.workspace = true
 buntu-schema.workspace = true
 bytes.workspace = true

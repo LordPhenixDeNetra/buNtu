@@ -13,6 +13,7 @@ pub mod upstream;
 
 use axum::Router;
 use axum::extract::DefaultBodyLimit;
+use axum::response::IntoResponse;
 use axum::routing::{delete, get, post};
 use tower_http::limit::RequestBodyLimitLayer;
 
@@ -34,6 +35,21 @@ pub fn app(readiness: Readiness) -> Router {
         .layer(RequestBodyLimitLayer::new(MAX_BODY_BYTES))
 }
 
+/// Exposition Prometheus (T1.19) : 503 tant que l'exportateur n'est pas installé.
+async fn metrics_endpoint() -> axum::response::Response {
+    match buntu_observe::metrics::render_global() {
+        Some(body) => (
+            [(
+                axum::http::header::CONTENT_TYPE,
+                "text/plain; version=0.0.4; charset=utf-8",
+            )],
+            body,
+        )
+            .into_response(),
+        None => axum::http::StatusCode::SERVICE_UNAVAILABLE.into_response(),
+    }
+}
+
 /// Routeur complet : santé + endpoints OpenAI (T1.13).
 pub fn app_with_state(state: GatewayState) -> Router {
     let health_router = Router::new()
@@ -50,6 +66,7 @@ pub fn app_with_state(state: GatewayState) -> Router {
             post(routes::openai::embeddings::embeddings),
         )
         .route("/v1/models", get(routes::openai::models::models))
+        .route("/metrics", get(metrics_endpoint))
         .route(
             "/anthropic/v1/messages",
             post(routes::anthropic::messages::messages),
