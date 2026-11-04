@@ -9,6 +9,7 @@
 
 pub mod capabilities;
 pub mod content;
+pub mod embeddings;
 pub mod error;
 pub mod message;
 pub mod request;
@@ -20,6 +21,7 @@ pub mod usage;
 
 pub use capabilities::Capabilities;
 pub use content::{ContentPart, ImageDetail, ImageSource};
+pub use embeddings::{Embedding, EmbeddingUsage, EmbeddingsRequest, EmbeddingsResponse};
 pub use error::GatewayError;
 pub use message::{Message, Role};
 pub use request::{Request, ResponseFormat, ToolChoice};
