@@ -1,0 +1,16 @@
+# Étapes injectées par cargo-dist dans le job `build-local-artifacts` (T1.25/T1.22).
+#
+# La console SvelteKit est embarquée dans le binaire par `rust-embed` : elle doit être
+# construite AVANT `dist build`, sinon chaque cible échoue avec
+# « #[derive(RustEmbed)] folder '../../ui/build' does not exist ».
+- name: Setup Node for the embedded console
+  uses: actions/setup-node@v4
+  with:
+    node-version: "22"
+    cache: npm
+    cache-dependency-path: ui/package-lock.json
+- name: Build the embedded console
+  working-directory: ui
+  run: |
+    npm ci --no-audit --no-fund
+    npm run build
