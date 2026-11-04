@@ -88,6 +88,9 @@ insta = { version = "1", features = ["json"] }
 # API d'administration + OpenAPI (T1.16).
 utoipa = "6"
 
+# Interface web embarquée (T1.22).
+rust-embed = "8"
+
 # E4 — stockage, journal, métriques et sécurité (T1.17–T1.21).
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros"] }
 metrics = "0.24"
