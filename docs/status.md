@@ -79,5 +79,7 @@ ajoutée à ce tableau au début de l'epic, en même temps que la rédaction de 
 | 2026-11-03 | #14 | T1.6 Chaîne de repli et alias | verte (1 min 28) |
 | 2026-11-03 | #15 | T1.7 Quatre timeouts | verte (51 s) |
 | 2026-11-03 | #16 | T1.8 Kit de conformité | verte (1 min 37) |
-| 2026-11-03 | #17 | T1.9 OpenAI | à confirmer |
-| 2026-11-04 | #18 | T1.10–T1.12 Anthropic, Gemini, compatible OpenAI | à confirmer |
+| 2026-11-03 | #17 | T1.9 OpenAI | verte (54 s) |
+| 2026-11-04 | #18 | T1.10–T1.12 Anthropic, Gemini, compatible OpenAI | verte (51 s) |
+| 2026-11-04 | #19 | Alignement du fournisseur compatible sur la fiche T1.12 | verte (1 min 18) |
+| 2026-11-04 | #20 | Intégration des fournisseurs dans `main` | verte (55 s, puis 1 min 08 sur `main`) |
