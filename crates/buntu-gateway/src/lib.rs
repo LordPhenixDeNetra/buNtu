@@ -1,29 +1,91 @@
-//! Passerelle HTTP de buNtu : routes de santé et serveur.
-//!
-//! Les routes métier (`/v1/...`) arriveront avec T1.13 ; ce crate expose pour l'instant le
-//! serveur, `/health`, `/ready` et les limites de base (corps, en-têtes, connexions).
+//! Passerelle HTTP de buNtu : routes de santé, endpoints compatibles OpenAI et serveur.
 
+pub mod admin;
+pub mod error_response;
+pub mod executor;
 pub mod health;
+pub mod registry;
+pub mod routes;
 pub mod server;
 pub mod shutdown;
+pub mod state;
+pub mod upstream;
 
 use axum::Router;
 use axum::extract::DefaultBodyLimit;
-use axum::routing::get;
+use axum::routing::{delete, get, post};
 use tower_http::limit::RequestBodyLimitLayer;
 
+pub use error_response::response as error_response;
 pub use health::Readiness;
 pub use server::{ServerConfig, serve};
+pub use state::GatewayState;
 
 /// Taille maximale du corps d'une requête : 10 Mo (cahier §8.1).
 pub const MAX_BODY_BYTES: usize = 10 * 1024 * 1024;
 
-/// Construit le routeur de la passerelle.
+/// Routeur de santé seul (tests historiques, sans configuration).
 pub fn app(readiness: Readiness) -> Router {
     Router::new()
         .route("/health", get(health::health))
         .route("/ready", get(health::ready))
         .with_state(readiness)
+        .layer(DefaultBodyLimit::max(MAX_BODY_BYTES))
+        .layer(RequestBodyLimitLayer::new(MAX_BODY_BYTES))
+}
+
+/// Routeur complet : santé + endpoints OpenAI (T1.13).
+pub fn app_with_state(state: GatewayState) -> Router {
+    let health_router = Router::new()
+        .route("/health", get(health::health))
+        .route("/ready", get(health::ready))
+        .with_state(state.readiness.clone());
+    let api_router = Router::new()
+        .route(
+            "/v1/chat/completions",
+            post(routes::openai::chat::chat_completions),
+        )
+        .route(
+            "/v1/embeddings",
+            post(routes::openai::embeddings::embeddings),
+        )
+        .route("/v1/models", get(routes::openai::models::models))
+        .route(
+            "/anthropic/v1/messages",
+            post(routes::anthropic::messages::messages),
+        )
+        .route(
+            "/admin/v1/providers",
+            get(admin::handlers::list_providers).post(admin::handlers::create_provider),
+        )
+        .route(
+            "/admin/v1/providers/{id}",
+            get(admin::handlers::get_provider)
+                .patch(admin::handlers::update_provider)
+                .delete(admin::handlers::delete_provider),
+        )
+        .route(
+            "/admin/v1/providers/{id}/keys",
+            post(admin::handlers::create_key),
+        )
+        .route(
+            "/admin/v1/providers/{id}/keys/{index}",
+            delete(admin::handlers::delete_key),
+        )
+        .route(
+            "/admin/v1/routes",
+            get(admin::handlers::list_routes).post(admin::handlers::create_route),
+        )
+        .route(
+            "/admin/v1/routes/{alias}",
+            get(admin::handlers::get_route)
+                .patch(admin::handlers::update_route)
+                .delete(admin::handlers::delete_route),
+        )
+        .route("/admin/v1/openapi.json", get(admin::handlers::openapi_json))
+        .with_state(state);
+    health_router
+        .merge(api_router)
         .layer(DefaultBodyLimit::max(MAX_BODY_BYTES))
         .layer(RequestBodyLimitLayer::new(MAX_BODY_BYTES))
 }
