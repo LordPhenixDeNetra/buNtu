@@ -73,6 +73,14 @@ Aucune. Prochaine : **T1.13** (endpoints compatibles OpenAI).
 | T1.20 | Authentification admin Argon2id + jetons API | fait | #23 | 2026-11-04 | Argon2id **m = 19 456 Kio, t = 2, p = 1** (OWASP), jetons 256 bits stockés **hachés** (SHA-256, `subtle`), limitation **10 échecs → blocage 5 min** ; **5 tests** (mauvais mot de passe, sel aléatoire, jeton haché, blocage, jeton révoqué côté store) |
 | T1.21 | Chiffrement des secrets au repos + `Secret<T>` | fait | #23 | 2026-11-04 | `Secret<T>` (`secrecy` + zéroïsation, `Debug` masqué), AES-256-GCM avec **nonce aléatoire par valeur**, clé maître depuis fichier (permissions 0600 vérifiées sous Unix) ou variable base64, rotation de clé ; **8 tests** dont recherche de la clé en clair dans le fichier SQLite : introuvable ; réserve : commande CLI `buntu secrets rotate` à brancher avec T1.22+ |
 
+## Phase 1 — E5 Interface web
+
+| ID | Tâche | Statut | PR | Date | Preuve |
+| --- | --- | --- | --- | --- | --- |
+| T1.22 | Squelette SvelteKit statique embarqué | fait | #24 | 2026-11-04 | `adapter-static` + TypeScript strict, client OpenAPI **généré** (`openapi-typescript` + `openapi-fetch`), i18n FR/EN, thème clair/sombre, `rust-embed` (cache immutable sur `_app/immutable/`, repli SPA), **3 tests Rust**, UI gzip **49,6 Kio** (< 1 Mio), job CI `ui` (check/build/size/Playwright+axe) ; réserve : preuve Playwright à confirmer en CI |
+| T1.23 | Pages fournisseurs, clés, routes et alias | fait | #24 | 2026-11-04 | écrans `/providers` (création, URL de base, clés avec aperçu seul, suppression) et `/routes` (alias, chaîne de repli éditable, réordonnancement) ; **E2E Playwright vert** (création fournisseur/route, rechargement, axe) |
+| T1.24 | Journal des requêtes filtrable + détail | fait | #24 | 2026-11-04 | migration **0002** (`attempts` sur `request_log`, appliquée : 6/6 tests store) ; endpoints `GET /admin/v1/requests` (curseur/filtres) + détail, journal branché dans le chemin de requête, page `/logs` avec filtres URL et détail, **3 tests E2E verts (Playwright + axe)**
+
 ## Phases suivantes
 
 Le détail des tâches des phases 2 à 4 reste dans le cahier des charges. Chaque phase sera
@@ -105,3 +113,4 @@ ajoutée à ce tableau au début de l'epic, en même temps que la rédaction de 
 | 2026-11-04 | #21 | Règle « relire la fiche avant chaque tâche » | verte (1 min 01) |
 | 2026-11-04 | #22 | Lot E3 : T1.13–T1.16 (API publique et d'administration) | verte (1 min 49 sur `main`) |
 | 2026-11-04 | #23 | Lot E4 : T1.17–T1.21 (stockage, journal, métriques, auth, secrets) | verte (1 min 26) |
+| 2026-11-04 | #24 | Lot E5 : T1.22–T1.24 (interface web) | à confirmer |
