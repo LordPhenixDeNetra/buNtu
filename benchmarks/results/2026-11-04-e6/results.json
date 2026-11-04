@@ -1,0 +1,360 @@
+{
+  "generated_at": "2026-11-04T19:24Z",
+  "generated_at_unix": 1793820249,
+  "host": {
+    "os": "windows x86_64",
+    "cores": 8,
+    "oha": "oha 1.16.0"
+  },
+  "toolchain": {
+    "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)"
+  },
+  "protocol": {
+    "warmup_seconds": 3,
+    "duration_seconds": 8,
+    "runs": 3,
+    "qps_steps": [
+      500,
+      1000,
+      2000
+    ],
+    "tolerance": 0.1,
+    "variance_allowed": true
+  },
+  "statics": {
+    "gateway_binary_bytes": 4770304,
+    "cold_start_ms_min": 518.6948,
+    "cold_start_ms_median": 522.7602999999999
+  },
+  "measurements": [
+    {
+      "target": "simulator",
+      "qps": 500,
+      "run": 1,
+      "requests_per_sec": 499.107129919458,
+      "success_rate": 1.0,
+      "p50_ms": 0.41960000000000003,
+      "p90_ms": 0.6579,
+      "p99_ms": 1.7788000000000002,
+      "p999_ms": 3.0818999999999996,
+      "rss_kib": null,
+      "cpu_percent": null
+    },
+    {
+      "target": "simulator",
+      "qps": 1000,
+      "run": 1,
+      "requests_per_sec": 999.6131122400716,
+      "success_rate": 1.0,
+      "p50_ms": 0.5098,
+      "p90_ms": 0.9008,
+      "p99_ms": 1.5478,
+      "p999_ms": 3.0508,
+      "rss_kib": null,
+      "cpu_percent": null
+    },
+    {
+      "target": "simulator",
+      "qps": 2000,
+      "run": 1,
+      "requests_per_sec": 1995.3173091367005,
+      "success_rate": 1.0,
+      "p50_ms": 0.7396,
+      "p90_ms": 1.414,
+      "p99_ms": 2.1856000000000004,
+      "p999_ms": 3.1426000000000003,
+      "rss_kib": null,
+      "cpu_percent": null
+    },
+    {
+      "target": "gateway",
+      "qps": 500,
+      "run": 1,
+      "requests_per_sec": 499.9380918951188,
+      "success_rate": 1.0,
+      "p50_ms": 1.0855000000000001,
+      "p90_ms": 1.6819000000000002,
+      "p99_ms": 2.8939,
+      "p999_ms": 16.648699999999998,
+      "rss_kib": null,
+      "cpu_percent": null
+    },
+    {
+      "target": "gateway",
+      "qps": 1000,
+      "run": 1,
+      "requests_per_sec": 998.4945697372074,
+      "success_rate": 1.0,
+      "p50_ms": 1.61,
+      "p90_ms": 2.4793,
+      "p99_ms": 3.5084,
+      "p999_ms": 5.002999999999999,
+      "rss_kib": null,
+      "cpu_percent": null
+    },
+    {
+      "target": "gateway",
+      "qps": 2000,
+      "run": 1,
+      "requests_per_sec": 1995.8673071790256,
+      "success_rate": 1.0,
+      "p50_ms": 2.4633,
+      "p90_ms": 3.4837000000000002,
+      "p99_ms": 4.859999999999999,
+      "p999_ms": 24.517,
+      "rss_kib": null,
+      "cpu_percent": null
+    },
+    {
+      "target": "simulator",
+      "qps": 500,
+      "run": 2,
+      "requests_per_sec": 499.33082548580035,
+      "success_rate": 1.0,
+      "p50_ms": 0.41829999999999995,
+      "p90_ms": 0.6534000000000001,
+      "p99_ms": 1.1088,
+      "p999_ms": 3.9795999999999996,
+      "rss_kib": null,
+      "cpu_percent": null
+    },
+    {
+      "target": "simulator",
+      "qps": 1000,
+      "run": 2,
+      "requests_per_sec": 997.8109524419853,
+      "success_rate": 1.0,
+      "p50_ms": 0.5013,
+      "p90_ms": 0.8622000000000001,
+      "p99_ms": 1.4398,
+      "p999_ms": 3.5086000000000004,
+      "rss_kib": null,
+      "cpu_percent": null
+    },
+    {
+      "target": "simulator",
+      "qps": 2000,
+      "run": 2,
+      "requests_per_sec": 1998.4305112745496,
+      "success_rate": 1.0,
+      "p50_ms": 0.7438,
+      "p90_ms": 1.4327999999999999,
+      "p99_ms": 2.2428,
+      "p999_ms": 4.9193999999999996,
+      "rss_kib": null,
+      "cpu_percent": null
+    },
+    {
+      "target": "gateway",
+      "qps": 500,
+      "run": 2,
+      "requests_per_sec": 499.1216419430798,
+      "success_rate": 1.0,
+      "p50_ms": 1.0602,
+      "p90_ms": 1.6988,
+      "p99_ms": 2.4359,
+      "p999_ms": 4.0929,
+      "rss_kib": null,
+      "cpu_percent": null
+    },
+    {
+      "target": "gateway",
+      "qps": 1000,
+      "run": 2,
+      "requests_per_sec": 998.1522020801988,
+      "success_rate": 1.0,
+      "p50_ms": 1.57,
+      "p90_ms": 2.4424,
+      "p99_ms": 3.1766,
+      "p999_ms": 4.2283,
+      "rss_kib": null,
+      "cpu_percent": null
+    },
+    {
+      "target": "gateway",
+      "qps": 2000,
+      "run": 2,
+      "requests_per_sec": 1996.332768155003,
+      "success_rate": 1.0,
+      "p50_ms": 2.5014999999999996,
+      "p90_ms": 3.5299,
+      "p99_ms": 4.515199999999999,
+      "p999_ms": 10.077,
+      "rss_kib": null,
+      "cpu_percent": null
+    },
+    {
+      "target": "simulator",
+      "qps": 500,
+      "run": 3,
+      "requests_per_sec": 500.1943110575594,
+      "success_rate": 1.0,
+      "p50_ms": 0.4174,
+      "p90_ms": 0.6771,
+      "p99_ms": 1.7018,
+      "p999_ms": 2.8920999999999997,
+      "rss_kib": null,
+      "cpu_percent": null
+    },
+    {
+      "target": "simulator",
+      "qps": 1000,
+      "run": 3,
+      "requests_per_sec": 998.476580782957,
+      "success_rate": 1.0,
+      "p50_ms": 0.5283,
+      "p90_ms": 0.9534,
+      "p99_ms": 1.7825,
+      "p999_ms": 3.0934,
+      "rss_kib": null,
+      "cpu_percent": null
+    },
+    {
+      "target": "simulator",
+      "qps": 2000,
+      "run": 3,
+      "requests_per_sec": 1998.555452016538,
+      "success_rate": 1.0,
+      "p50_ms": 0.7136,
+      "p90_ms": 1.4152,
+      "p99_ms": 2.2594999999999996,
+      "p999_ms": 5.6056,
+      "rss_kib": null,
+      "cpu_percent": null
+    },
+    {
+      "target": "gateway",
+      "qps": 500,
+      "run": 3,
+      "requests_per_sec": 499.1212930300902,
+      "success_rate": 1.0,
+      "p50_ms": 1.1163,
+      "p90_ms": 1.7033,
+      "p99_ms": 2.7252,
+      "p999_ms": 6.6147,
+      "rss_kib": null,
+      "cpu_percent": null
+    },
+    {
+      "target": "gateway",
+      "qps": 1000,
+      "run": 3,
+      "requests_per_sec": 998.1033165285148,
+      "success_rate": 1.0,
+      "p50_ms": 1.7646000000000002,
+      "p90_ms": 2.4353000000000002,
+      "p99_ms": 3.6671,
+      "p999_ms": 10.7238,
+      "rss_kib": null,
+      "cpu_percent": null
+    },
+    {
+      "target": "gateway",
+      "qps": 2000,
+      "run": 3,
+      "requests_per_sec": 1995.9814207437696,
+      "success_rate": 1.0,
+      "p50_ms": 2.5074,
+      "p90_ms": 3.4816000000000003,
+      "p99_ms": 4.3636,
+      "p999_ms": 19.396,
+      "rss_kib": null,
+      "cpu_percent": null
+    }
+  ],
+  "overhead": [
+    {
+      "qps": 500,
+      "p50_us": 665.9000000000002,
+      "p99_us": 1115.0999999999997,
+      "p50_spread": 0.0855984382039345,
+      "p99_spread": 0.272352255403103
+    },
+    {
+      "qps": 1000,
+      "p50_us": 1100.2,
+      "p99_us": 1884.6000000000001,
+      "p50_spread": 0.15233593892019623,
+      "p99_spread": 0.11875198981216158
+    },
+    {
+      "qps": 2000,
+      "p50_us": 1757.6999999999996,
+      "p99_us": 2272.399999999999,
+      "p50_spread": 0.039881663537577605,
+      "p99_spread": 0.2509681394120749
+    }
+  ],
+  "reproducibility": {
+    "tolerance": 0.1,
+    "passed": false,
+    "checks": [
+      {
+        "target": "simulator",
+        "qps": 500,
+        "p99_ms": [
+          1.7788000000000002,
+          1.1088,
+          1.7018
+        ],
+        "deviation": 0.6042568542568544,
+        "passed": false
+      },
+      {
+        "target": "simulator",
+        "qps": 1000,
+        "p99_ms": [
+          1.5478,
+          1.4398,
+          1.7825
+        ],
+        "deviation": 0.2380191693290735,
+        "passed": false
+      },
+      {
+        "target": "simulator",
+        "qps": 2000,
+        "p99_ms": [
+          2.1856000000000004,
+          2.2428,
+          2.2594999999999996
+        ],
+        "deviation": 0.0338122254758415,
+        "passed": true
+      },
+      {
+        "target": "gateway",
+        "qps": 500,
+        "p99_ms": [
+          2.8939,
+          2.4359,
+          2.7252
+        ],
+        "deviation": 0.18802085471488966,
+        "passed": false
+      },
+      {
+        "target": "gateway",
+        "qps": 1000,
+        "p99_ms": [
+          3.5084,
+          3.1766,
+          3.6671
+        ],
+        "deviation": 0.1544103758735755,
+        "passed": false
+      },
+      {
+        "target": "gateway",
+        "qps": 2000,
+        "p99_ms": [
+          4.859999999999999,
+          4.515199999999999,
+          4.3636
+        ],
+        "deviation": 0.11375928132734428,
+        "passed": false
+      }
+    ]
+  }
+}
