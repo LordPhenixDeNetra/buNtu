@@ -1,0 +1,12 @@
+---
+source: crates/buntu-gateway/tests/error_response.rs
+assertion_line: 110
+expression: body
+---
+{
+  "error": {
+    "code": "internal_error",
+    "message": "internal error: bug",
+    "type": "server_error"
+  }
+}

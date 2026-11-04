@@ -1,0 +1,12 @@
+---
+source: crates/buntu-gateway/tests/error_response.rs
+assertion_line: 50
+expression: body
+---
+{
+  "error": {
+    "code": "provider_unavailable",
+    "message": "provider unavailable: statut 503",
+    "type": "api_error"
+  }
+}

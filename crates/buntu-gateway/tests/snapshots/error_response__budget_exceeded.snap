@@ -1,0 +1,12 @@
+---
+source: crates/buntu-gateway/tests/error_response.rs
+assertion_line: 85
+expression: body
+---
+{
+  "error": {
+    "code": "budget_exceeded",
+    "message": "budget exceeded",
+    "type": "insufficient_quota"
+  }
+}
