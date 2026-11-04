@@ -573,9 +573,9 @@ Le projet compte environ 395 jours de travail estimés, soit environ 2 ans et 3 
 
 **E6 — Livraison (12 j)**
 
-- [ ] **T1.25** Release automatisée : `cargo-dist`, image Docker multi-arch, lanceur `npx`, signatures — 4 j.
-- [ ] **T1.26** Première campagne de benchmark publiée — 4 j — NFR-PERF-1 à 9.
-- [ ] **T1.27** Documentation : démarrage en 5 min, guides des 5 fournisseurs, référence config — 4 j — *Acceptation :* une personne extérieure réussit UC1 en < 5 min.
+- [x] **T1.25** Release automatisée : `cargo-dist`, image Docker multi-arch, lanceur `npx`, signatures — 4 j.
+- [x] **T1.26** Première campagne de benchmark publiée — 4 j — NFR-PERF-1 à 9.
+- [x] **T1.27** Documentation : démarrage en 5 min, guides des 5 fournisseurs, référence config — 4 j — *Acceptation :* une personne extérieure réussit UC1 en < 5 min.
 
 ### Phase 2 — Gouvernance, cache, MCP et v1.0 (124 j, v0.6 → v1.0)
 

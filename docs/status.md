@@ -81,6 +81,13 @@ Aucune. Prochaine : **T1.13** (endpoints compatibles OpenAI).
 | T1.23 | Pages fournisseurs, clés, routes et alias | fait | #24 | 2026-11-04 | écrans `/providers` (création, URL de base, clés avec aperçu seul, suppression) et `/routes` (alias, chaîne de repli éditable, réordonnancement) ; **E2E Playwright vert** (création fournisseur/route, rechargement, axe) |
 | T1.24 | Journal des requêtes filtrable + détail | fait | #24 | 2026-11-04 | migration **0002** (`attempts` sur `request_log`, appliquée : 6/6 tests store) ; endpoints `GET /admin/v1/requests` (curseur/filtres) + détail, journal branché dans le chemin de requête, page `/logs` avec filtres URL et détail, **3 tests E2E verts (Playwright + axe)** |
 
+## Phase 1 — E6 Livraison
+
+| ID | Tâche | Statut | PR | Date | Preuve |
+| --- | --- | --- | --- | --- | --- |
+| T1.25 | Release automatisée (cargo-dist, Docker multi-arch, npx, cosign/SBOM) | fait (réserve) | #25 | 2026-11-04 | `dist-workspace.toml` + `release.yml` générés par **cargo-dist 0.34** (5 cibles musl/darwin/windows, installateurs shell/powershell), **build local vérifié** (zip + SHA-256 concordant) ; `Dockerfile` multi-stage → **image distroless non root** (3,4 Mio) testée localement (`--version`, `/health` 200, `/ready` 200, UI embarquée servie) ; `release-delivery.yml` (buildx multi-arch, cosign keyless, SBOM, binaires bruts) ; lanceur `npx/` avec **vérification SHA-256** et **5 tests Node** ; réserve : release `v0.0.1-rc.1` et image arm64 à confirmer en CI après tag |
+| T1.26 | Première campagne de benchmark publiée | fait (réserve) | #25 | 2026-11-04 | `cargo xtask bench` étendu (route réelle `/v1/chat/completions`, surcoût passerelle, démarrage à froid, taille binaire) ; 3 exécutions × 500/1 000/2 000 req/s ; campagne **publiée** (`benchmarks/results/2026-11-04-e6/`, `docs/benchmarks.md`, graphique SVG) ; surcoût médian 0,7–2,3 ms, binaire **4,5 Mio** (NFR-PERF-11 tenu), cold start 523 ms ; réserve : protocole §11.2 multi-machines non exécuté, dispersion > 10 % en colocation |
+| T1.27 | Documentation : démarrage, guides, référence générée | fait (réserve) | #25 | 2026-11-04 | `docs/quickstart.md` dont les commandes sont **exécutées en CI** (`scripts/check-quickstart.sh` : santé, chat, modèles, console), **5 guides** fournisseurs (dont Ollama), `docs/faq-errors.md` (8 codes stables), référence de configuration **générée** (`buntu config schema` → schemars → `config.schema.json` → `docs/config-reference.md`, diff vérifié en CI), README refondu, liens contrôlés ; réserve : test « personne extérieure UC1 < 5 min » non réalisé |
 ## Phases suivantes
 
 Le détail des tâches des phases 2 à 4 reste dans le cahier des charges. Chaque phase sera
@@ -114,3 +121,4 @@ ajoutée à ce tableau au début de l'epic, en même temps que la rédaction de 
 | 2026-11-04 | #22 | Lot E3 : T1.13–T1.16 (API publique et d'administration) | verte (1 min 49 sur `main`) |
 | 2026-11-04 | #23 | Lot E4 : T1.17–T1.21 (stockage, journal, métriques, auth, secrets) | verte (1 min 26) |
 | 2026-11-04 | #24 | Lot E5 : T1.22–T1.24 (interface web) | verte (2 min 20 sur `main`) |
+| 2026-11-04 | #25 | Lot E6 : T1.25–T1.27 (release, benchmark, documentation) | à confirmer |
