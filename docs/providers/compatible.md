@@ -8,14 +8,26 @@ Ces serveurs exposent `POST /v1/chat/completions` au format OpenAI Chat Completi
 traduction utilisée est donc **exactement** celle de `buntu-providers::openai` ; le fournisseur
 compatible ne fait que fixer le chemin et les divergences connues.
 
+## Paramétrage (fiche T1.12)
+
+Le fournisseur est paramétré, pas dupliqué :
+
+- `path` : chemin de l'endpoint (`/v1/chat/completions` par défaut) ;
+- `base_url` : URL absolue optionnelle (ex. `https://api.groq.com/openai`) ; sans elle, le client
+  amont joint l'URL de base configurée ;
+- `headers` : en-têtes supplémentaires (ex. OpenRouter `HTTP-Referer`, `X-Title`) ;
+- `quirks` **déclarés** : `stream_usage` (omet `stream_options` si le serveur le refuse) et
+  `parallel_tools` (envoie `parallel_tool_calls: false` si le serveur ne gère pas les appels
+  d'outils parallèles).
+
 ## Préréglages
 
-| Préréglage | Chemin | Remarque |
+| Préréglage | Chemin | Quirks |
 | --- | --- | --- |
-| `Compatible::Vllm` | `/v1/chat/completions` | traduction OpenAI complète |
-| `Compatible::Groq` | `/v1/chat/completions` | — |
-| `Compatible::OpenRouter` | `/v1/chat/completions` | — |
-| `Compatible::Ollama` | `/v1/chat/completions` | `stream_options` omis (certaines versions le refusent) |
+| `Compatible::Vllm` | `/v1/chat/completions` | défaut |
+| `Compatible::Groq` | `/v1/chat/completions` | défaut |
+| `Compatible::OpenRouter` | `/v1/chat/completions` | défaut |
+| `Compatible::Ollama` | `/v1/chat/completions` | `stream_usage = false` |
 
 `OpenAiCompatibleProvider::new(path)` accepte un chemin arbitraire ; le client amont
 (hyper-util, ADR-0004) portera l'URL de base et la clé.
