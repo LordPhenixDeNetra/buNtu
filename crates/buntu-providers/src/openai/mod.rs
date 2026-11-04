@@ -7,12 +7,16 @@
 //! Le client amont (hyper-util, ADR-0004) n'existe pas encore : ce module ne fait que la
 //! traduction, testée par le kit de conformité (T1.8).
 
+pub mod embeddings;
 pub mod errors;
 pub mod request;
 pub mod response;
 pub mod stream;
 
-use buntu_schema::{Capabilities, GatewayError, Request, Response, StreamEvent};
+use buntu_schema::{
+    Capabilities, EmbeddingsRequest, EmbeddingsResponse, GatewayError, Request, Response,
+    StreamEvent,
+};
 use bytes::Bytes;
 use hyper::HeaderMap;
 
@@ -24,6 +28,7 @@ pub const DEFAULT_PATH: &str = "/v1/chat/completions";
 #[derive(Debug, Clone)]
 pub struct OpenAiProvider {
     path: String,
+    embeddings_path: String,
     include_stream_usage: bool,
 }
 
@@ -31,6 +36,7 @@ impl Default for OpenAiProvider {
     fn default() -> Self {
         Self {
             path: DEFAULT_PATH.to_owned(),
+            embeddings_path: embeddings::DEFAULT_PATH.to_owned(),
             include_stream_usage: true,
         }
     }
@@ -40,8 +46,13 @@ impl OpenAiProvider {
     pub fn new(path: impl Into<String>) -> Self {
         Self {
             path: path.into(),
-            include_stream_usage: true,
+            ..Self::default()
         }
+    }
+
+    pub fn with_embeddings_path(mut self, path: impl Into<String>) -> Self {
+        self.embeddings_path = path.into();
+        self
     }
 
     /// Certains serveurs compatibles OpenAI (Ollama, certains proxy) refusent
@@ -56,6 +67,14 @@ impl OpenAiProvider {
             DEFAULT_PATH
         } else {
             &self.path
+        }
+    }
+
+    fn embeddings_path(&self) -> &str {
+        if self.embeddings_path.is_empty() {
+            embeddings::DEFAULT_PATH
+        } else {
+            &self.embeddings_path
         }
     }
 }
@@ -92,5 +111,16 @@ impl Provider for OpenAiProvider {
             tools: true,
             vision: false,
         }
+    }
+
+    fn build_embeddings_request(
+        &self,
+        request: &EmbeddingsRequest,
+    ) -> Result<HttpRequest, GatewayError> {
+        embeddings::build(self.embeddings_path(), request)
+    }
+
+    fn parse_embeddings_response(&self, body: Bytes) -> Result<EmbeddingsResponse, GatewayError> {
+        embeddings::parse(&body)
     }
 }

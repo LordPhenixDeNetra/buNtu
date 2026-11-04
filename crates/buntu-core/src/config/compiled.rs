@@ -49,6 +49,8 @@ pub struct CompiledHooks {
 pub struct CompiledProvider {
     pub id: String,
     pub kind: String,
+    /// URL de base de l'API amont (obligatoire pour le chemin HTTP réel).
+    pub base_url: Option<String>,
     pub keys: Vec<CompiledKey>,
     /// Table de sélection pondérée construite une fois, avec ses pauses par clé.
     pub selector: KeySelector,
@@ -194,6 +196,12 @@ fn compile_provider(
     Ok(CompiledProvider {
         id: id.to_owned(),
         kind: provider.kind.trim().to_owned(),
+        base_url: provider
+            .base_url
+            .as_deref()
+            .map(str::trim)
+            .filter(|url| !url.is_empty())
+            .map(str::to_owned),
         keys,
         selector,
     })

@@ -67,6 +67,9 @@ pub struct RawProvider {
     pub id: String,
     #[serde(rename = "type")]
     pub kind: String,
+    /// URL de base de l'API du fournisseur (ex. `http://127.0.0.1:9000`).
+    #[serde(default)]
+    pub base_url: Option<String>,
     #[serde(default)]
     pub keys: Vec<RawKey>,
 }
