@@ -216,4 +216,8 @@ jobs:
         working-directory: npx
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --provenance --access public
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          version="${RELEASE_TAG#v}"
+          if [[ "$version" == *-* ]]; then dist_tag=next; else dist_tag=latest; fi
+          npm publish --provenance --access public --tag "$dist_tag"
