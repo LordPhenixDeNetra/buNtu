@@ -8,46 +8,67 @@ répartition de charge, cache sémantique, budgets et passerelle MCP — et **to
 fonctionnalités gratuites, y compris celles que les concurrents réservent à une offre
 entreprise (SSO, RBAC, audit, clustering, guardrails).
 
-> **Statut : pré-alpha.** Le produit n'est **pas utilisable** : aucune passerelle HTTP n'existe
-> encore, aucun fournisseur n'est branché. Ce dépôt contient le socle technique et les documents
-> de référence. Les fonctions listées ci-dessus sont des objectifs du cahier des charges, pas des
-> fonctionnalités disponibles.
+> **Statut : alpha initiale.** La passerelle fonctionne localement : endpoints compatibles
+> OpenAI et Anthropic, repli automatique, console web, journal des requêtes, stockage SQLite,
+> métriques, chiffrement des secrets. Le cache sémantique, les budgets, les fournisseurs
+> cloud natifs, le SSO/RBAC et le clustering restent à livrer (phases 2 et 3 du cahier).
+> Aucune release publique n'a encore été publiée ; le pipeline de release est en place (T1.25).
 
-## Le nom
+## Démarrage rapide
 
-« buNtu » vient de **« Buntu »**, qui signifie **« porte » en wolof** : une porte d'entrée unique
-vers les modèles, plutôt qu'une API par fournisseur.
-
-## Ce qui existe aujourd'hui
-
-| Élément | État |
-| --- | --- |
-| Cahier des charges et cahier des tâches | [document de référence](<buNtu — Cahier des charges et cahier des tâches.md>) |
-| Guide d'exécution humain + agents IA | [guide](<Guide d'exécution (agents IA).md>) |
-| Workspace Cargo (13 crates vides) | fait (T0.2) — `buntu --version` répond |
-| CI : fmt, clippy, nextest, deny, audit, couverture, builds macOS/Windows | fait (T0.2) |
-| Simulateur de fournisseur (tests et benchmarks) | fait (T0.3) — `mock-provider` |
-| Schéma canonique v0 | fait (T0.5) — `buntu-schema` |
-| ADR, README, CONTRIBUTING, SECURITY, licence | fait (T0.6/T0.7) |
-
-## Démarrage (développement)
-
-Prérequis : Rust stable (`rust-toolchain.toml`), `cargo-nextest`, `cargo-deny`,
-`cargo-audit` et le composant `llvm-tools-preview`.
+Guide complet : **[docs/quickstart.md](docs/quickstart.md)** (5 minutes, sans compte fournisseur).
 
 ```sh
-cargo build --workspace
-cargo run --bin buntu                  # affiche « buntu 0.0.0 »
-cargo nextest run --workspace --no-tests=pass
+cd ui && npm ci && npm run build && cd ..
+cargo build --release -p buntu-cli -p buntu-mock-provider
+./target/release/buntu --version
 ```
 
-Le simulateur de fournisseur (OpenAI et Anthropic simulés) sert aux tests et benchmarks :
+Puis démarrez la passerelle avec le simulateur : voir le guide. La console est servie sur
+`http://127.0.0.1:8080/` (fournisseurs, routes, journal), et les endpoints sont ceux d'OpenAI :
 
 ```sh
-MOCK_LISTEN=127.0.0.1:18080 cargo run -p buntu-mock-provider
-curl -s http://127.0.0.1:18080/v1/chat/completions \
+curl -s http://127.0.0.1:8080/v1/chat/completions \
   -H 'content-type: application/json' \
-  -d '{"model":"any","stream":false}'
+  -d '{"model":"chat","messages":[{"role":"user","content":"bonjour"}]}'
+curl -s http://127.0.0.1:8080/v1/models
+```
+
+## Ce qui fonctionne aujourd'hui
+
+| Domaine | État |
+| --- | --- |
+| Moteur : pipeline, hooks, clés pondérées, réessais, alias, repli, timeouts | fait (T1.1–T1.7) |
+| Fournisseurs : OpenAI, Anthropic, Gemini, compatible OpenAI (vLLM, Groq, OpenRouter, Ollama) | fait (T1.9–T1.12) + kit de conformité |
+| API : `/v1/chat/completions` (JSON + SSE), `/v1/embeddings`, `/v1/models`, `/anthropic/v1/messages` | fait (T1.13–T1.15) |
+| Administration REST v1 + `openapi.json` généré | fait (T1.16) |
+| Stockage SQLite + migrations, journal asynchrone, métriques `/metrics`, auth admin, secrets AES-256-GCM | fait (T1.17–T1.21) |
+| Console web embarquée (`rust-embed`), i18n FR/EN, thème, écrans fournisseurs/routes/journal | fait (T1.22–T1.24) |
+| Pipeline de release (cargo-dist, Docker multi-arch, `npx`, cosign, SBOM), docs et campagne de benchmark | fait (T1.25–T1.27) |
+| Cache sémantique, budgets/coûts, MCP, SSO/RBAC/audit, clustering | phases 2–3, non livrés |
+
+## Documentation
+
+- [Démarrage en 5 minutes](docs/quickstart.md)
+- [Référence de configuration](docs/config-reference.md) — **générée** depuis les types Rust
+- Guides fournisseurs : [OpenAI](docs/providers/openai.md), [Anthropic](docs/providers/anthropic.md),
+  [Gemini](docs/providers/gemini.md), [Ollama](docs/providers/ollama.md),
+  [compatible OpenAI](docs/providers/compatible.md)
+- [Erreurs et dépannage](docs/faq-errors.md)
+- [Campagne de benchmark et limites](docs/benchmarks.md)
+- [Suivi des tâches](docs/status.md) · [Cahier des charges](<buNtu — Cahier des charges et cahier des tâches.md>)
+  · [Guide d'exécution](<Guide d'exécution (agents IA).md>) · [ADR](docs/adr/)
+
+## Développement
+
+Prérequis : Rust stable (`rust-toolchain.toml`), Node.js ≥ 20, `cargo-nextest`, `cargo-deny`,
+`cargo-audit`. L'interface (`ui/build`) est **embarquée dans le binaire** : construisez-la avant
+tout `cargo build`/`cargo test` qui compile `buntu-gateway`.
+
+```sh
+(cd ui && npm ci && npm run build)
+cargo build --workspace
+cargo nextest run --workspace --no-tests=pass
 ```
 
 Vérification complète avant de proposer un changement :
@@ -57,14 +78,15 @@ cargo fmt --check && cargo clippy --all-targets -- -D warnings \
   && cargo nextest run --no-tests=pass && cargo deny check && cargo audit
 ```
 
-## Documentation
+Le simulateur de fournisseur (OpenAI et Anthropic simulés) sert aux tests et benchmarks :
 
-- [Cahier des charges et cahier des tâches](<buNtu — Cahier des charges et cahier des tâches.md>) :
-  périmètre, exigences `FR-*`/`NFR-*`, architecture, plan en quatre phases.
-- [Guide d'exécution (agents IA)](<Guide d'exécution (agents IA).md>) : boucle de travail,
-  règles absolues, fiches de tâches.
-- [Décisions d'architecture](docs/adr/) : une fiche par décision.
-- [Benchmarks](benchmarks/README.md) : protocole et plafond du simulateur.
+```sh
+MOCK_LISTEN=127.0.0.1:18080 cargo run -p buntu-mock-provider
+```
+
+Le banc de benchmark et le protocole sont décrits dans [benchmarks/README.md](benchmarks/README.md)
+et [docs/benchmarks.md](docs/benchmarks.md) ; la campagne se lance avec
+`cargo xtask bench --help`.
 
 ## Contribuer
 
