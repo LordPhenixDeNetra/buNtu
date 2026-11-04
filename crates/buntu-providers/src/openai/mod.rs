@@ -24,19 +24,31 @@ pub const DEFAULT_PATH: &str = "/v1/chat/completions";
 #[derive(Debug, Clone)]
 pub struct OpenAiProvider {
     path: String,
+    include_stream_usage: bool,
 }
 
 impl Default for OpenAiProvider {
     fn default() -> Self {
         Self {
             path: DEFAULT_PATH.to_owned(),
+            include_stream_usage: true,
         }
     }
 }
 
 impl OpenAiProvider {
     pub fn new(path: impl Into<String>) -> Self {
-        Self { path: path.into() }
+        Self {
+            path: path.into(),
+            include_stream_usage: true,
+        }
+    }
+
+    /// Certains serveurs compatibles OpenAI (Ollama, certains proxy) refusent
+    /// `stream_options` : permet de l'omettre (T1.12).
+    pub fn without_stream_usage(mut self) -> Self {
+        self.include_stream_usage = false;
+        self
     }
 
     fn path(&self) -> &str {
@@ -54,7 +66,7 @@ impl Provider for OpenAiProvider {
     }
 
     fn build_request(&self, request: &Request) -> Result<HttpRequest, GatewayError> {
-        request::build(self.path(), request)
+        request::build(self.path(), request, self.include_stream_usage)
     }
 
     fn parse_response(&self, body: Bytes) -> Result<Response, GatewayError> {

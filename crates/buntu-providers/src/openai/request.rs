@@ -9,8 +9,12 @@ use buntu_schema::{
 };
 use serde_json::{Map, Value, json};
 
-pub fn build(path: &str, request: &Request) -> Result<hyper::Request<bytes::Bytes>, GatewayError> {
-    let body = body(request)?;
+pub fn build(
+    path: &str,
+    request: &Request,
+    include_stream_usage: bool,
+) -> Result<hyper::Request<bytes::Bytes>, GatewayError> {
+    let body = body(request, include_stream_usage)?;
     let bytes = serde_json::to_vec(&body).map_err(|error| internal_error(error.to_string()))?;
     hyper::Request::builder()
         .method(hyper::Method::POST)
@@ -38,7 +42,7 @@ fn unsupported(message: String) -> GatewayError {
     GatewayError::InvalidRequest { message }
 }
 
-pub fn body(request: &Request) -> Result<Value, GatewayError> {
+pub fn body(request: &Request, include_stream_usage: bool) -> Result<Value, GatewayError> {
     let mut body = Map::new();
     body.insert("model".to_owned(), Value::String(request.model.clone()));
     body.insert(
@@ -79,11 +83,14 @@ pub fn body(request: &Request) -> Result<Value, GatewayError> {
     }
     if request.stream {
         body.insert("stream".to_owned(), Value::Bool(true));
-        // Nécessaire pour recevoir l'usage en fin de flux (cf. fiche T1.9).
-        body.insert(
-            "stream_options".to_owned(),
-            json!({ "include_usage": true }),
-        );
+        // Nécessaire pour recevoir l'usage en fin de flux (cf. fiche T1.9). Certains serveurs
+        // « compatibles OpenAI » refusent ce champ : il est donc optionnel (T1.12).
+        if include_stream_usage {
+            body.insert(
+                "stream_options".to_owned(),
+                json!({ "include_usage": true }),
+            );
+        }
     }
     if let Some(format) = &request.response_format {
         body.insert("response_format".to_owned(), response_format(format));
