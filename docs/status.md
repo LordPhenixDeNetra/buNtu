@@ -93,4 +93,4 @@ ajoutée à ce tableau au début de l'epic, en même temps que la rédaction de 
 | 2026-11-04 | #19 | Alignement du fournisseur compatible sur la fiche T1.12 | verte (1 min 18) |
 | 2026-11-04 | #20 | Intégration des fournisseurs dans `main` | verte (55 s, puis 1 min 08 sur `main`) |
 | 2026-11-04 | #21 | Règle « relire la fiche avant chaque tâche » | verte (1 min 01) |
-| 2026-11-04 | #22 | Lot E3 : T1.15 + T1.13 (erreurs, endpoints OpenAI) | à confirmer |
+| 2026-11-04 | #22 | Lot E3 : T1.13–T1.16 (API publique et d'administration) | à confirmer (CI après fusion de `main`) |
