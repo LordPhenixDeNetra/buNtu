@@ -1,7 +1,6 @@
 //! Orchestration du banc : construire, démarrer, charger, mesurer, vérifier.
 
 use std::error::Error;
-#[cfg(target_os = "linux")]
 use std::fs;
 use std::io::{Read, Write};
 use std::net::TcpStream;
@@ -29,6 +28,7 @@ pub struct Options {
     pub seconds: u32,
     pub warmup: u32,
     pub tolerance: f64,
+    pub allow_variance: bool,
     pub output: Option<PathBuf>,
 }
 
@@ -40,6 +40,7 @@ impl Options {
             seconds: DEFAULT_SECONDS,
             warmup: DEFAULT_WARMUP,
             tolerance: DEFAULT_TOLERANCE,
+            allow_variance: false,
             output: None,
         };
 
@@ -51,6 +52,7 @@ impl Options {
                 "--seconds" => options.seconds = take_value(&arguments, &mut index)?.parse()?,
                 "--warmup" => options.warmup = take_value(&arguments, &mut index)?.parse()?,
                 "--tolerance" => options.tolerance = take_value(&arguments, &mut index)?.parse()?,
+                "--allow-variance" => options.allow_variance = true,
                 "--output" => {
                     options.output = Some(PathBuf::from(take_value(&arguments, &mut index)?));
                 }
@@ -111,13 +113,19 @@ pub fn run(options: Options) -> Result<(), Box<dyn Error>> {
     let rustc = tool_version("rustc")?;
 
     let mut measurements = Vec::new();
+    let mut cold_starts_ms = Vec::new();
     for run_index in 1..=options.runs {
         println!("== exécution {run_index}/{}", options.runs);
-        measurements.extend(measure_simulator(&target_directory, &options, run_index)?);
-        measurements.extend(measure_gateway(&target_directory, &options, run_index)?);
+        let (batch, cold_start_ms) = measure_run(&target_directory, &options, run_index)?;
+        measurements.extend(batch);
+        cold_starts_ms.push(cold_start_ms);
     }
 
-    let report = report::Report::build(&options, measurements, oha, rustc);
+    let gateway_binary_bytes = fs::metadata(binary(&target_directory, "buntu"))
+        .map(|metadata| metadata.len())
+        .unwrap_or(0);
+    let statics = report::StaticMetrics::new(gateway_binary_bytes, cold_starts_ms);
+    let report = report::Report::build(&options, measurements, statics, oha, rustc);
     let directory = match &options.output {
         Some(path) => path.clone(),
         None => PathBuf::from("benchmarks/results").join(report::stamp()),
@@ -125,10 +133,10 @@ pub fn run(options: Options) -> Result<(), Box<dyn Error>> {
     let written = report::write(&report, &directory)?;
     println!("rapport écrit dans {}", written.display());
 
-    if report.reproducibility.passed {
+    if report.reproducibility.passed || options.allow_variance {
         Ok(())
     } else {
-        Err("reproductibilité au-delà de la tolérance : voir la section Reproductibilité du rapport".into())
+        Err("reproductibilité au-delà de la tolérance : voir la section Reproductibilité du rapport (--allow-variance pour publier malgré la dispersion)".into())
     }
 }
 
@@ -243,75 +251,106 @@ pub(crate) fn wait_http_ready(
     Err(format!("le service sur le port {port} n'est pas prêt après {timeout:?}").into())
 }
 
-fn measure_simulator(
+/// Une exécution complète : simulateur direct, puis passerelle routée vers ce simulateur.
+///
+/// Rend les mesures et le démarrage à froid (ms) de la passerelle jusqu'à `/ready`.
+fn measure_run(
     target_directory: &Path,
     options: &Options,
     run: u32,
-) -> Result<Vec<Measurement>, Box<dyn Error>> {
+) -> Result<(Vec<Measurement>, f64), Box<dyn Error>> {
     println!("-- cible : simulateur (direct)");
-    let port = free_port()?;
-    let mut command = Command::new(binary(target_directory, "mock-provider"));
-    command.env("MOCK_LISTEN", format!("127.0.0.1:{port}"));
-    let server = Server::spawn(command)?;
-    wait_tcp(port, READY_TIMEOUT)?;
+    let simulator_port = free_port()?;
+    let mut simulator_command = Command::new(binary(target_directory, "mock-provider"));
+    simulator_command.env("MOCK_LISTEN", format!("127.0.0.1:{simulator_port}"));
+    let simulator = Server::spawn(simulator_command)?;
+    wait_tcp(simulator_port, READY_TIMEOUT)?;
 
-    let url = format!("http://127.0.0.1:{port}/v1/chat/completions");
-    warmup(&url, "POST", true, options)?;
-
+    let direct_url = format!("http://127.0.0.1:{simulator_port}/v1/chat/completions");
+    warmup(&direct_url, "POST", true, options)?;
     let mut measurements = Vec::new();
     for &qps in &options.qps {
         measurements.push(measure_once(
             &TargetRequest {
                 name: "simulator",
-                url: &url,
+                url: &direct_url,
                 method: "POST",
                 with_body: true,
             },
             qps,
             run,
             options,
-            server.pid(),
+            simulator.pid(),
         )?);
     }
-    drop(server);
-    Ok(measurements)
-}
 
-fn measure_gateway(
-    target_directory: &Path,
-    options: &Options,
-    run: u32,
-) -> Result<Vec<Measurement>, Box<dyn Error>> {
-    println!("-- cible : passerelle (/ready en attendant le routage de T1.13)");
-    let port = free_port()?;
-    let mut command = Command::new(binary(target_directory, "buntu"));
-    command
+    println!("-- cible : passerelle /v1/chat/completions (routée vers le simulateur)");
+    let gateway_port = free_port()?;
+    let config = write_bench_config(simulator_port, gateway_port)?;
+    let database =
+        std::env::temp_dir().join(format!("buntu-bench-{}-{run}.sqlite", std::process::id()));
+    let mut gateway_command = Command::new(binary(target_directory, "buntu"));
+    gateway_command
         .arg("serve")
         .arg("--listen")
-        .arg(format!("127.0.0.1:{port}"));
-    let server = Server::spawn(command)?;
-    wait_http_ready(port, "/ready", READY_TIMEOUT)?;
+        .arg(format!("127.0.0.1:{gateway_port}"))
+        .arg("--config")
+        .arg(&config)
+        .env("BUNTU_DB_PATH", &database);
+    let started = Instant::now();
+    let gateway = Server::spawn(gateway_command)?;
+    wait_http_ready(gateway_port, "/ready", READY_TIMEOUT)?;
+    let cold_start_ms = started.elapsed().as_secs_f64() * 1_000.0;
 
-    let url = format!("http://127.0.0.1:{port}/ready");
-    warmup(&url, "GET", false, options)?;
-
-    let mut measurements = Vec::new();
+    let gateway_url = format!("http://127.0.0.1:{gateway_port}/v1/chat/completions");
+    warmup(&gateway_url, "POST", true, options)?;
     for &qps in &options.qps {
         measurements.push(measure_once(
             &TargetRequest {
                 name: "gateway",
-                url: &url,
-                method: "GET",
-                with_body: false,
+                url: &gateway_url,
+                method: "POST",
+                with_body: true,
             },
             qps,
             run,
             options,
-            server.pid(),
+            gateway.pid(),
         )?);
     }
-    drop(server);
-    Ok(measurements)
+
+    drop(gateway);
+    drop(simulator);
+    let _ = fs::remove_file(&config);
+    for suffix in ["", "-wal", "-shm"] {
+        let _ = fs::remove_file(format!("{}{suffix}", database.display()));
+    }
+    Ok((measurements, cold_start_ms))
+}
+
+fn write_bench_config(simulator_port: u16, gateway_port: u16) -> Result<PathBuf, Box<dyn Error>> {
+    let path = std::env::temp_dir().join(format!(
+        "buntu-bench-{}-{}.toml",
+        std::process::id(),
+        gateway_port
+    ));
+    let content = format!(
+        r#"[server]
+listen = "127.0.0.1:{gateway_port}"
+
+[[providers]]
+id = "mock"
+type = "mock"
+base_url = "http://127.0.0.1:{simulator_port}"
+keys = [{{ secret = "bench-key", weight = 1 }}]
+
+[[routes]]
+alias = "bench"
+fallbacks = ["mock/fake-model"]
+"#
+    );
+    fs::write(&path, content)?;
+    Ok(path)
 }
 
 fn warmup(
@@ -393,7 +432,7 @@ fn run_oha(
             "-H",
             "content-type: application/json",
             "-d",
-            "{\"stream\":false}",
+            "{\"model\":\"bench\",\"messages\":[{\"role\":\"user\",\"content\":\"bonjour\"}],\"stream\":false}",
         ]);
     }
     command.arg(url);

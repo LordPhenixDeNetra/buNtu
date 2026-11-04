@@ -143,9 +143,12 @@ le sont aussi (preuve SDK à confirmer en CI, TLS amont en T1.21) ; T1.16 l'est 
 en mémoire jusqu'à T1.17, authentification admin en T1.20). **E4 est livré** : `buntu-store`
 (SQLite WAL, migrations versionnées), journal asynchrone borné avec pertes comptées (T1.18),
 métriques Prometheus exposées sur `/metrics` (T1.19), authentification admin Argon2id + jetons
-hachés (T1.20) et chiffrement AES-256-GCM des secrets au repos avec `Secret<T>` (T1.21). Les
-prochains travaux sont **T0.1** (preuve de disponibilité du nom, côté humain), puis
-**T1.22–T1.26** (interface, import, bench, doctor, campagne de performance). Le suivi est tenu
-dans `docs/status.md`.
+hachés (T1.20) et chiffrement AES-256-GCM des secrets au repos avec `Secret<T>` (T1.21). **E5 est livré** : console SvelteKit statique embarquée par `rust-embed`, écrans
+fournisseurs/routes/journal et E2E Playwright/axe verts. **E6 est livré** : pipeline de release
+cargo-dist + image Docker distroless multi-arch + lanceur `npx` vérifié par SHA-256 +
+signatures/SBOM, première campagne de benchmark publiée (`docs/benchmarks.md`) et documentation
+de démarrage exécutée en CI avec référence de configuration générée. Les prochains travaux sont
+**T0.1** (preuve de disponibilité du nom, côté humain), puis la **phase 2** (fournisseurs cloud
+natifs, budgets, coûts, cache sémantique, MCP). Le suivi est tenu dans `docs/status.md`.
 
 Toute ligne de code écrite avant sa tâche est hors périmètre.

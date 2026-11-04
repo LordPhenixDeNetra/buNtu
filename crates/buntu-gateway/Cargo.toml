@@ -28,7 +28,7 @@ tower-http.workspace = true
 utoipa.workspace = true
 
 [dev-dependencies]
-buntu-mock-provider = { version = "0.0.0", path = "../../tools/mock-provider" }
+buntu-mock-provider = { version = "0.0.1-rc.1", path = "../../tools/mock-provider" }
 insta.workspace = true
 reqwest.workspace = true
 

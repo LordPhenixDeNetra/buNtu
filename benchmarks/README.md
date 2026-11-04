@@ -95,3 +95,7 @@ machines séparées, paliers de 5 min, médiane de 3 exécutions) : il sera vér
 publiée de T1.26. Le banc, ses options et son garde-fou sont livrés et fonctionnent ; c'est la
 mesure qui n'est pas valable sur un poste de développement.
 
+## Campagnes publiées
+
+- [4 novembre 2026 — première campagne (T1.26)](../docs/benchmarks.md) : surcoût local,
+  métriques statiques, dispersion, limites et données brutes.

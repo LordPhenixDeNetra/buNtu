@@ -304,26 +304,27 @@ checksum = "72f5acc6cb2ba439de613abc23857ec3d78374d8ed5ac84e9d11336e87da8649"
 
 [[package]]
 name = "buntu-cache"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 
 [[package]]
 name = "buntu-cli"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 dependencies = [
  "buntu-core",
  "buntu-gateway",
  "buntu-observe",
  "buntu-store",
+ "serde_json",
  "tokio",
 ]
 
 [[package]]
 name = "buntu-cluster"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 
 [[package]]
 name = "buntu-conformance"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 dependencies = [
  "buntu-providers",
  "buntu-schema",
@@ -338,7 +339,7 @@ dependencies = [
 
 [[package]]
 name = "buntu-core"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 dependencies = [
  "arc-swap",
  "axum",
@@ -348,6 +349,7 @@ dependencies = [
  "fastrand",
  "notify",
  "reqwest",
+ "schemars",
  "serde",
  "serde_json",
  "thiserror",
@@ -357,7 +359,7 @@ dependencies = [
 
 [[package]]
 name = "buntu-gateway"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 dependencies = [
  "async-stream",
  "axum",
@@ -384,15 +386,15 @@ dependencies = [
 
 [[package]]
 name = "buntu-governance"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 
 [[package]]
 name = "buntu-mcp"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 
 [[package]]
 name = "buntu-mock-provider"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 dependencies = [
  "async-stream",
  "axum",
@@ -405,7 +407,7 @@ dependencies = [
 
 [[package]]
 name = "buntu-observe"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 dependencies = [
  "buntu-store",
  "metrics",
@@ -415,11 +417,11 @@ dependencies = [
 
 [[package]]
 name = "buntu-plugin-wasm"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 
 [[package]]
 name = "buntu-providers"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 dependencies = [
  "buntu-schema",
  "bytes",
@@ -429,7 +431,7 @@ dependencies = [
 
 [[package]]
 name = "buntu-schema"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 dependencies = [
  "proptest",
  "secrecy",
@@ -441,7 +443,7 @@ dependencies = [
 
 [[package]]
 name = "buntu-security"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 dependencies = [
  "aes-gcm",
  "argon2",
@@ -455,7 +457,7 @@ dependencies = [
 
 [[package]]
 name = "buntu-store"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 dependencies = [
  "buntu-security",
  "serde_json",
@@ -799,6 +801,12 @@ name = "dotenvy"
 version = "0.15.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1aaf95b3e5c8f23aa320147307562d361db0ae0d51242340f558153b4eb2439b"
+
+[[package]]
+name = "dyn-clone"
+version = "1.0.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d0881ea181b1df73ff77ffaaf9c7544ecc11e82fba9b5f27b262a3c73a332555"
 
 [[package]]
 name = "either"
@@ -2183,6 +2191,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "ref-cast"
+version = "1.0.27"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e440fb4e4b4147295338efb76001ab9e4efc0e5839df2c47fc5ac2381d365c3"
+dependencies = [
+ "ref-cast-impl",
+]
+
+[[package]]
+name = "ref-cast-impl"
+version = "1.0.27"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "92ecd8964f8453721699a1ed72037b0db49ce2f5a5138486ee89bed6f67cdf3a"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.9",
+]
+
+[[package]]
 name = "regex"
 version = "1.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2348,6 +2376,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "schemars"
+version = "1.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab508826f74a77ca9d5aba6ff19b522583ee3eaf28a19384ff3d0e5835fadf6e"
+dependencies = [
+ "dyn-clone",
+ "ref-cast",
+ "schemars_derive",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "schemars_derive"
+version = "1.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e1c3a92094fa7d61aa124645844facb6b554dfc797136d0f5fd1f890e2bffc69"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "serde_derive_internals",
+ "syn 3.0.9",
+]
+
+[[package]]
 name = "scoped-tls"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2392,6 +2445,17 @@ name = "serde_derive"
 version = "1.0.229"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e7a5d71263a5a7d47b41f6b3f06ba276f10cc18b0931f1799f710578e2309348"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.9",
+]
+
+[[package]]
+name = "serde_derive_internals"
+version = "0.30.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f852137cce035d6a4df67ccce505ff6b3e9fd3a10e3e52b24dc71e650bb1a9bd"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3530,7 +3594,7 @@ checksum = "3ad82d2a33cdc9674dc7465672f271e096168fcdbe0f799d9e6db8c5892679dc"
 
 [[package]]
 name = "xtask"
-version = "0.0.0"
+version = "0.0.1-rc.1"
 dependencies = [
  "serde",
  "serde_json",

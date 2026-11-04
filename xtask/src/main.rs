@@ -19,6 +19,7 @@ options de bench:
   --seconds N     durée de chaque palier, en secondes (défaut : 5)
   --warmup N      durée de la chauffe, en secondes (défaut : 2)
   --tolerance F   écart relatif maximal des P99 entre exécutions (défaut : 0.10)
+  --allow-variance  publie la campagne même si les P99 dépassent la tolérance (dispersion reportée)
   --output DIR    répertoire de sortie (défaut : benchmarks/results/<date>)
 
 options de reload-soak:

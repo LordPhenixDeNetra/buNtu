@@ -21,7 +21,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.0.0"
+version = "0.0.1-rc.1"
 edition = "2024"
 license = "Apache-2.0"
 rust-version = "1.90"
@@ -37,19 +37,19 @@ expect_used = "deny"
 [workspace.dependencies]
 # Crates internes : la version explicite évite que cargo-deny les traite comme des
 # dépendances « wildcard » (règle `bans.wildcards`). Elles seront publiées ensemble ensuite.
-buntu-schema = { version = "0.0.0", path = "crates/buntu-schema" }
-buntu-core = { version = "0.0.0", path = "crates/buntu-core" }
-buntu-providers = { version = "0.0.0", path = "crates/buntu-providers" }
-buntu-gateway = { version = "0.0.0", path = "crates/buntu-gateway" }
-buntu-store = { version = "0.0.0", path = "crates/buntu-store" }
-buntu-governance = { version = "0.0.0", path = "crates/buntu-governance" }
-buntu-cache = { version = "0.0.0", path = "crates/buntu-cache" }
-buntu-mcp = { version = "0.0.0", path = "crates/buntu-mcp" }
-buntu-security = { version = "0.0.0", path = "crates/buntu-security" }
-buntu-observe = { version = "0.0.0", path = "crates/buntu-observe" }
-buntu-plugin-wasm = { version = "0.0.0", path = "crates/buntu-plugin-wasm" }
-buntu-cluster = { version = "0.0.0", path = "crates/buntu-cluster" }
-buntu-cli = { version = "0.0.0", path = "crates/buntu-cli" }
+buntu-schema = { version = "0.0.1-rc.1", path = "crates/buntu-schema" }
+buntu-core = { version = "0.0.1-rc.1", path = "crates/buntu-core" }
+buntu-providers = { version = "0.0.1-rc.1", path = "crates/buntu-providers" }
+buntu-gateway = { version = "0.0.1-rc.1", path = "crates/buntu-gateway" }
+buntu-store = { version = "0.0.1-rc.1", path = "crates/buntu-store" }
+buntu-governance = { version = "0.0.1-rc.1", path = "crates/buntu-governance" }
+buntu-cache = { version = "0.0.1-rc.1", path = "crates/buntu-cache" }
+buntu-mcp = { version = "0.0.1-rc.1", path = "crates/buntu-mcp" }
+buntu-security = { version = "0.0.1-rc.1", path = "crates/buntu-security" }
+buntu-observe = { version = "0.0.1-rc.1", path = "crates/buntu-observe" }
+buntu-plugin-wasm = { version = "0.0.1-rc.1", path = "crates/buntu-plugin-wasm" }
+buntu-cluster = { version = "0.0.1-rc.1", path = "crates/buntu-cluster" }
+buntu-cli = { version = "0.0.1-rc.1", path = "crates/buntu-cli" }
 
 # Dépendances du simulateur de fournisseur (T0.3) ; aucune crate produit ne les utilise.
 async-stream = "0.3"
@@ -91,6 +91,9 @@ utoipa = "6"
 # Interface web embarquée (T1.22).
 rust-embed = "8"
 
+# Référence de configuration générée (T1.27).
+schemars = "1"
+
 # E4 — stockage, journal, métriques et sécurité (T1.17–T1.21).
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros"] }
 metrics = "0.24"
@@ -108,3 +111,8 @@ zeroize = "1"
 lto = "fat"
 codegen-units = 1
 panic = "abort"
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"

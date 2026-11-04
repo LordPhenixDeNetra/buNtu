@@ -1,0 +1,214 @@
+{
+  "$defs": {
+    "RawHooks": {
+      "description": "Hooks déclarés, dans l'ordre d'exécution.",
+      "properties": {
+        "post": {
+          "default": [],
+          "description": "Hooks exécutés après l'appel fournisseur.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "pre": {
+          "default": [],
+          "description": "Hooks exécutés avant l'appel fournisseur.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "RawKey": {
+      "description": "Une clé API de fournisseur.",
+      "properties": {
+        "secret": {
+          "description": "Référence `env:VAR` (recommandé en production) ou valeur littérale (tests).",
+          "type": "string"
+        },
+        "weight": {
+          "default": 1,
+          "description": "Poids de sélection ; une clé plus lourde est choisie plus souvent.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "secret"
+      ],
+      "type": "object"
+    },
+    "RawProvider": {
+      "description": "Un fournisseur de modèles.",
+      "properties": {
+        "base_url": {
+          "default": null,
+          "description": "URL de base de l'API du fournisseur (ex. `http://127.0.0.1:9000`).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "description": "Identifiant unique, utilisé dans les cibles (`openai/gpt-4o`).",
+          "type": "string"
+        },
+        "keys": {
+          "default": [],
+          "description": "Clés API, sélectionnées par poids décroissant.",
+          "items": {
+            "$ref": "#/$defs/RawKey"
+          },
+          "type": "array"
+        },
+        "type": {
+          "description": "Type de fournisseur : `openai`, `anthropic`, `gemini`, `compatible`, `mock`…",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "type": "object"
+    },
+    "RawRoute": {
+      "description": "Un alias de modèle et sa chaîne de repli.",
+      "properties": {
+        "alias": {
+          "description": "Nom exposé par l'API (`model: \"chat\"`).",
+          "type": "string"
+        },
+        "fallbacks": {
+          "default": [],
+          "description": "Cibles essayées dans l'ordre : `fournisseur/modèle`.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "timeouts": {
+          "$ref": "#/$defs/RawTimeouts",
+          "default": {
+            "connect_ms": null,
+            "first_byte_ms": null,
+            "inter_chunk_ms": null,
+            "total_ms": null
+          },
+          "description": "Surcharges de timeouts pour cet alias."
+        }
+      },
+      "required": [
+        "alias"
+      ],
+      "type": "object"
+    },
+    "RawServer": {
+      "description": "Paramètres du serveur HTTP.",
+      "properties": {
+        "listen": {
+          "default": "0.0.0.0:8080",
+          "description": "Adresse d'écoute (`0.0.0.0:8080` par défaut).",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "RawTimeouts": {
+      "description": "Surcharges de timeouts, en millisecondes ; `None` = valeur héritée.",
+      "properties": {
+        "connect_ms": {
+          "default": null,
+          "description": "Délai maximal d'établissement de la connexion amont.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "first_byte_ms": {
+          "default": null,
+          "description": "Délai maximal avant le premier octet de la réponse amont.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "inter_chunk_ms": {
+          "default": null,
+          "description": "Délai maximal entre deux morceaux d'un flux amont.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "total_ms": {
+          "default": null,
+          "description": "Délai maximal total d'une requête.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "hooks": {
+      "$ref": "#/$defs/RawHooks",
+      "default": {
+        "post": [],
+        "pre": []
+      },
+      "description": "Hooks exécutés avant et après l'appel fournisseur."
+    },
+    "providers": {
+      "default": [],
+      "description": "Fournisseurs de modèles configurés.",
+      "items": {
+        "$ref": "#/$defs/RawProvider"
+      },
+      "type": "array"
+    },
+    "routes": {
+      "default": [],
+      "description": "Alias de modèles et chaînes de repli.",
+      "items": {
+        "$ref": "#/$defs/RawRoute"
+      },
+      "type": "array"
+    },
+    "server": {
+      "$ref": "#/$defs/RawServer",
+      "default": {
+        "listen": "0.0.0.0:8080"
+      },
+      "description": "Paramètres du serveur HTTP."
+    },
+    "timeouts": {
+      "$ref": "#/$defs/RawTimeouts",
+      "default": {
+        "connect_ms": null,
+        "first_byte_ms": null,
+        "inter_chunk_ms": null,
+        "total_ms": null
+      },
+      "description": "Timeouts par défaut, en millisecondes."
+    }
+  },
+  "title": "RawConfig",
+  "type": "object"
+}

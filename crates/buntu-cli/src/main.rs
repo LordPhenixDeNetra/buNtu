@@ -19,6 +19,7 @@ usage: buntu <commande>
 commandes:
   serve [--config FICHIER] [--listen ADRESSE]   démarre la passerelle
   config validate FICHIER                       valide un fichier de configuration
+  config schema                                 affiche le schéma JSON de la configuration
   --version                                     affiche la version
 ";
 
@@ -164,10 +165,17 @@ fn config_command(arguments: Vec<String>) -> Result<(), Box<dyn Error>> {
             );
             Ok(())
         }
+        Some("schema") => {
+            let schema = buntu_core::config::json_schema();
+            let pretty = serde_json::to_string_pretty(&schema)
+                .map_err(|error| format!("schéma non sérialisable : {error}"))?;
+            println!("{pretty}");
+            Ok(())
+        }
         Some(other) => Err(format!(
-            "sous-commande inconnue : {other}\nusage: buntu config validate <fichier>"
+            "sous-commande inconnue : {other}\nusage: buntu config validate <fichier> | buntu config schema"
         )
         .into()),
-        None => Err("usage: buntu config validate <fichier>".into()),
+        None => Err("usage: buntu config validate <fichier> | buntu config schema".into()),
     }
 }

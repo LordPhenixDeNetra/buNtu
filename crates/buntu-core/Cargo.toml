@@ -12,6 +12,7 @@ arc-swap.workspace = true
 buntu-schema.workspace = true
 fastrand.workspace = true
 notify.workspace = true
+schemars.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
@@ -20,7 +21,7 @@ toml.workspace = true
 
 [dev-dependencies]
 axum.workspace = true
-buntu-mock-provider = { version = "0.0.0", path = "../../tools/mock-provider" }
+buntu-mock-provider = { version = "0.0.1-rc.1", path = "../../tools/mock-provider" }
 criterion.workspace = true
 reqwest.workspace = true
 
