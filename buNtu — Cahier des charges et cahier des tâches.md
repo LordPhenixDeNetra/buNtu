@@ -559,11 +559,11 @@ Le projet compte environ 395 jours de travail estimés, soit environ 2 ans et 3 
 
 **E4 — Stockage, journaux, sécurité de base (14 j)**
 
-- [ ] **T1.17** `buntu-store` SQLite + migrations versionnées — 4 j.
-- [ ] **T1.18** Journal des requêtes asynchrone (canal borné, échantillonnage) — 3 j — FR-OBS-3 — *Acceptation :* surcoût ≤ 5 µs, aucune requête ralentie si la base est lente.
-- [ ] **T1.19** Métriques Prometheus — 2 j — FR-OBS-1.
-- [ ] **T1.20** Authentification admin Argon2id + jetons API — 3 j — FR-SEC-1.
-- [ ] **T1.21** Chiffrement des secrets au repos, type `Secret<T>` — 2 j.
+- [x] **T1.17** `buntu-store` SQLite + migrations versionnées — 4 j.
+- [x] **T1.18** Journal des requêtes asynchrone (canal borné, échantillonnage) — 3 j — FR-OBS-3 — *Acceptation :* surcoût ≤ 5 µs, aucune requête ralentie si la base est lente.
+- [x] **T1.19** Métriques Prometheus — 2 j — FR-OBS-1.
+- [x] **T1.20** Authentification admin Argon2id + jetons API — 3 j — FR-SEC-1.
+- [x] **T1.21** Chiffrement des secrets au repos, type `Secret<T>` — 2 j.
 
 **E5 — Interface web (12 j)**
 

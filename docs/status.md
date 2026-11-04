@@ -63,6 +63,16 @@ Aucune. Prochaine : **T1.13** (endpoints compatibles OpenAI).
 | T1.15 | Erreurs normalisées + en-têtes `x-buntu-*` | fait | #22 | 2026-11-04 | 8 codes stables + statut HTTP + type OpenAI ; `x-buntu-error-source` et `retry-after` ; **9 tests `insta`** (8 snapshots + anti-secret) ; aucun message ne contient clé, en-tête d'authentification ou corps de requête |
 | T1.16 | API d'administration + OpenAPI | fait (réserve) | #22 | 2026-11-04 | CRUD fournisseurs/clés/routes sur la configuration brute, **validation par le même code que `config validate`**, pagination par curseur (max 100), **aperçu de clé seulement** (`sk-…a1b2` / `env:VAR`) ; `openapi.json` généré par `utoipa` + **test de diff** (échec si obsolète) ; **5 tests** (CRUD, pagination, anti-fuite, validation, OpenAPI) ; réserve : mutations en mémoire (persistance avec T1.17), authentification admin en T1.20 |
 
+## Phase 1 — E4 Stockage, journaux, sécurité de base
+
+| ID | Tâche | Statut | PR | Date | Preuve |
+| --- | --- | --- | --- | --- | --- |
+| T1.17 | `buntu-store` SQLite + migrations versionnées | fait (réserve) | #23 | 2026-11-04 | pool `sqlx` SQLite en **WAL** + `busy_timeout` 5 s, migrations embarquées (`migrations/0001_initial.sql`, en avant seulement), `Store` minimal sans ORM (fournisseurs, clés, routes, journal, comptes, jetons) ; **5 tests** (migrations, entités, WAL fichier, jeton révoqué, clé chiffrée au repos) ; réserve : requêtes `sqlx` runtime, `sqlx prepare`/mode hors ligne reporté (sqlx-cli absent de l'environnement) |
+| T1.18 | Journal des requêtes asynchrone | fait | #23 | 2026-11-04 | canal `mpsc` borné à **10 000**, `try_send` uniquement (jamais `send().await`), lots de **500 ou 1 s**, compteur `buntu_log_queue_dropped_total` ; **2 tests** : 20 000 envois < 100 ms avec base simulée à 1 s/écriture et pertes comptées, lots ≤ 500 |
+| T1.19 | Métriques Prometheus | fait | #23 | 2026-11-04 | `metrics` + exportateur Prometheus, seaux dédiés µs (surcoût) et s (durée), labels à faible cardinalité ; endpoint `GET /metrics` branché ; **4 tests** (noms/sceaux/anti-cardinalité, installation idempotente, endpoint HTTP) |
+| T1.20 | Authentification admin Argon2id + jetons API | fait | #23 | 2026-11-04 | Argon2id **m = 19 456 Kio, t = 2, p = 1** (OWASP), jetons 256 bits stockés **hachés** (SHA-256, `subtle`), limitation **10 échecs → blocage 5 min** ; **5 tests** (mauvais mot de passe, sel aléatoire, jeton haché, blocage, jeton révoqué côté store) |
+| T1.21 | Chiffrement des secrets au repos + `Secret<T>` | fait | #23 | 2026-11-04 | `Secret<T>` (`secrecy` + zéroïsation, `Debug` masqué), AES-256-GCM avec **nonce aléatoire par valeur**, clé maître depuis fichier (permissions 0600 vérifiées sous Unix) ou variable base64, rotation de clé ; **8 tests** dont recherche de la clé en clair dans le fichier SQLite : introuvable ; réserve : commande CLI `buntu secrets rotate` à brancher avec T1.22+ |
+
 ## Phases suivantes
 
 Le détail des tâches des phases 2 à 4 reste dans le cahier des charges. Chaque phase sera
@@ -94,3 +104,4 @@ ajoutée à ce tableau au début de l'epic, en même temps que la rédaction de 
 | 2026-11-04 | #20 | Intégration des fournisseurs dans `main` | verte (55 s, puis 1 min 08 sur `main`) |
 | 2026-11-04 | #21 | Règle « relire la fiche avant chaque tâche » | verte (1 min 01) |
 | 2026-11-04 | #22 | Lot E3 : T1.13–T1.16 (API publique et d'administration) | à confirmer (CI après fusion de `main`) |
+| 2026-11-04 | #23 | Lot E4 : T1.17–T1.21 (stockage, journal, métriques, auth, secrets) | à confirmer |
