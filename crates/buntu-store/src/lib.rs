@@ -3,5 +3,6 @@
 pub mod store;
 
 pub use store::{
-    KeyRecord, MIGRATOR, ProviderRecord, RequestLogRecord, RouteRecord, Store, StoreError,
+    KeyRecord, MIGRATOR, ProviderRecord, RequestLogQuery, RequestLogRecord, RouteRecord, Store,
+    StoreError,
 };

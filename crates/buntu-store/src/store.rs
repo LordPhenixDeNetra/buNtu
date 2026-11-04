@@ -60,6 +60,18 @@ pub struct RequestLogRecord {
     pub input_tokens: u32,
     pub output_tokens: u32,
     pub created_at: i64,
+    pub attempts: u32,
+    pub rowid: i64,
+}
+
+/// Filtres du journal, paginés par curseur (rowid).
+#[derive(Debug, Clone, Default)]
+pub struct RequestLogQuery {
+    pub cursor: Option<i64>,
+    pub limit: i64,
+    pub provider: Option<String>,
+    pub status: Option<u16>,
+    pub model: Option<String>,
 }
 
 /// Pool SQLite partagé : à cloner, jamais à recréer par requête.
@@ -216,8 +228,8 @@ impl Store {
     pub async fn insert_request_log(&self, record: &RequestLogRecord) -> Result<(), StoreError> {
         sqlx::query(
             "INSERT INTO request_log \
-             (id, model, provider, status, latency_ms, input_tokens, output_tokens, created_at) \
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+             (id, model, provider, status, latency_ms, input_tokens, output_tokens, created_at, attempts) \
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(&record.id)
         .bind(&record.model)
@@ -227,36 +239,62 @@ impl Store {
         .bind(i64::from(record.input_tokens))
         .bind(i64::from(record.output_tokens))
         .bind(record.created_at)
+        .bind(i64::from(record.attempts))
         .execute(&self.pool)
         .await?;
         Ok(())
+    }
+
+    /// Journal filtré, trié du plus récent au plus ancien, paginé par curseur (rowid).
+    pub async fn query_request_logs(
+        &self,
+        query: &RequestLogQuery,
+    ) -> Result<Vec<RequestLogRecord>, StoreError> {
+        let mut builder = sqlx::QueryBuilder::<sqlx::Sqlite>::new(
+            "SELECT rowid, id, model, provider, status, latency_ms, input_tokens, output_tokens, \
+             created_at, attempts FROM request_log WHERE 1 = 1",
+        );
+        if let Some(cursor) = query.cursor {
+            builder.push(" AND rowid < ").push_bind(cursor);
+        }
+        if let Some(provider) = &query.provider {
+            builder.push(" AND provider = ").push_bind(provider.clone());
+        }
+        if let Some(status) = query.status {
+            builder.push(" AND status = ").push_bind(i64::from(status));
+        }
+        if let Some(model) = &query.model {
+            builder.push(" AND model = ").push_bind(model.clone());
+        }
+        builder
+            .push(" ORDER BY rowid DESC LIMIT ")
+            .push_bind(query.limit.clamp(1, 100));
+        let rows = builder.build().fetch_all(&self.pool).await?;
+        rows.into_iter().map(log_from_row).collect()
+    }
+
+    /// Détail d'une requête par identifiant.
+    pub async fn request_log(&self, id: &str) -> Result<RequestLogRecord, StoreError> {
+        let row = sqlx::query(
+            "SELECT rowid, id, model, provider, status, latency_ms, input_tokens, output_tokens, \
+             created_at, attempts FROM request_log WHERE id = ?",
+        )
+        .bind(id)
+        .fetch_optional(&self.pool)
+        .await?
+        .ok_or(StoreError::NotFound)?;
+        log_from_row(row)
     }
 
     pub async fn recent_request_logs(
         &self,
         limit: i64,
     ) -> Result<Vec<RequestLogRecord>, StoreError> {
-        let rows = sqlx::query(
-            "SELECT id, model, provider, status, latency_ms, input_tokens, output_tokens, created_at \
-             FROM request_log ORDER BY created_at DESC, rowid DESC LIMIT ?",
-        )
-        .bind(limit)
-        .fetch_all(&self.pool)
-        .await?;
-        rows.into_iter()
-            .map(|row| {
-                Ok(RequestLogRecord {
-                    id: row.try_get("id")?,
-                    model: row.try_get("model")?,
-                    provider: row.try_get("provider")?,
-                    status: row.try_get::<i64, _>("status")? as u16,
-                    latency_ms: row.try_get::<i64, _>("latency_ms")? as u64,
-                    input_tokens: row.try_get::<i64, _>("input_tokens")? as u32,
-                    output_tokens: row.try_get::<i64, _>("output_tokens")? as u32,
-                    created_at: row.try_get("created_at")?,
-                })
-            })
-            .collect()
+        self.query_request_logs(&RequestLogQuery {
+            limit,
+            ..RequestLogQuery::default()
+        })
+        .await
     }
 
     /// Persiste un jeton API : seul son empreinte est stockée (T1.20).
@@ -294,4 +332,20 @@ impl Store {
         let revoked: i64 = row.try_get("revoked")?;
         Ok(revoked == 0)
     }
+}
+
+fn log_from_row(row: sqlx::sqlite::SqliteRow) -> Result<RequestLogRecord, StoreError> {
+    use sqlx::Row;
+    Ok(RequestLogRecord {
+        id: row.try_get("id")?,
+        model: row.try_get("model")?,
+        provider: row.try_get("provider")?,
+        status: row.try_get::<i64, _>("status")? as u16,
+        latency_ms: row.try_get::<i64, _>("latency_ms")? as u64,
+        input_tokens: row.try_get::<i64, _>("input_tokens")? as u32,
+        output_tokens: row.try_get::<i64, _>("output_tokens")? as u32,
+        created_at: row.try_get("created_at")?,
+        attempts: row.try_get::<i64, _>("attempts")? as u32,
+        rowid: row.try_get("rowid")?,
+    })
 }

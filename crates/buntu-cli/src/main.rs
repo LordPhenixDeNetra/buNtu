@@ -102,8 +102,14 @@ fn serve_command(options: ServeOptions) -> Result<(), Box<dyn Error>> {
             eprintln!("buNtu: métriques indisponibles ({error})");
         }
         let readiness = Readiness::new(true);
-        let state = GatewayState::new(readiness.clone(), handle)
+        let mut state = GatewayState::new(readiness.clone(), handle)
             .with_admin(Arc::new(AdminStore::new(raw_config)));
+        // Journal des requêtes (T1.24) : SQLite, chemin configurable par l'environnement.
+        let database = std::env::var("BUNTU_DB_PATH").unwrap_or_else(|_| "buntu.sqlite".to_owned());
+        match buntu_store::Store::open(&format!("sqlite://{database}")).await {
+            Ok(store) => state = state.with_storage(Arc::new(store)),
+            Err(error) => eprintln!("buNtu: journal indisponible ({error})"),
+        }
         serve(
             listener,
             app_with_state(state),

@@ -31,6 +31,8 @@ pub use store::AdminStore;
         handlers::get_route,
         handlers::update_route,
         handlers::delete_route,
+        handlers::list_requests,
+        handlers::get_request,
     ),
     components(schemas(
         handlers::KeyView,
@@ -45,6 +47,8 @@ pub use store::AdminStore;
         handlers::UpdateRoute,
         handlers::ErrorDetail,
         handlers::ErrorEnvelope,
+        handlers::RequestLogView,
+        handlers::RequestLogPage,
     ))
 )]
 pub struct AdminApi;

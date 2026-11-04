@@ -47,9 +47,27 @@ async fn run(state: &GatewayState, body: Value) -> Result<AxumResponse, GatewayE
         return stream(&executor, &targets, &request, &context).await;
     }
 
+    let started = std::time::Instant::now();
     let routed = FallbackChain::default()
         .execute(&targets, &executor, &context, &request)
         .await?;
+    let latency = started.elapsed();
+    // Journal des requêtes (T1.24) : `try_log` non bloquant (T1.18).
+    state.record_request(buntu_store::RequestLogRecord {
+        id: context.id.clone(),
+        model: routed.model.clone(),
+        provider: routed.provider.clone(),
+        status: 200,
+        latency_ms: u64::try_from(latency.as_millis()).unwrap_or(u64::MAX),
+        input_tokens: routed.response.usage.input_tokens,
+        output_tokens: routed.response.usage.output_tokens,
+        created_at: std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|duration| duration.as_secs() as i64)
+            .unwrap_or(0),
+        attempts: routed.attempts,
+        rowid: 0,
+    });
     let mut response = Json(wire::to_openai(&routed.response)).into_response();
     crate::routes::add_routed_headers(
         &mut response,
