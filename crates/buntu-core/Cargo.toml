@@ -12,6 +12,7 @@ arc-swap.workspace = true
 buntu-schema.workspace = true
 fastrand.workspace = true
 notify.workspace = true
+schemars.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true

@@ -19,7 +19,7 @@ pub use compiled::{
     CompiledConfig, CompiledKey, CompiledProvider, CompiledRoute, CompiledTarget, SecretValue,
 };
 pub use env::{Environment, MapEnvironment, ProcessEnv};
-pub use file::{RawConfig, RawKey, RawProvider, RawRoute, RawServer};
+pub use file::{RawConfig, RawKey, RawProvider, RawRoute, RawServer, json_schema};
 
 /// Erreurs de configuration, toujours accompagnées du chemin du champ fautif.
 #[derive(Debug, thiserror::Error)]

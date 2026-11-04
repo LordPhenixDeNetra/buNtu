@@ -91,6 +91,9 @@ utoipa = "6"
 # Interface web embarquée (T1.22).
 rust-embed = "8"
 
+# Référence de configuration générée (T1.27).
+schemars = "1"
+
 # E4 — stockage, journal, métriques et sécurité (T1.17–T1.21).
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros"] }
 metrics = "0.24"
@@ -108,3 +111,8 @@ zeroize = "1"
 lto = "fat"
 codegen-units = 1
 panic = "abort"
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
