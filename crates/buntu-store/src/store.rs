@@ -49,6 +49,28 @@ pub struct RouteRecord {
     pub fallbacks: Vec<String>,
 }
 
+/// Secret d'une clé de la couche base : chiffré, ou référence `env:VAR` (pas un secret).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum StoredSecret {
+    Encrypted(Vec<u8>),
+    Reference(String),
+}
+
+/// Une clé de la couche base, dans l'ordre de déclaration.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StoredKey {
+    pub secret: StoredSecret,
+    pub weight: u32,
+}
+
+/// Une route de la couche base ; `timeouts` est le JSON des surcharges.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StoredRoute {
+    pub alias: String,
+    pub fallbacks: Vec<String>,
+    pub timeouts: String,
+}
+
 /// Une ligne du journal des requêtes.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestLogRecord {
@@ -223,6 +245,126 @@ impl Store {
             alias: row.try_get("alias")?,
             fallbacks: serde_json::from_str(&fallbacks).unwrap_or_default(),
         })
+    }
+
+    // --- Couche base de la configuration (cahier §7.1) -------------------------------------
+
+    /// Crée ou remplace un fournisseur et **toutes** ses clés, dans une transaction.
+    pub async fn save_provider(
+        &self,
+        provider: &ProviderRecord,
+        keys: &[StoredKey],
+    ) -> Result<(), StoreError> {
+        let mut transaction = self.pool.begin().await?;
+        sqlx::query(
+            "INSERT INTO providers (id, kind, base_url) VALUES (?, ?, ?) \
+             ON CONFLICT(id) DO UPDATE SET kind = excluded.kind, base_url = excluded.base_url",
+        )
+        .bind(&provider.id)
+        .bind(&provider.kind)
+        .bind(&provider.base_url)
+        .execute(&mut *transaction)
+        .await?;
+        sqlx::query("DELETE FROM provider_keys WHERE provider_id = ?")
+            .bind(&provider.id)
+            .execute(&mut *transaction)
+            .await?;
+        for key in keys {
+            let (ciphertext, reference): (&[u8], Option<&str>) = match &key.secret {
+                StoredSecret::Encrypted(blob) => (blob, None),
+                StoredSecret::Reference(reference) => (&[], Some(reference)),
+            };
+            sqlx::query(
+                "INSERT INTO provider_keys (provider_id, secret_ciphertext, reference, weight) \
+                 VALUES (?, ?, ?, ?)",
+            )
+            .bind(&provider.id)
+            .bind(ciphertext)
+            .bind(reference)
+            .bind(key.weight)
+            .execute(&mut *transaction)
+            .await?;
+        }
+        transaction.commit().await?;
+        Ok(())
+    }
+
+    /// Supprime un fournisseur (ses clés suivent) ; `false` s'il n'existe pas.
+    pub async fn delete_provider(&self, id: &str) -> Result<bool, StoreError> {
+        let result = sqlx::query("DELETE FROM providers WHERE id = ?")
+            .bind(id)
+            .execute(&self.pool)
+            .await?;
+        Ok(result.rows_affected() == 1)
+    }
+
+    /// Clés d'un fournisseur, dans l'ordre d'insertion.
+    pub async fn stored_keys(&self, provider_id: &str) -> Result<Vec<StoredKey>, StoreError> {
+        let rows = sqlx::query(
+            "SELECT secret_ciphertext, reference, weight FROM provider_keys \
+             WHERE provider_id = ? ORDER BY id",
+        )
+        .bind(provider_id)
+        .fetch_all(&self.pool)
+        .await?;
+        rows.into_iter()
+            .map(|row| {
+                let reference: Option<String> = row.try_get("reference")?;
+                let secret = match reference {
+                    Some(reference) => StoredSecret::Reference(reference),
+                    None => StoredSecret::Encrypted(row.try_get("secret_ciphertext")?),
+                };
+                Ok(StoredKey {
+                    secret,
+                    weight: row.try_get("weight")?,
+                })
+            })
+            .collect()
+    }
+
+    /// Crée ou remplace une route.
+    pub async fn save_route(&self, route: &StoredRoute) -> Result<(), StoreError> {
+        let fallbacks = serde_json::to_string(&route.fallbacks)
+            .map_err(|error| StoreError::Database(sqlx::Error::Decode(Box::new(error))))?;
+        sqlx::query(
+            "INSERT INTO routes (alias, fallbacks, timeouts) VALUES (?, ?, ?) \
+             ON CONFLICT(alias) DO UPDATE SET fallbacks = excluded.fallbacks, \
+             timeouts = excluded.timeouts",
+        )
+        .bind(&route.alias)
+        .bind(fallbacks)
+        .bind(&route.timeouts)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    /// Supprime une route ; `false` si elle n'existe pas.
+    pub async fn delete_route(&self, alias: &str) -> Result<bool, StoreError> {
+        let result = sqlx::query("DELETE FROM routes WHERE alias = ?")
+            .bind(alias)
+            .execute(&self.pool)
+            .await?;
+        Ok(result.rows_affected() == 1)
+    }
+
+    /// Toutes les routes de la couche base, triées par alias.
+    pub async fn stored_routes(&self) -> Result<Vec<StoredRoute>, StoreError> {
+        let rows = sqlx::query("SELECT alias, fallbacks, timeouts FROM routes ORDER BY alias")
+            .fetch_all(&self.pool)
+            .await?;
+        rows.into_iter()
+            .map(|row| {
+                let fallbacks: String = row.try_get("fallbacks")?;
+                Ok(StoredRoute {
+                    alias: row.try_get("alias")?,
+                    fallbacks: serde_json::from_str(&fallbacks).map_err(|error| {
+                        StoreError::Database(sqlx::Error::Decode(Box::new(error)))
+                    })?,
+                    timeouts: row.try_get("timeouts")?,
+                })
+            })
+            .collect()
     }
 
     pub async fn insert_request_log(&self, record: &RequestLogRecord) -> Result<(), StoreError> {
