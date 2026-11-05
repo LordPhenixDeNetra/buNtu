@@ -14,6 +14,7 @@ contexte, décision, alternatives écartées, conséquences, date, statut.
 | [0005](0005-storage.md) | Stockage : SQLite puis PostgreSQL | T0.6 | accepté |
 | [0006](0006-ui.md) | Interface : SvelteKit statique | T0.6 | accepté sous réserve de prototype |
 | [0007](0007-license.md) | Licence Apache 2.0 et DCO | T0.6 | accepté |
+| [0008](0008-config-source.md) | Configuration : trois sources, un seul modèle | revue 2026-11-05 | accepté |
 
 ## Conventions
 
