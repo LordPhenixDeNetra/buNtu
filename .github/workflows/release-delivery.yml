@@ -33,7 +33,7 @@ jobs:
     name: container (linux/amd64, linux/arm64)
     runs-on: ubuntu-latest
     timeout-minutes: 90
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success')
     steps:
       - uses: actions/checkout@v4
         with:
@@ -103,7 +103,7 @@ jobs:
     name: raw binaries + signatures (${{ matrix.target }})
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success')
     strategy:
       fail-fast: false
       matrix:
@@ -170,7 +170,7 @@ jobs:
     needs: binaries
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success')
     env:
       GH_REPO: ${{ github.repository }}
     steps:
@@ -201,18 +201,20 @@ jobs:
           COSIGN_EXPERIMENTAL: "1"
         run: |
           tag="${{ inputs.tag || github.event.workflow_run.head_branch }}"
+          mkdir -p checksums
+          gh release download "$tag" --pattern '*.sha256' --dir checksums
           tokens=$(gh release view "$tag" --json assets --jq '.assets[].name | select(endswith(".sha256"))')
           for name in $tokens; do
-            cosign sign-blob --yes --bundle "${name}.sigstore.json" "${name}"
-            gh release upload "$tag" "${name}.sigstore.json" --clobber
+            cosign sign-blob --yes --bundle "checksums/${name}.sigstore.json" "checksums/${name}"
           done
+          gh release upload "$tag" checksums/*.sigstore.json --clobber
 
   npm:
     name: publish the npx launcher
     needs: [binaries]
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success')
     env:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
