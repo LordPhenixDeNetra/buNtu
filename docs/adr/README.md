@@ -7,7 +7,7 @@ contexte, décision, alternatives écartées, conséquences, date, statut.
 
 | Numéro | Titre | Tâche | Statut |
 | --- | --- | --- | --- |
-| 0001 | Nom du projet | T0.1 | à rédiger (côté humain) |
+| [0001](0001-nom.md) | Nom du projet | T0.1 | proposé (marques et réservations à faire, côté humain) |
 | [0002](0002-schema.md) | Schéma canonique v0 | T0.5 | accepté |
 | [0003](0003-runtime.md) | Runtime asynchrone : tokio | T0.6 | accepté |
 | [0004](0004-http.md) | HTTP : hyper/axum et client amont | T0.6 | accepté |
