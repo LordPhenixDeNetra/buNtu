@@ -25,6 +25,31 @@ pub struct RawConfig {
     /// Timeouts par défaut, en millisecondes.
     #[serde(default)]
     pub timeouts: RawTimeouts,
+    /// Rôle de la base face au fichier (cahier §7.1).
+    #[serde(default)]
+    pub config: RawConfigSection,
+}
+
+/// Section `[config]`.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct RawConfigSection {
+    /// `merged` (défaut) : base + fichier + environnement, l'API d'administration écrit en
+    /// base ; `file` : la base est en lecture seule (GitOps).
+    #[serde(default)]
+    pub mode: ConfigMode,
+}
+
+/// Mode de configuration (cahier §7.1).
+#[derive(
+    Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema,
+)]
+#[serde(rename_all = "lowercase")]
+pub enum ConfigMode {
+    /// Base, puis fichier, puis environnement ; l'API d'administration écrit en base.
+    #[default]
+    Merged,
+    /// Le fichier seul fait foi pour les écritures : l'API d'administration est en lecture seule.
+    File,
 }
 
 /// Surcharges de timeouts, en millisecondes ; `None` = valeur héritée.

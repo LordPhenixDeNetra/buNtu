@@ -1,5 +1,31 @@
 {
   "$defs": {
+    "ConfigMode": {
+      "description": "Mode de configuration (cahier §7.1).",
+      "oneOf": [
+        {
+          "const": "merged",
+          "description": "Base, puis fichier, puis environnement ; l'API d'administration écrit en base.",
+          "type": "string"
+        },
+        {
+          "const": "file",
+          "description": "Le fichier seul fait foi pour les écritures : l'API d'administration est en lecture seule.",
+          "type": "string"
+        }
+      ]
+    },
+    "RawConfigSection": {
+      "description": "Section `[config]`.",
+      "properties": {
+        "mode": {
+          "$ref": "#/$defs/ConfigMode",
+          "default": "merged",
+          "description": "`merged` (défaut) : base + fichier + environnement, l'API d'administration écrit en\nbase ; `file` : la base est en lecture seule (GitOps)."
+        }
+      },
+      "type": "object"
+    },
     "RawHooks": {
       "description": "Hooks déclarés, dans l'ordre d'exécution.",
       "properties": {
@@ -167,6 +193,13 @@
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "properties": {
+    "config": {
+      "$ref": "#/$defs/RawConfigSection",
+      "default": {
+        "mode": "merged"
+      },
+      "description": "Rôle de la base face au fichier (cahier §7.1)."
+    },
     "hooks": {
       "$ref": "#/$defs/RawHooks",
       "default": {

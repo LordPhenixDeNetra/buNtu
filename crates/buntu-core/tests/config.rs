@@ -221,3 +221,121 @@ fn default_listen_address_is_loopback_only() -> Result<(), Box<dyn std::error::E
     );
     Ok(())
 }
+
+// --- Trois sources, un seul modèle (cahier §7.1, revue 2026-11-05 section 2) ---------------
+
+fn provider(id: &str, base_url: &str) -> buntu_core::config::RawProvider {
+    buntu_core::config::RawProvider {
+        id: id.to_owned(),
+        kind: "openai".to_owned(),
+        base_url: Some(base_url.to_owned()),
+        keys: vec![buntu_core::config::RawKey {
+            secret: "sk-test".to_owned(),
+            weight: 1,
+        }],
+    }
+}
+
+fn base_layer() -> buntu_core::config::RawConfig {
+    buntu_core::config::RawConfig {
+        providers: vec![
+            provider("db", "http://base"),
+            provider("partage", "http://base"),
+        ],
+        ..Default::default()
+    }
+}
+
+const FILE_LAYER: &str = r#"
+[[providers]]
+id = "partage"
+type = "openai"
+base_url = "http://fichier"
+keys = [{ secret = "sk-fichier" }]
+"#;
+
+#[test]
+fn file_layer_overrides_the_database_layer_by_id() -> Result<(), Box<dyn Error>> {
+    let file = buntu_core::config::file::parse_str(FILE_LAYER, "test")?;
+    let compiled =
+        buntu_core::config::compile_layers(&base_layer(), &file, &MapEnvironment::default())?;
+    assert_eq!(compiled.providers.len(), 2);
+    assert_eq!(
+        compiled.providers["partage"].base_url.as_deref(),
+        Some("http://fichier"),
+        "le fichier a priorité sur la base"
+    );
+    assert_eq!(
+        compiled.providers["db"].base_url.as_deref(),
+        Some("http://base")
+    );
+    Ok(())
+}
+
+#[test]
+fn environment_overrides_the_file_and_the_database() -> Result<(), Box<dyn Error>> {
+    let file = buntu_core::config::file::parse_str(FILE_LAYER, "test")?;
+    let environment = MapEnvironment::new([("BUNTU_PROVIDERS__0__BASE_URL", "http://env")]);
+    let compiled = buntu_core::config::compile_layers(&base_layer(), &file, &environment)?;
+    assert_eq!(
+        compiled.providers["partage"].base_url.as_deref(),
+        Some("http://env")
+    );
+    Ok(())
+}
+
+#[test]
+fn file_reload_keeps_the_database_layer() -> Result<(), Box<dyn Error>> {
+    let path = temp_path("reload-layers");
+    std::fs::write(&path, FILE_LAYER)?;
+    let environment = MapEnvironment::default();
+    let file = buntu_core::config::file::read(&path)?;
+    let handle = ConfigHandle::from_layers(base_layer(), file, &environment)?;
+
+    std::fs::write(
+        &path,
+        FILE_LAYER.replace("http://fichier", "http://fichier-v2"),
+    )?;
+    handle.reload(&path, &environment)?;
+    let snapshot = handle.snapshot();
+    assert!(
+        snapshot.providers.contains_key("db"),
+        "la couche base est perdue"
+    );
+    assert_eq!(
+        snapshot.providers["partage"].base_url.as_deref(),
+        Some("http://fichier-v2")
+    );
+    assert_eq!(handle.layers().base.providers.len(), 2);
+
+    // Une modification de la base est publiée sans toucher au fichier.
+    let mut base = handle.layers().base.clone();
+    base.providers.retain(|provider| provider.id != "db");
+    handle.commit_base(base, &environment)?;
+    assert!(!handle.snapshot().providers.contains_key("db"));
+    assert!(handle.snapshot().providers.contains_key("partage"));
+
+    let _ = std::fs::remove_file(&path);
+    Ok(())
+}
+
+#[test]
+fn config_mode_file_makes_the_database_read_only() -> Result<(), Box<dyn Error>> {
+    use buntu_core::config::ConfigMode;
+    assert_eq!(
+        from_str("", &MapEnvironment::default())?.mode,
+        ConfigMode::Merged
+    );
+    let compiled = from_str("[config]\nmode = \"file\"\n", &MapEnvironment::default())?;
+    assert_eq!(compiled.mode, ConfigMode::File);
+    Ok(())
+}
+
+#[test]
+fn unknown_provider_type_is_rejected_by_validation() {
+    let content = EXAMPLE.replace("type = \"openai\"", "type = \"opnai\"");
+    let error = expect_error(from_str(&content, &environment()));
+    let message = error.to_string();
+    assert!(message.contains("providers[0].type"), "{message}");
+    assert!(message.contains("opnai"), "{message}");
+}

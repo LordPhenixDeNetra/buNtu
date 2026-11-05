@@ -5,7 +5,7 @@ use std::fmt;
 use std::net::SocketAddr;
 use std::time::Duration;
 
-use crate::config::file::{RawConfig, RawHooks, RawProvider, RawRoute, RawTimeouts};
+use crate::config::file::{ConfigMode, RawConfig, RawHooks, RawProvider, RawRoute, RawTimeouts};
 use crate::config::{ConfigError, Environment};
 use crate::keys::KeySelector;
 use crate::timeouts::Timeouts;
@@ -17,6 +17,8 @@ pub struct CompiledConfig {
     pub routes: HashMap<String, CompiledRoute>,
     pub hooks: CompiledHooks,
     pub timeouts: Timeouts,
+    /// Rôle de la base face au fichier (cahier §7.1).
+    pub mode: ConfigMode,
 }
 
 impl Default for CompiledConfig {
@@ -29,6 +31,7 @@ impl Default for CompiledConfig {
             routes: HashMap::new(),
             hooks: CompiledHooks::default(),
             timeouts: Timeouts::default(),
+            mode: ConfigMode::default(),
         }
     }
 }
@@ -98,6 +101,18 @@ impl fmt::Debug for SecretValue {
     }
 }
 
+/// Types de fournisseurs pris en charge ; le registre de la passerelle doit les servir tous
+/// (test `registry_and_validation_know_the_same_provider_types`).
+pub const PROVIDER_KINDS: &[&str] = &[
+    "openai",
+    "anthropic",
+    "gemini",
+    "compatible",
+    "openai_compatible",
+    "ollama",
+    "mock",
+];
+
 pub fn compile(
     raw: &RawConfig,
     environment: &dyn Environment,
@@ -143,6 +158,7 @@ pub fn compile(
         routes,
         hooks,
         timeouts,
+        mode: raw.config.mode,
     })
 }
 
@@ -162,6 +178,16 @@ fn compile_provider(
         return Err(ConfigError::Invalid {
             path: format!("providers[{index}].type"),
             message: "type vide".to_owned(),
+        });
+    }
+    if !PROVIDER_KINDS.contains(&provider.kind.trim()) {
+        return Err(ConfigError::Invalid {
+            path: format!("providers[{index}].type"),
+            message: format!(
+                "type inconnu `{}` (attendu : {})",
+                provider.kind.trim(),
+                PROVIDER_KINDS.join(", ")
+            ),
         });
     }
     if provider.keys.is_empty() {

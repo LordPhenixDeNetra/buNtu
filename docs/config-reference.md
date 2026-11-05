@@ -10,11 +10,28 @@
 
 | Champ | Type | Requis | Défaut | Description |
 | --- | --- | --- | --- | --- |
+| `config` | RawConfigSection | non | `{"mode":"merged"}` | Rôle de la base face au fichier (cahier §7.1). |
 | `hooks` | RawHooks | non | `{"post":[],"pre":[]}` | Hooks exécutés avant et après l'appel fournisseur. |
 | `providers` | liste de RawProvider | non | `[]` | Fournisseurs de modèles configurés. |
 | `routes` | liste de RawRoute | non | `[]` | Alias de modèles et chaînes de repli. |
 | `server` | RawServer | non | `{"listen":"127.0.0.1:8080"}` | Paramètres du serveur HTTP. |
 | `timeouts` | RawTimeouts | non | `{"connect_ms":null,"first_byte_ms":null,"inter_chunk_ms":null,"total_ms":null}` | Timeouts par défaut, en millisecondes. |
+
+### `ConfigMode`
+
+Mode de configuration (cahier §7.1).
+
+| Champ | Type | Requis | Défaut | Description |
+| --- | --- | --- | --- | --- |
+
+### `RawConfigSection`
+
+Section `[config]`.
+
+| Champ | Type | Requis | Défaut | Description |
+| --- | --- | --- | --- | --- |
+| `mode` | ConfigMode | non | `"merged"` | `merged` (défaut) : base + fichier + environnement, l'API d'administration écrit en
+base ; `file` : la base est en lecture seule (GitOps). |
 
 ### `RawHooks`
 
