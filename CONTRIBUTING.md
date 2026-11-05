@@ -9,8 +9,8 @@ En participant, vous acceptez le [code de conduite](CODE_OF_CONDUCT.md).
 
 1. Lisez [AGENTS.md](AGENTS.md) : il fixe les règles du dépôt (périmètre, tests d'abord,
    vérifications machine). Elles s'appliquent aux humains comme aux agents IA.
-2. Lisez le [cahier des charges](<buNtu — Cahier des charges et cahier des tâches.md>) et le
-   [guide d'exécution](<Guide d'exécution (agents IA).md>) pour le contexte.
+2. Lisez le [cahier des charges](docs/cahier-des-charges.md) et le
+   [guide d'exécution](docs/guide-agents.md) pour le contexte.
 3. Ouvrez une issue avant un changement de fond : une tâche par pull request.
 
 ## Environnement

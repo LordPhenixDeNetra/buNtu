@@ -518,7 +518,7 @@ Le projet compte environ 395 jours de travail estimés, soit environ 2 ans et 3 
 
 **Règles de travail en solo.** Une seule tâche en cours à la fois. Une tâche dépassant 150 % de son estimation est redécoupée. Chaque vendredi : 30 min de revue du tableau et mise à jour des estimations. Toute décision structurante fait l'objet d'un ADR (Architecture Decision Record) dans `docs/adr/`.
 
-**Exécution détaillée.** Chaque tâche a une fiche pas à pas, avec les règles à imposer aux agents IA : Guide d'exécution (agents IA)
+**Exécution détaillée.** Chaque tâche a une fiche pas à pas, avec les règles à imposer aux agents IA : [guide d'exécution](guide-agents.md)
 
 ### Phase 0 — Fondations (15 j, v0.0)
 

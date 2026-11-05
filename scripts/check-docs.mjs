@@ -12,8 +12,8 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 const required = [
-  "buNtu — Cahier des charges et cahier des tâches.md",
-  "Guide d'exécution (agents IA).md",
+  "docs/cahier-des-charges.md",
+  "docs/guide-agents.md",
   "AGENTS.md",
   "CLAUDE.md",
   "docs/quickstart.md",
