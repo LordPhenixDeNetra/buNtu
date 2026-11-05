@@ -226,22 +226,34 @@ impl Store {
     }
 
     pub async fn insert_request_log(&self, record: &RequestLogRecord) -> Result<(), StoreError> {
-        sqlx::query(
-            "INSERT INTO request_log \
-             (id, model, provider, status, latency_ms, input_tokens, output_tokens, created_at, attempts) \
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        )
-        .bind(&record.id)
-        .bind(&record.model)
-        .bind(&record.provider)
-        .bind(i64::from(record.status))
-        .bind(record.latency_ms as i64)
-        .bind(i64::from(record.input_tokens))
-        .bind(i64::from(record.output_tokens))
-        .bind(record.created_at)
-        .bind(i64::from(record.attempts))
-        .execute(&self.pool)
-        .await?;
+        self.insert_request_logs(std::slice::from_ref(record)).await
+    }
+
+    /// Écrit un lot du journal dans une seule transaction : tout ou rien.
+    pub async fn insert_request_logs(
+        &self,
+        records: &[RequestLogRecord],
+    ) -> Result<(), StoreError> {
+        let mut transaction = self.pool.begin().await?;
+        for record in records {
+            sqlx::query(
+                "INSERT INTO request_log \
+                 (id, model, provider, status, latency_ms, input_tokens, output_tokens, created_at, attempts) \
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            )
+            .bind(&record.id)
+            .bind(&record.model)
+            .bind(&record.provider)
+            .bind(i64::from(record.status))
+            .bind(record.latency_ms as i64)
+            .bind(i64::from(record.input_tokens))
+            .bind(i64::from(record.output_tokens))
+            .bind(record.created_at)
+            .bind(i64::from(record.attempts))
+            .execute(&mut *transaction)
+            .await?;
+        }
+        transaction.commit().await?;
         Ok(())
     }
 
@@ -320,6 +332,16 @@ impl Store {
             .execute(&self.pool)
             .await?;
         Ok(result.rows_affected() == 1)
+    }
+
+    /// Au moins un jeton API non révoqué existe (amorçage de l'authentification admin).
+    pub async fn has_active_api_token(&self) -> Result<bool, StoreError> {
+        let row =
+            sqlx::query("SELECT EXISTS (SELECT 1 FROM api_tokens WHERE revoked = 0) AS present")
+                .fetch_one(&self.pool)
+                .await?;
+        let present: i64 = row.try_get("present")?;
+        Ok(present == 1)
     }
 
     /// Un jeton est actif s'il existe et n'est pas révoqué.
