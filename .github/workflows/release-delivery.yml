@@ -77,15 +77,19 @@ jobs:
       - name: Install cosign
         uses: sigstore/cosign-installer@v3.8.1
 
+      - name: Compute the lowercase image path
+        id: image
+        run: echo "path=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
       - name: Sign the image (keyless)
         run: |
           cosign sign --yes \
-            "${REGISTRY}/${IMAGE_NAME}@${{ steps.build.outputs.digest }}"
+            "${REGISTRY}/${{ steps.image.outputs.path }}@${{ steps.build.outputs.digest }}"
 
       - name: SBOM for the image
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          image: ${{ env.REGISTRY }}/${{ steps.image.outputs.path }}@${{ steps.build.outputs.digest }}
           artifact-name: buntu-container-${{ inputs.tag || github.event.workflow_run.head_branch }}.spdx.json
           output-file: buntu-container.spdx.json
 
@@ -167,6 +171,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    env:
+      GH_REPO: ${{ github.repository }}
     steps:
       - name: Download the published binary and its checksum
         env:
@@ -221,7 +227,7 @@ jobs:
 
       - name: Align the package version with the release
         working-directory: npx
-        run: npm version --no-git-tag-version "${{ inputs.tag || github.event.workflow_run.head_branch }}"
+        run: npm version --no-git-tag-version --allow-same-version "${{ inputs.tag || github.event.workflow_run.head_branch }}"
 
       - name: Test the launcher
         working-directory: npx
