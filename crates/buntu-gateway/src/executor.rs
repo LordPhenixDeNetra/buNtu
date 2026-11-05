@@ -12,13 +12,15 @@ use buntu_core::fallback::TargetExecutor;
 use buntu_core::hooks::BoxFuture;
 use buntu_core::keys::KeySelectionError;
 use buntu_core::routing::Target;
+use buntu_core::timeouts::{StreamTimeouts, Timeouts, with_timeout};
 use buntu_providers::provider::{HttpRequest, Provider};
 use buntu_schema::{EmbeddingsRequest, EmbeddingsResponse, GatewayError, Request, Response};
-use hyper::HeaderMap;
+use bytes::Bytes;
+use http_body_util::BodyExt;
 use hyper::body::Incoming;
 
 use crate::state::GatewayState;
-use crate::upstream::UpstreamClient;
+use crate::upstream::{MAX_ERROR_BODY_BYTES, UpstreamClient, read_limited};
 
 /// Exécuteur HTTP adossé à un instantané de configuration.
 #[derive(Clone)]
@@ -43,6 +45,15 @@ impl HttpExecutor {
             registry: Arc::clone(&state.registry),
             upstream: state.upstream.clone(),
         }
+    }
+
+    /// Timeouts applicables au modèle demandé : ceux de l'alias, sinon les globaux (T1.7).
+    pub fn timeouts_for(&self, requested: &str) -> Timeouts {
+        self.config
+            .routes
+            .get(requested)
+            .map(|route| route.timeouts)
+            .unwrap_or(self.config.timeouts)
     }
 
     fn provider_for(
@@ -174,31 +185,37 @@ impl HttpExecutor {
         prepared.provider.parse_response(body)
     }
 
-    /// Ouvre un flux chat : rend le traducteur et le corps amont pour l'analyse incrémentale.
+    /// Ouvre un flux chat : rend le traducteur et le corps amont, sous les timeouts du flux.
+    ///
+    /// Les en-têtes amont doivent arriver avant le premier octet ; les morceaux suivent ensuite
+    /// le budget de [`UpstreamChunks`].
     pub async fn open_stream(
         &self,
         target: &Target,
         request: &Request,
-    ) -> Result<(Arc<dyn Provider>, u16, HeaderMap, Incoming), GatewayError> {
+        timeouts: Timeouts,
+    ) -> Result<(Arc<dyn Provider>, UpstreamChunks), GatewayError> {
+        let started = std::time::Instant::now();
         let prepared = self.prepare(target, request)?;
-        let (status, headers, body) = self
-            .upstream
-            .send_stream(&prepared.base_url, prepared.request.clone())
-            .await?;
+        let (status, headers, body) = with_timeout(
+            timeouts.first_byte.min(timeouts.total),
+            self.upstream
+                .send_stream(&prepared.base_url, prepared.request.clone()),
+        )
+        .await?;
         if !(200..300).contains(&status) {
-            let mut chunk = Vec::new();
-            use http_body_util::BodyExt;
-            let mut body = body;
-            while let Some(Ok(frame)) = body.frame().await {
-                if let Ok(data) = frame.into_data() {
-                    chunk.extend_from_slice(&data);
-                }
-            }
+            let chunk = read_limited(body, MAX_ERROR_BODY_BYTES)
+                .await
+                .unwrap_or_default();
             let error = prepared.provider.map_error(status, &headers, &chunk);
             self.pause_on_rate_limit(target, prepared.key_index, &error);
             return Err(error);
         }
-        Ok((prepared.provider, status, headers, body))
+        let chunks = UpstreamChunks {
+            body,
+            timeouts: StreamTimeouts::new(timeouts, started),
+        };
+        Ok((prepared.provider, chunks))
     }
 
     /// Exécute un appel embeddings vers la cible.
@@ -226,6 +243,40 @@ impl HttpExecutor {
             && let Some(provider) = self.config.providers.get(&target.provider)
         {
             let _ = provider.selector.pause(key_index, *delay);
+        }
+    }
+}
+
+/// Corps d'un flux amont, lu morceau par morceau sous les timeouts inter-morceaux et total.
+pub struct UpstreamChunks {
+    body: Incoming,
+    timeouts: StreamTimeouts,
+}
+
+impl UpstreamChunks {
+    /// Morceau suivant ; `None` en fin de flux normale. Une coupure de connexion ou un délai
+    /// dépassé rend une erreur : le client doit la voir, jamais un faux succès.
+    pub async fn next(&mut self) -> Option<Result<Bytes, GatewayError>> {
+        loop {
+            let budget = match self.timeouts.next_budget() {
+                Ok(budget) => budget,
+                Err(error) => return Some(Err(error)),
+            };
+            match tokio::time::timeout(budget, self.body.frame()).await {
+                Err(_elapsed) => return Some(Err(GatewayError::Timeout)),
+                Ok(None) => return None,
+                Ok(Some(Err(error))) => {
+                    return Some(Err(GatewayError::ProviderUnavailable {
+                        message: format!("flux amont interrompu : {error}"),
+                    }));
+                }
+                Ok(Some(Ok(frame))) => {
+                    if let Ok(data) = frame.into_data() {
+                        self.timeouts.received_chunk();
+                        return Some(Ok(data));
+                    }
+                }
+            }
         }
     }
 }
