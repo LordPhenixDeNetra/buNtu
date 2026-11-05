@@ -28,7 +28,7 @@ pub trait LogSink: Send + Sync + 'static {
     fn write<'a>(&'a self, records: &'a [RequestLogRecord]) -> WriteFuture<'a>;
 }
 
-/// Écrit dans SQLite, ligne par ligne (pool borné : jamais de connexion par requête HTTP).
+/// Écrit dans SQLite, un lot par transaction (pool borné : jamais de connexion par requête HTTP).
 pub struct StoreSink {
     store: Store,
 }
@@ -42,13 +42,10 @@ impl StoreSink {
 impl LogSink for StoreSink {
     fn write<'a>(&'a self, records: &'a [RequestLogRecord]) -> WriteFuture<'a> {
         Box::pin(async move {
-            for record in records {
-                self.store
-                    .insert_request_log(record)
-                    .await
-                    .map_err(|error| error.to_string())?;
-            }
-            Ok(())
+            self.store
+                .insert_request_logs(records)
+                .await
+                .map_err(|error| error.to_string())
         })
     }
 }

@@ -4,6 +4,7 @@ use axum::Json;
 use axum::extract::State;
 use axum::response::{IntoResponse, Response as AxumResponse};
 use buntu_core::routing;
+use buntu_core::timeouts::with_timeout;
 use buntu_schema::{EmbeddingsRequest, GatewayError};
 use serde_json::{Map, Value};
 
@@ -28,10 +29,13 @@ async fn run(state: &GatewayState, body: Value) -> Result<AxumResponse, GatewayE
     let config = state.config.snapshot();
     let targets = routing::resolve(&config, &request.model, routing::Capabilities::NONE)?;
     let executor = HttpExecutor::from_state(state);
+    let timeouts = executor.timeouts_for(&request.model);
+    // Réponse complète : même règle que `TimedExecutor` (premier octet, sous plafond total).
+    let deadline = timeouts.first_byte.min(timeouts.total);
 
     let mut last_error = None;
     for target in &targets {
-        match executor.execute_embeddings(target, &request).await {
+        match with_timeout(deadline, executor.execute_embeddings(target, &request)).await {
             Ok(response) => {
                 let mut http = Json(wire::embeddings_to_openai(&response)).into_response();
                 crate::routes::add_routed_headers(&mut http, &target.provider, &target.model, 1);

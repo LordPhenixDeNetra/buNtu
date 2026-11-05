@@ -206,3 +206,18 @@ fn snapshots_stay_consistent_during_reloads() -> Result<(), Box<dyn Error>> {
     let _ = std::fs::remove_file(&path);
     Ok(())
 }
+
+#[test]
+fn default_listen_address_is_loopback_only() -> Result<(), Box<dyn std::error::Error>> {
+    // Sans `[server]`, rien n'est exposé au réseau : l'exposition se demande explicitement.
+    let config = from_str("", &MapEnvironment::default())?;
+    assert_eq!(
+        config.server.listen,
+        "127.0.0.1:8080".parse::<SocketAddr>()?
+    );
+    assert_eq!(
+        buntu_core::config::CompiledConfig::default().server.listen,
+        "127.0.0.1:8080".parse::<SocketAddr>()?
+    );
+    Ok(())
+}

@@ -23,7 +23,7 @@ impl Default for CompiledConfig {
     fn default() -> Self {
         Self {
             server: CompiledServer {
-                listen: SocketAddr::from(([0, 0, 0, 0], 8080)),
+                listen: SocketAddr::from(([127, 0, 0, 1], 8080)),
             },
             providers: HashMap::new(),
             routes: HashMap::new(),

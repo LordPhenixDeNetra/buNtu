@@ -1,10 +1,11 @@
 //! État partagé de la passerelle : configuration, traducteurs, client amont et administration.
 
 use std::sync::Arc;
-use std::sync::atomic::{AtomicU64, Ordering};
 
 use buntu_core::config::ConfigHandle;
+use buntu_core::fallback::FallbackChain;
 use buntu_observe::request_log::RequestLog;
+use buntu_security::tokens::{hash_token, verify_token};
 use buntu_store::Store;
 
 use crate::admin::AdminStore;
@@ -20,11 +21,14 @@ pub struct GatewayState {
     pub registry: Arc<ProviderRegistry>,
     pub upstream: UpstreamClient,
     pub admin: Arc<AdminStore>,
-    /// Stockage partagé (journal des requêtes, T1.24).
+    /// Stockage partagé (journal des requêtes, T1.24 ; jetons admin).
     pub store: Option<Arc<Store>>,
     /// Journal asynchrone : `try_send`, jamais bloquant (T1.18).
     pub request_log: Option<RequestLog>,
-    next_request_id: Arc<AtomicU64>,
+    /// Chaîne de repli unique : son budget de réessais vaut pour **toutes** les requêtes (T1.5).
+    pub fallback: Arc<FallbackChain>,
+    /// Empreinte du jeton admin fourni au démarrage (`BUNTU_ADMIN_TOKEN`), jamais le clair.
+    admin_token_hash: Option<String>,
 }
 
 impl GatewayState {
@@ -37,12 +41,19 @@ impl GatewayState {
             admin: Arc::new(AdminStore::empty()),
             store: None,
             request_log: None,
-            next_request_id: Arc::new(AtomicU64::new(1)),
+            fallback: Arc::new(FallbackChain::default()),
+            admin_token_hash: None,
         }
     }
 
     pub fn with_registry(mut self, registry: Arc<ProviderRegistry>) -> Self {
         self.registry = registry;
+        self
+    }
+
+    /// Accepte ce jeton sur l'API d'administration (seule son empreinte est gardée).
+    pub fn with_admin_token(mut self, token: &str) -> Self {
+        self.admin_token_hash = Some(hash_token(token));
         self
     }
 
@@ -71,9 +82,25 @@ impl GatewayState {
         }
     }
 
-    /// Identifiant de requête, pour le contexte et les journaux.
+    /// Identifiant de requête, unique d'un démarrage à l'autre (clé primaire du journal).
     pub fn request_id(&self) -> String {
-        let id = self.next_request_id.fetch_add(1, Ordering::Relaxed);
-        format!("req-{id}")
+        format!("req-{:016x}{:016x}", fastrand::u64(..), fastrand::u64(..))
+    }
+
+    /// Jeton admin valide : celui du démarrage, ou un jeton actif (non révoqué) du stockage.
+    /// Sans l'un ni l'autre, l'API d'administration reste fermée.
+    pub async fn admin_token_is_valid(&self, token: &str) -> bool {
+        if let Some(expected) = &self.admin_token_hash
+            && verify_token(expected, token).unwrap_or(false)
+        {
+            return true;
+        }
+        match &self.store {
+            Some(store) => store
+                .api_token_is_active(&hash_token(token))
+                .await
+                .unwrap_or(false),
+            None => false,
+        }
     }
 }

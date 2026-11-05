@@ -161,3 +161,36 @@ async fn keys_and_rows_survive_a_file_database_with_wal() -> Result<(), Box<dyn 
     let _ = std::fs::remove_file(&path);
     Ok(())
 }
+
+#[tokio::test]
+async fn request_log_batch_is_written_at_once() -> Result<(), Box<dyn Error>> {
+    let store = Store::open_in_memory().await?;
+    let batch: Vec<RequestLogRecord> = (0..3)
+        .map(|index| RequestLogRecord {
+            id: format!("lot-{index}"),
+            model: "chat".to_owned(),
+            provider: "openai".to_owned(),
+            status: 200,
+            latency_ms: 1,
+            input_tokens: 0,
+            output_tokens: 0,
+            created_at: 1_700_000_000,
+            attempts: 1,
+            rowid: 0,
+        })
+        .collect();
+    store.insert_request_logs(&batch).await?;
+    assert_eq!(store.recent_request_logs(10).await?.len(), 3);
+    Ok(())
+}
+
+#[tokio::test]
+async fn active_api_token_presence_is_reported() -> Result<(), Box<dyn Error>> {
+    let store = Store::open_in_memory().await?;
+    assert!(!store.has_active_api_token().await?);
+    store.insert_api_token("tok-1", "hash-1", "admin").await?;
+    assert!(store.has_active_api_token().await?);
+    store.revoke_api_token("tok-1").await?;
+    assert!(!store.has_active_api_token().await?);
+    Ok(())
+}

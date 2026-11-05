@@ -89,7 +89,7 @@ fn serve_command(options: ServeOptions) -> Result<(), Box<dyn Error>> {
             None => (
                 options
                     .listen
-                    .unwrap_or_else(|| SocketAddr::from(([0, 0, 0, 0], 8080))),
+                    .unwrap_or_else(|| SocketAddr::from(([127, 0, 0, 1], 8080))),
                 ConfigHandle::new(buntu_core::config::CompiledConfig::default()),
                 buntu_core::config::RawConfig::default(),
             ),
@@ -111,6 +111,7 @@ fn serve_command(options: ServeOptions) -> Result<(), Box<dyn Error>> {
             Ok(store) => state = state.with_storage(Arc::new(store)),
             Err(error) => eprintln!("buNtu: journal indisponible ({error})"),
         }
+        state = admin_token(state).await?;
         serve(
             listener,
             app_with_state(state),
@@ -121,6 +122,41 @@ fn serve_command(options: ServeOptions) -> Result<(), Box<dyn Error>> {
         .await?;
         Ok::<(), Box<dyn Error>>(())
     })
+}
+
+/// Longueur minimale d'un jeton admin fourni par l'environnement.
+const MIN_ADMIN_TOKEN_CHARS: usize = 32;
+
+/// Jeton de l'API d'administration (revue 2026-11-05, point 1a).
+///
+/// `BUNTU_ADMIN_TOKEN` s'il est défini ; sinon, au premier démarrage (aucun jeton actif en
+/// base), un jeton de 256 bits est généré, **affiché une seule fois** et stocké haché.
+async fn admin_token(state: GatewayState) -> Result<GatewayState, Box<dyn Error>> {
+    if let Ok(token) = std::env::var("BUNTU_ADMIN_TOKEN") {
+        if token.chars().count() < MIN_ADMIN_TOKEN_CHARS {
+            return Err(format!(
+                "BUNTU_ADMIN_TOKEN trop court ({MIN_ADMIN_TOKEN_CHARS} caractères minimum)"
+            )
+            .into());
+        }
+        return Ok(state.with_admin_token(&token));
+    }
+    let Some(store) = state.store.clone() else {
+        eprintln!("buNtu: API d'administration fermée (ni stockage ni BUNTU_ADMIN_TOKEN)");
+        return Ok(state);
+    };
+    if !store.has_active_api_token().await? {
+        let token = buntu_security::tokens::generate_token();
+        let id = format!("tok-{}", token.hash.get(..16).unwrap_or(&token.hash));
+        store
+            .insert_api_token(&id, &token.hash, "jeton admin initial")
+            .await?;
+        println!(
+            "buNtu: jeton d'administration (affiché une seule fois) : {}",
+            token.token
+        );
+    }
+    Ok(state)
 }
 
 fn spawn_watchers(handle: ConfigHandle, path: PathBuf) -> Result<(), Box<dyn Error>> {

@@ -72,6 +72,10 @@ pub fn app_with_state(state: GatewayState) -> Router {
             "/anthropic/v1/messages",
             post(routes::anthropic::messages::messages),
         )
+        .route("/", get(ui::index))
+        .route("/{*path}", get(ui::asset))
+        .with_state(state.clone());
+    let admin_router = Router::new()
         .route(
             "/admin/v1/providers",
             get(admin::handlers::list_providers).post(admin::handlers::create_provider),
@@ -103,11 +107,15 @@ pub fn app_with_state(state: GatewayState) -> Router {
         .route("/admin/v1/openapi.json", get(admin::handlers::openapi_json))
         .route("/admin/v1/requests", get(admin::handlers::list_requests))
         .route("/admin/v1/requests/{id}", get(admin::handlers::get_request))
-        .route("/", get(ui::index))
-        .route("/{*path}", get(ui::asset))
+        // Toute l'API d'administration exige un jeton (revue 2026-11-05, point 1a).
+        .route_layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            admin::require_token,
+        ))
         .with_state(state);
     health_router
         .merge(api_router)
+        .merge(admin_router)
         .layer(DefaultBodyLimit::max(MAX_BODY_BYTES))
         .layer(RequestBodyLimitLayer::new(MAX_BODY_BYTES))
 }

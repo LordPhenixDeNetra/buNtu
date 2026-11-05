@@ -13,6 +13,9 @@ allow = [
     # `notify` (surveillance de fichiers, T1.2) est sous CC0-1.0, dédiée au domaine public.
     "CC0-1.0",
     "Zlib",
+    # `webpki-roots` (racines CA Mozilla du TLS amont, revue 2026-11-05 point 1f) : licence
+    # permissive pour données, sans clause de réciprocité.
+    "CDLA-Permissive-2.0",
 ]
 confidence-threshold = 0.93
 

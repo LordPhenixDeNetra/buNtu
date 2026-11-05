@@ -12,14 +12,13 @@ use axum::Json;
 use axum::extract::State;
 use axum::response::{IntoResponse, Response as AxumResponse};
 use buntu_core::context::RequestContext;
-use buntu_core::fallback::FallbackChain;
 use buntu_core::routing;
+use buntu_core::timeouts::{TimedExecutor, Timeouts};
 use buntu_providers::provider::StreamState;
 use buntu_schema::{
     ContentPart, GatewayError, ImageSource, Message, Request, Role, StopReason, Tool, ToolChoice,
 };
 use bytes::Bytes;
-use http_body_util::BodyExt;
 use serde_json::{Map, Value, json};
 
 use crate::error_response;
@@ -43,13 +42,20 @@ async fn run(state: &GatewayState, body: Value) -> Result<AxumResponse, GatewayE
     )?;
     let context = RequestContext::new(state.request_id());
     let executor = HttpExecutor::from_state(state);
+    let timeouts = executor.timeouts_for(&request.model);
 
     if request.stream {
-        return stream(&executor, &targets, &request, &context).await;
+        return stream(&executor, &targets, &request, &context, timeouts).await;
     }
 
-    let routed = FallbackChain::default()
-        .execute(&targets, &executor, &context, &request)
+    let routed = state
+        .fallback
+        .execute(
+            &targets,
+            &TimedExecutor::new(&executor, timeouts),
+            &context,
+            &request,
+        )
         .await?;
     let mut response = Json(to_anthropic(&routed.response)).into_response();
     crate::routes::add_routed_headers(
@@ -323,19 +329,20 @@ async fn stream(
     targets: &[buntu_core::routing::Target],
     request: &Request,
     context: &RequestContext,
+    timeouts: Timeouts,
 ) -> Result<AxumResponse, GatewayError> {
     let mut opened = None;
     let mut last_error = None;
     for target in targets {
-        match executor.open_stream(target, request).await {
-            Ok((provider, _status, _headers, body)) => {
-                opened = Some((provider, target.clone(), body));
+        match executor.open_stream(target, request, timeouts).await {
+            Ok((provider, chunks)) => {
+                opened = Some((provider, target.clone(), chunks));
                 break;
             }
             Err(error) => last_error = Some(error),
         }
     }
-    let Some((provider, target, body)) = opened else {
+    let Some((provider, target, mut chunks)) = opened else {
         return Err(last_error.unwrap_or_else(|| GatewayError::Internal {
             message: "aucune cible pour le flux".to_owned(),
         }));
@@ -345,7 +352,6 @@ async fn stream(
     let model = target.model.clone();
     let stream = async_stream::stream! {
         let mut stream_state = StreamState::new();
-        let mut body = body;
         // (index du bloc ouvert, est-ce un bloc outil ?)
         let mut block: Option<(u32, bool)> = None;
         let mut next_index = 0_u32;
@@ -355,11 +361,8 @@ async fn stream(
         let mut output_tokens = 0_u32;
         let mut start_emitted = false;
 
-        while let Some(Ok(frame)) = body.frame().await {
-            let Ok(data) = frame.into_data() else {
-                continue;
-            };
-            let events = match provider.parse_stream_chunk(&mut stream_state, data) {
+        while let Some(next) = chunks.next().await {
+            let events = match next.and_then(|data| provider.parse_stream_chunk(&mut stream_state, data)) {
                 Ok(events) => events,
                 Err(error) => {
                     yield Ok::<Bytes, std::convert::Infallible>(sse("error", &json!({

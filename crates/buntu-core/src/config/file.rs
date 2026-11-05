@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::config::ConfigError;
 
-pub const DEFAULT_LISTEN: &str = "0.0.0.0:8080";
+pub const DEFAULT_LISTEN: &str = "127.0.0.1:8080";
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct RawConfig {
@@ -58,7 +58,7 @@ pub struct RawHooks {
 /// Paramètres du serveur HTTP.
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct RawServer {
-    /// Adresse d'écoute (`0.0.0.0:8080` par défaut).
+    /// Adresse d'écoute (`127.0.0.1:8080` par défaut : boucle locale seulement).
     #[serde(default = "default_listen")]
     pub listen: String,
 }

@@ -13,7 +13,7 @@
 | `hooks` | RawHooks | non | `{"post":[],"pre":[]}` | Hooks exécutés avant et après l'appel fournisseur. |
 | `providers` | liste de RawProvider | non | `[]` | Fournisseurs de modèles configurés. |
 | `routes` | liste de RawRoute | non | `[]` | Alias de modèles et chaînes de repli. |
-| `server` | RawServer | non | `{"listen":"0.0.0.0:8080"}` | Paramètres du serveur HTTP. |
+| `server` | RawServer | non | `{"listen":"127.0.0.1:8080"}` | Paramètres du serveur HTTP. |
 | `timeouts` | RawTimeouts | non | `{"connect_ms":null,"first_byte_ms":null,"inter_chunk_ms":null,"total_ms":null}` | Timeouts par défaut, en millisecondes. |
 
 ### `RawHooks`
@@ -61,7 +61,7 @@ Paramètres du serveur HTTP.
 
 | Champ | Type | Requis | Défaut | Description |
 | --- | --- | --- | --- | --- |
-| `listen` | chaîne | non | `"0.0.0.0:8080"` | Adresse d'écoute (`0.0.0.0:8080` par défaut). |
+| `listen` | chaîne | non | `"127.0.0.1:8080"` | Adresse d'écoute (`127.0.0.1:8080` par défaut : boucle locale seulement). |
 
 ### `RawTimeouts`
 

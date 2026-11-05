@@ -9,6 +9,36 @@ pub mod store;
 
 pub use store::AdminStore;
 
+use axum::extract::{Request, State};
+use axum::middleware::Next;
+use axum::response::Response;
+
+use crate::state::GatewayState;
+
+/// Garde de l'API d'administration : `Authorization: Bearer <jeton>` obligatoire.
+pub async fn require_token(
+    State(state): State<GatewayState>,
+    request: Request,
+    next: Next,
+) -> Response {
+    let token = request
+        .headers()
+        .get(axum::http::header::AUTHORIZATION)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.strip_prefix("Bearer "));
+    if let Some(token) = token
+        && state.admin_token_is_valid(token).await
+    {
+        return next.run(request).await;
+    }
+    let mut response = crate::error_response::response(&buntu_schema::GatewayError::Authentication);
+    response.headers_mut().insert(
+        axum::http::header::WWW_AUTHENTICATE,
+        axum::http::HeaderValue::from_static("Bearer"),
+    );
+    response
+}
+
 /// Spécification OpenAPI de l'API d'administration.
 #[derive(utoipa::OpenApi)]
 #[openapi(

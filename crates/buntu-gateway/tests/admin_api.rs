@@ -27,7 +27,8 @@ async fn start() -> Result<Running, Box<dyn Error>> {
         Readiness::new(true),
         ConfigHandle::new(buntu_core::config::CompiledConfig::default()),
     )
-    .with_admin(Arc::new(AdminStore::new(RawConfig::default())));
+    .with_admin(Arc::new(AdminStore::new(RawConfig::default())))
+    .with_admin_token(ADMIN_TOKEN);
     let router: Router = app_with_state(state);
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
     let address = listener.local_addr()?;
@@ -47,8 +48,18 @@ async fn start() -> Result<Running, Box<dyn Error>> {
     Ok(Running { address, handle })
 }
 
+/// Jeton admin des tests (API protégée, revue 2026-11-05 point 1a).
+const ADMIN_TOKEN: &str = "buntu_jeton-de-test-admin-0123456789";
+
 fn client() -> reqwest::Client {
-    reqwest::Client::new()
+    let mut headers = reqwest::header::HeaderMap::new();
+    if let Ok(value) = reqwest::header::HeaderValue::from_str(&format!("Bearer {ADMIN_TOKEN}")) {
+        headers.insert(reqwest::header::AUTHORIZATION, value);
+    }
+    reqwest::Client::builder()
+        .default_headers(headers)
+        .build()
+        .unwrap_or_default()
 }
 
 async fn create_provider(
