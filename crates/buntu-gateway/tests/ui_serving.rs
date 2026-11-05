@@ -6,7 +6,7 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
 
-use buntu_core::config::{ConfigHandle, RawConfig};
+use buntu_core::config::ConfigHandle;
 use buntu_gateway::admin::AdminStore;
 use buntu_gateway::{GatewayState, Readiness, app_with_state};
 
@@ -15,7 +15,7 @@ async fn start() -> Result<(SocketAddr, tokio::task::JoinHandle<()>), Box<dyn Er
         Readiness::new(true),
         ConfigHandle::new(buntu_core::config::CompiledConfig::default()),
     )
-    .with_admin(Arc::new(AdminStore::new(RawConfig::default())));
+    .with_admin(Arc::new(AdminStore::default()));
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
     let address = listener.local_addr()?;
     let handle = tokio::spawn(async move {

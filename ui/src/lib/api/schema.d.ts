@@ -190,6 +190,8 @@ export interface components {
             base_url?: string | null;
             id: string;
             keys: components["schemas"]["KeyView"][];
+            /** @description `file` (prioritaire, lecture seule ici) ou `database` (écrit par cette API). */
+            source: string;
             type: string;
         };
         RequestLogPage: {
@@ -223,6 +225,8 @@ export interface components {
         RouteView: {
             alias: string;
             fallbacks: string[];
+            /** @description `file` (prioritaire, lecture seule ici) ou `database` (écrit par cette API). */
+            source: string;
         };
         UpdateProvider: {
             base_url?: string | null;

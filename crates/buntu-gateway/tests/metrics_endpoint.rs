@@ -5,7 +5,7 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
 
-use buntu_core::config::{ConfigHandle, RawConfig};
+use buntu_core::config::ConfigHandle;
 use buntu_gateway::admin::AdminStore;
 use buntu_gateway::{GatewayState, Readiness, app_with_state};
 
@@ -24,7 +24,7 @@ async fn metrics_endpoint_serves_the_prometheus_exposition() -> Result<(), Box<d
         Readiness::new(true),
         ConfigHandle::new(buntu_core::config::CompiledConfig::default()),
     )
-    .with_admin(Arc::new(AdminStore::new(RawConfig::default())));
+    .with_admin(Arc::new(AdminStore::default()));
     let router = app_with_state(state);
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
     let address: SocketAddr = listener.local_addr()?;

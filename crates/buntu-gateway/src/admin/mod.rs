@@ -7,7 +7,7 @@
 pub mod handlers;
 pub mod store;
 
-pub use store::AdminStore;
+pub use store::{AdminStore, Touched, load_base};
 
 use axum::extract::{Request, State};
 use axum::middleware::Next;

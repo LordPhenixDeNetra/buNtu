@@ -8,10 +8,11 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
-use buntu_core::config::{ConfigHandle, ProcessEnv, spawn_file_watcher};
-use buntu_gateway::admin::AdminStore;
+use buntu_core::config::{ConfigHandle, ProcessEnv, RawConfig, spawn_file_watcher};
+use buntu_gateway::admin::{AdminStore, load_base};
 use buntu_gateway::server::ServerConfig;
 use buntu_gateway::{GatewayState, Readiness, app_with_state, serve, shutdown};
+use buntu_security::secrets::{DEFAULT_KEY_ENV, SecretCipher};
 
 const USAGE: &str = "\
 usage: buntu <commande>
@@ -77,23 +78,31 @@ fn serve_command(options: ServeOptions) -> Result<(), Box<dyn Error>> {
         .enable_all()
         .build()?;
     runtime.block_on(async move {
-        let (listen, handle, raw_config) = match &options.config {
-            Some(path) => {
-                let config = buntu_core::config::load(path, &ProcessEnv)?;
-                let raw = buntu_core::config::file::read(path)?;
-                let listen = options.listen.unwrap_or(config.server.listen);
-                let handle = ConfigHandle::new(config);
-                spawn_watchers(handle.clone(), path.clone())?;
-                (listen, handle, raw)
+        // Stockage (journal, jetons, couche base de la configuration), chemin réglable.
+        let database = std::env::var("BUNTU_DB_PATH").unwrap_or_else(|_| "buntu.sqlite".to_owned());
+        let store = match buntu_store::Store::open(&format!("sqlite://{database}")).await {
+            Ok(store) => Some(store),
+            Err(error) => {
+                eprintln!("buNtu: stockage indisponible ({error})");
+                None
             }
-            None => (
-                options
-                    .listen
-                    .unwrap_or_else(|| SocketAddr::from(([127, 0, 0, 1], 8080))),
-                ConfigHandle::new(buntu_core::config::CompiledConfig::default()),
-                buntu_core::config::RawConfig::default(),
-            ),
         };
+        let cipher = master_key(&database, store.is_some())?;
+
+        // Trois sources, un seul modèle (cahier §7.1, ADR-0008) : base < fichier < environnement.
+        let base = match &store {
+            Some(store) => load_base(store, cipher.as_ref()).await?,
+            None => RawConfig::default(),
+        };
+        let file = match &options.config {
+            Some(path) => buntu_core::config::file::read(path)?,
+            None => RawConfig::default(),
+        };
+        let handle = ConfigHandle::from_layers(base, file, &ProcessEnv)?;
+        if let Some(path) = &options.config {
+            spawn_watchers(handle.clone(), path.clone())?;
+        }
+        let listen = options.listen.unwrap_or(handle.snapshot().server.listen);
 
         let listener = tokio::net::TcpListener::bind(listen).await?;
         let address = listener.local_addr()?;
@@ -104,12 +113,9 @@ fn serve_command(options: ServeOptions) -> Result<(), Box<dyn Error>> {
         }
         let readiness = Readiness::new(true);
         let mut state = GatewayState::new(readiness.clone(), handle)
-            .with_admin(Arc::new(AdminStore::new(raw_config)));
-        // Journal des requêtes (T1.24) : SQLite, chemin configurable par l'environnement.
-        let database = std::env::var("BUNTU_DB_PATH").unwrap_or_else(|_| "buntu.sqlite".to_owned());
-        match buntu_store::Store::open(&format!("sqlite://{database}")).await {
-            Ok(store) => state = state.with_storage(Arc::new(store)),
-            Err(error) => eprintln!("buNtu: journal indisponible ({error})"),
+            .with_admin(Arc::new(AdminStore::new(cipher)));
+        if let Some(store) = store {
+            state = state.with_storage(Arc::new(store));
         }
         state = admin_token(state).await?;
         serve(
@@ -122,6 +128,30 @@ fn serve_command(options: ServeOptions) -> Result<(), Box<dyn Error>> {
         .await?;
         Ok::<(), Box<dyn Error>>(())
     })
+}
+
+/// Clé maître des secrets au repos (T1.21) : `BUNTU_MASTER_KEY` (base64), sinon le fichier
+/// `BUNTU_MASTER_KEY_FILE`, sinon `<base>.key` à côté de la base, créé au premier démarrage
+/// (0600). Elle n'est jamais écrite en base.
+fn master_key(database: &str, has_store: bool) -> Result<Option<SecretCipher>, Box<dyn Error>> {
+    if std::env::var_os(DEFAULT_KEY_ENV).is_some() {
+        return Ok(Some(SecretCipher::from_env(DEFAULT_KEY_ENV)?));
+    }
+    if let Some(path) = std::env::var_os("BUNTU_MASTER_KEY_FILE") {
+        return Ok(Some(SecretCipher::from_file(Path::new(&path))?));
+    }
+    if !has_store {
+        return Ok(None);
+    }
+    let path = PathBuf::from(format!("{database}.key"));
+    let (cipher, created) = SecretCipher::load_or_create(&path)?;
+    if created {
+        println!(
+            "buNtu: clé maître créée dans {} (à sauvegarder, jamais à versionner)",
+            path.display()
+        );
+    }
+    Ok(Some(cipher))
 }
 
 /// Longueur minimale d'un jeton admin fourni par l'environnement.
