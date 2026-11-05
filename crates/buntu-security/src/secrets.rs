@@ -81,7 +81,38 @@ impl SecretCipher {
             }
         }
         let bytes = std::fs::read(path).map_err(|error| SecretError::Key(error.to_string()))?;
-        Self::from_master_key(bytes.trim_ascii())
+        let content = bytes.trim_ascii();
+        // 32 octets bruts, ou leur encodage base64 (format écrit par `load_or_create`).
+        if content.len() == MASTER_KEY_BYTES {
+            return Self::from_master_key(content);
+        }
+        let decoded = base64::engine::general_purpose::STANDARD
+            .decode(content)
+            .map_err(|_| SecretError::Key("ni 32 octets bruts ni base64".to_owned()))?;
+        Self::from_master_key(&decoded)
+    }
+
+    /// Lit la clé maître du fichier, ou la crée (aléatoire, base64, 0600) s'il n'existe pas.
+    /// Rend `true` quand la clé vient d'être créée.
+    pub fn load_or_create(path: &std::path::Path) -> Result<(Self, bool), SecretError> {
+        if path.exists() {
+            return Ok((Self::from_file(path)?, false));
+        }
+        let key = Self::random_master_key();
+        let encoded = base64::engine::general_purpose::STANDARD.encode(key);
+        let mut options = std::fs::OpenOptions::new();
+        options.write(true).create_new(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            options.mode(0o600);
+        }
+        let mut file = options
+            .open(path)
+            .map_err(|error| SecretError::Key(format!("{} : {error}", path.display())))?;
+        std::io::Write::write_all(&mut file, format!("{encoded}\n").as_bytes())
+            .map_err(|error| SecretError::Key(error.to_string()))?;
+        Ok((Self::from_master_key(&key)?, true))
     }
 
     /// Chiffre une valeur : `nonce || ciphertext` avec un nonce aléatoire par appel.
