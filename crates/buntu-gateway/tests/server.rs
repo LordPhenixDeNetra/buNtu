@@ -8,13 +8,22 @@ use async_stream::stream;
 use axum::Router;
 use axum::body::Body;
 use axum::routing::get;
+use buntu_core::config::{CompiledConfig, ConfigHandle};
 use buntu_gateway::server::ServerConfig;
-use buntu_gateway::{MAX_BODY_BYTES, Readiness, app, serve};
+use buntu_gateway::{GatewayState, MAX_BODY_BYTES, Readiness, app_with_state, serve};
 use bytes::Bytes;
 use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
 
 type Spawned = (SocketAddr, oneshot::Sender<()>, JoinHandle<()>);
+
+/// Routeur complet de la passerelle, sans configuration.
+fn app(readiness: Readiness) -> Router {
+    app_with_state(GatewayState::new(
+        readiness,
+        ConfigHandle::new(CompiledConfig::default()),
+    ))
+}
 
 async fn spawn(router: Router, readiness: Readiness) -> Result<Spawned, Box<dyn Error>> {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;

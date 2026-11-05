@@ -10,12 +10,13 @@ use buntu_core::context::RequestContext;
 use buntu_core::routing;
 use buntu_core::timeouts::{TimedExecutor, Timeouts};
 use buntu_providers::provider::StreamState;
-use buntu_schema::GatewayError;
+use buntu_schema::{GatewayError, StreamEvent, Usage};
 use bytes::Bytes;
 use serde_json::Value;
 
 use crate::error_response;
 use crate::executor::HttpExecutor;
+use crate::routes::{Journal, add_routed_headers, sse_response};
 use crate::state::GatewayState;
 
 use super::request;
@@ -25,13 +26,21 @@ pub async fn chat_completions(
     State(state): State<GatewayState>,
     Json(body): Json<Value>,
 ) -> AxumResponse {
-    match run(&state, body).await {
+    let journal = Journal::start(&state, &body);
+    match run(&state, body, &journal).await {
         Ok(response) => response,
-        Err(error) => error_response::response(&error),
+        Err(error) => {
+            journal.failure(None, &error);
+            error_response::response(&error)
+        }
     }
 }
 
-async fn run(state: &GatewayState, body: Value) -> Result<AxumResponse, GatewayError> {
+async fn run(
+    state: &GatewayState,
+    body: Value,
+    journal: &Journal,
+) -> Result<AxumResponse, GatewayError> {
     let request = request::parse(&body)?;
     let config = state.config.snapshot();
     let targets = routing::resolve(
@@ -39,15 +48,14 @@ async fn run(state: &GatewayState, body: Value) -> Result<AxumResponse, GatewayE
         &request.model,
         routing::required_capabilities(&request),
     )?;
-    let context = RequestContext::new(state.request_id());
+    let context = RequestContext::new(journal.id.clone());
     let executor = HttpExecutor::from_state(state);
     let timeouts = executor.timeouts_for(&request.model);
 
     if request.stream {
-        return stream(&executor, &targets, &request, &context, timeouts).await;
+        return stream(&executor, &targets, &request, journal, timeouts).await;
     }
 
-    let started = std::time::Instant::now();
     let routed = state
         .fallback
         .execute(
@@ -57,25 +65,14 @@ async fn run(state: &GatewayState, body: Value) -> Result<AxumResponse, GatewayE
             &request,
         )
         .await?;
-    let latency = started.elapsed();
-    // Journal des requêtes (T1.24) : `try_log` non bloquant (T1.18).
-    state.record_request(buntu_store::RequestLogRecord {
-        id: context.id.clone(),
-        model: routed.model.clone(),
-        provider: routed.provider.clone(),
-        status: 200,
-        latency_ms: u64::try_from(latency.as_millis()).unwrap_or(u64::MAX),
-        input_tokens: routed.response.usage.input_tokens,
-        output_tokens: routed.response.usage.output_tokens,
-        created_at: std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|duration| duration.as_secs() as i64)
-            .unwrap_or(0),
-        attempts: routed.attempts,
-        rowid: 0,
-    });
+    journal.success(
+        &routed.provider,
+        &routed.model,
+        routed.attempts,
+        &routed.response.usage,
+    );
     let mut response = Json(wire::to_openai(&routed.response)).into_response();
-    crate::routes::add_routed_headers(
+    add_routed_headers(
         &mut response,
         &routed.provider,
         &routed.model,
@@ -88,35 +85,29 @@ async fn stream(
     executor: &HttpExecutor,
     targets: &[buntu_core::routing::Target],
     request: &buntu_schema::Request,
-    context: &RequestContext,
+    journal: &Journal,
     timeouts: Timeouts,
 ) -> Result<AxumResponse, GatewayError> {
-    let mut opened = None;
-    let mut last_error = None;
-    // Repli avant le premier octet uniquement : une fois le flux commencé, aucune reprise.
-    for target in targets {
-        match executor.open_stream(target, request, timeouts).await {
-            Ok((provider, chunks)) => {
-                opened = Some((provider, target.clone(), chunks));
-                break;
-            }
-            Err(error) => last_error = Some(error),
-        }
-    }
-    let Some((provider, target, mut chunks)) = opened else {
-        return Err(last_error.unwrap_or_else(|| GatewayError::Internal {
-            message: "aucune cible pour le flux".to_owned(),
-        }));
-    };
+    let opened = executor
+        .open_first_stream(targets, request, timeouts)
+        .await?;
+    let (provider, target, mut chunks) = (opened.provider, opened.target, opened.chunks);
 
-    let id = format!("chatcmpl-{}", context.id);
+    let id = format!("chatcmpl-{}", journal.id);
     let model = target.model.clone();
+    let journal = journal.clone();
+    let logged = target.clone();
     let stream = async_stream::stream! {
         let mut stream_state = StreamState::new();
+        let mut usage = Usage::default();
+        let mut failed = None;
         while let Some(next) = chunks.next().await {
             match next.and_then(|data| provider.parse_stream_chunk(&mut stream_state, data)) {
                 Ok(events) => {
                     for event in &events {
+                        if let StreamEvent::Usage { usage: counted } = event {
+                            usage = *counted;
+                        }
                         if let Some(chunk) = wire::chunk(event, &id, &model) {
                             yield Ok::<Bytes, std::convert::Infallible>(
                                 Bytes::from(format!("data: {chunk}\n\n")),
@@ -129,23 +120,17 @@ async fn stream(
                         "error": { "message": error.to_string(), "type": error.error_type(), "code": error.code() }
                     });
                     yield Ok(Bytes::from(format!("data: {frame}\n\n")));
+                    failed = Some(error);
                     break;
                 }
             }
         }
         yield Ok(Bytes::from_static(b"data: [DONE]\n\n"));
+        match failed {
+            Some(error) => journal.failure(Some(&logged), &error),
+            None => journal.success(&logged.provider, &logged.model, 1, &usage),
+        }
     };
 
-    let mut response = axum::body::Body::from_stream(stream).into_response();
-    let headers = response.headers_mut();
-    headers.insert(
-        axum::http::header::CONTENT_TYPE,
-        axum::http::HeaderValue::from_static("text/event-stream"),
-    );
-    headers.insert(
-        axum::http::header::CACHE_CONTROL,
-        axum::http::HeaderValue::from_static("no-cache"),
-    );
-    crate::routes::add_routed_headers(&mut response, &target.provider, &target.model, 1);
-    Ok(response)
+    Ok(sse_response(axum::body::Body::from_stream(stream), &target))
 }

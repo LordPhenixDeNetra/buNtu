@@ -169,9 +169,6 @@ fn finish_reason(reason: &Option<StopReason>) -> Value {
     Value::String(value.to_owned())
 }
 
-fn created() -> u64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|duration| duration.as_secs())
-        .unwrap_or(0)
+fn created() -> i64 {
+    crate::routes::unix_now()
 }

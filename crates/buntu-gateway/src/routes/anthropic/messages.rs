@@ -23,16 +23,25 @@ use serde_json::{Map, Value, json};
 
 use crate::error_response;
 use crate::executor::HttpExecutor;
+use crate::routes::{Journal, sse_response};
 use crate::state::GatewayState;
 
 pub async fn messages(State(state): State<GatewayState>, Json(body): Json<Value>) -> AxumResponse {
-    match run(&state, body).await {
+    let journal = Journal::start(&state, &body);
+    match run(&state, body, &journal).await {
         Ok(response) => response,
-        Err(error) => error_response::response(&error),
+        Err(error) => {
+            journal.failure(None, &error);
+            error_response::response(&error)
+        }
     }
 }
 
-async fn run(state: &GatewayState, body: Value) -> Result<AxumResponse, GatewayError> {
+async fn run(
+    state: &GatewayState,
+    body: Value,
+    journal: &Journal,
+) -> Result<AxumResponse, GatewayError> {
     let request = parse_request(&body)?;
     let config = state.config.snapshot();
     let targets = routing::resolve(
@@ -40,12 +49,12 @@ async fn run(state: &GatewayState, body: Value) -> Result<AxumResponse, GatewayE
         &request.model,
         routing::required_capabilities(&request),
     )?;
-    let context = RequestContext::new(state.request_id());
+    let context = RequestContext::new(journal.id.clone());
     let executor = HttpExecutor::from_state(state);
     let timeouts = executor.timeouts_for(&request.model);
 
     if request.stream {
-        return stream(&executor, &targets, &request, &context, timeouts).await;
+        return stream(&executor, &targets, &request, journal, timeouts).await;
     }
 
     let routed = state
@@ -57,6 +66,12 @@ async fn run(state: &GatewayState, body: Value) -> Result<AxumResponse, GatewayE
             &request,
         )
         .await?;
+    journal.success(
+        &routed.provider,
+        &routed.model,
+        routed.attempts,
+        &routed.response.usage,
+    );
     let mut response = Json(to_anthropic(&routed.response)).into_response();
     crate::routes::add_routed_headers(
         &mut response,
@@ -328,30 +343,22 @@ async fn stream(
     executor: &HttpExecutor,
     targets: &[buntu_core::routing::Target],
     request: &Request,
-    context: &RequestContext,
+    journal: &Journal,
     timeouts: Timeouts,
 ) -> Result<AxumResponse, GatewayError> {
-    let mut opened = None;
-    let mut last_error = None;
-    for target in targets {
-        match executor.open_stream(target, request, timeouts).await {
-            Ok((provider, chunks)) => {
-                opened = Some((provider, target.clone(), chunks));
-                break;
-            }
-            Err(error) => last_error = Some(error),
-        }
-    }
-    let Some((provider, target, mut chunks)) = opened else {
-        return Err(last_error.unwrap_or_else(|| GatewayError::Internal {
-            message: "aucune cible pour le flux".to_owned(),
-        }));
-    };
+    let opened = executor
+        .open_first_stream(targets, request, timeouts)
+        .await?;
+    let (provider, target, mut chunks) = (opened.provider, opened.target, opened.chunks);
 
-    let id = format!("msg_{}", context.id);
+    let id = format!("msg_{}", journal.id);
     let model = target.model.clone();
+    let journal = journal.clone();
+    let logged = target.clone();
     let stream = async_stream::stream! {
         let mut stream_state = StreamState::new();
+        let mut usage = buntu_schema::Usage::default();
+        let mut failed = None;
         // (index du bloc ouvert, est-ce un bloc outil ?)
         let mut block: Option<(u32, bool)> = None;
         let mut next_index = 0_u32;
@@ -369,6 +376,7 @@ async fn stream(
                         "type": "error",
                         "error": { "type": "api_error", "message": error.to_string() },
                     })));
+                    failed = Some(error);
                     break;
                 }
             };
@@ -477,8 +485,9 @@ async fn stream(
                             })));
                         }
                     }
-                    buntu_schema::StreamEvent::Usage { usage } => {
-                        output_tokens = usage.output_tokens;
+                    buntu_schema::StreamEvent::Usage { usage: counted } => {
+                        output_tokens = counted.output_tokens;
+                        usage = counted;
                     }
                     buntu_schema::StreamEvent::Stop { reason } => {
                         stop = Some(reason);
@@ -500,20 +509,13 @@ async fn stream(
             "usage": { "output_tokens": output_tokens },
         })));
         yield Ok(sse("message_stop", &json!({ "type": "message_stop" })));
+        match failed {
+            Some(error) => journal.failure(Some(&logged), &error),
+            None => journal.success(&logged.provider, &logged.model, 1, &usage),
+        }
     };
 
-    let mut response = axum::body::Body::from_stream(stream).into_response();
-    let headers = response.headers_mut();
-    headers.insert(
-        axum::http::header::CONTENT_TYPE,
-        axum::http::HeaderValue::from_static("text/event-stream"),
-    );
-    headers.insert(
-        axum::http::header::CACHE_CONTROL,
-        axum::http::HeaderValue::from_static("no-cache"),
-    );
-    crate::routes::add_routed_headers(&mut response, &target.provider, &target.model, 1);
-    Ok(response)
+    Ok(sse_response(axum::body::Body::from_stream(stream), &target))
 }
 
 fn sse(event: &str, data: &Value) -> Bytes {
