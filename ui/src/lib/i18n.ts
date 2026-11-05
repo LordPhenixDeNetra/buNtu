@@ -56,7 +56,11 @@ const dictionary: Record<Locale, Record<string, string>> = {
     'routes.confirmDelete': 'Supprimer cette route ?',
     'routes.save': 'Enregistrer la chaîne',
     'common.cancel': 'Annuler',
-    'common.close': 'Fermer'
+    'common.close': 'Fermer',
+    'auth.title': 'Jeton d’administration',
+    'auth.help': 'L’API d’administration est protégée. Collez le jeton affiché au premier démarrage de buntu (ou la valeur de BUNTU_ADMIN_TOKEN).',
+    'auth.token': 'Jeton',
+    'auth.submit': 'Valider'
   },
   en: {
     'app.title': 'buNtu — console',
@@ -111,7 +115,11 @@ const dictionary: Record<Locale, Record<string, string>> = {
     'routes.confirmDelete': 'Delete this route?',
     'routes.save': 'Save chain',
     'common.cancel': 'Cancel',
-    'common.close': 'Close'
+    'common.close': 'Close',
+    'auth.title': 'Admin token',
+    'auth.help': 'The admin API is protected. Paste the token printed when buntu first started (or the value of BUNTU_ADMIN_TOKEN).',
+    'auth.token': 'Token',
+    'auth.submit': 'Submit'
   }
 };
 

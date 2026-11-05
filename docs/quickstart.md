@@ -94,3 +94,17 @@ fichier (`-v "$PWD/buntu.toml:/etc/buntu.toml"`) et passez `--config /etc/buntu.
 - [Guides fournisseurs](providers/openai.md) : OpenAI, Anthropic, Gemini, Ollama, compatible.
 - [Erreurs et dépannage](faq-errors.md)
 - Console web : `http://127.0.0.1:8080/` (fournisseurs, routes, journal des requêtes).
+
+## Accès à l'administration
+
+L'API d'administration (`/admin/v1/*`) et la console exigent un jeton
+(`Authorization: Bearer <jeton>`). Au premier démarrage, buNtu génère un jeton, l'affiche
+**une seule fois** dans la sortie standard et n'en garde que l'empreinte en base. Vous pouvez aussi
+fournir le vôtre (32 caractères minimum) :
+
+```sh
+BUNTU_ADMIN_TOKEN="$(openssl rand -hex 32)" buntu serve --config buntu.toml
+```
+
+Par défaut, buNtu n'écoute que sur `127.0.0.1:8080`. Pour l'exposer au réseau, passez
+`--listen 0.0.0.0:8080` (c'est ce que fait l'image Docker).

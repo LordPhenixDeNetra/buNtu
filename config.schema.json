@@ -111,8 +111,8 @@
       "description": "Paramètres du serveur HTTP.",
       "properties": {
         "listen": {
-          "default": "0.0.0.0:8080",
-          "description": "Adresse d'écoute (`0.0.0.0:8080` par défaut).",
+          "default": "127.0.0.1:8080",
+          "description": "Adresse d'écoute (`127.0.0.1:8080` par défaut : boucle locale seulement).",
           "type": "string"
         }
       },
@@ -194,7 +194,7 @@
     "server": {
       "$ref": "#/$defs/RawServer",
       "default": {
-        "listen": "0.0.0.0:8080"
+        "listen": "127.0.0.1:8080"
       },
       "description": "Paramètres du serveur HTTP."
     },

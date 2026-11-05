@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { adminToken } from './tests/admin-token';
 
 /**
  * Par défaut, tests contre une instance réelle (`tests/serve-e2e.sh` :
@@ -13,6 +14,7 @@ export default defineConfig({
   reporter: [['list']],
   use: {
     baseURL,
+    extraHTTPHeaders: { Authorization: `Bearer ${adminToken}` },
     trace: 'retain-on-failure'
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
@@ -22,6 +24,7 @@ export default defineConfig({
         command: 'bash tests/serve-e2e.sh',
         url: 'http://127.0.0.1:19000/health',
         reuseExistingServer: false,
+        env: { BUNTU_ADMIN_TOKEN: adminToken },
         timeout: 180_000
       }
 });
