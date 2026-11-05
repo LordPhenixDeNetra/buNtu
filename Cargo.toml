@@ -7,13 +7,8 @@ members = [
     "crates/buntu-providers",
     "crates/buntu-gateway",
     "crates/buntu-store",
-    "crates/buntu-governance",
-    "crates/buntu-cache",
-    "crates/buntu-mcp",
     "crates/buntu-security",
     "crates/buntu-observe",
-    "crates/buntu-plugin-wasm",
-    "crates/buntu-cluster",
     "crates/buntu-cli",
     "crates/buntu-conformance",
     "tools/mock-provider",
@@ -42,16 +37,14 @@ buntu-core = { version = "0.0.1-rc.1", path = "crates/buntu-core" }
 buntu-providers = { version = "0.0.1-rc.1", path = "crates/buntu-providers" }
 buntu-gateway = { version = "0.0.1-rc.1", path = "crates/buntu-gateway" }
 buntu-store = { version = "0.0.1-rc.1", path = "crates/buntu-store" }
-buntu-governance = { version = "0.0.1-rc.1", path = "crates/buntu-governance" }
-buntu-cache = { version = "0.0.1-rc.1", path = "crates/buntu-cache" }
-buntu-mcp = { version = "0.0.1-rc.1", path = "crates/buntu-mcp" }
 buntu-security = { version = "0.0.1-rc.1", path = "crates/buntu-security" }
 buntu-observe = { version = "0.0.1-rc.1", path = "crates/buntu-observe" }
-buntu-plugin-wasm = { version = "0.0.1-rc.1", path = "crates/buntu-plugin-wasm" }
-buntu-cluster = { version = "0.0.1-rc.1", path = "crates/buntu-cluster" }
 buntu-cli = { version = "0.0.1-rc.1", path = "crates/buntu-cli" }
+# Simulateur de fournisseur (T0.3) : dépendance de test uniquement, jamais publiée.
+buntu-mock-provider = { version = "0.0.1-rc.1", path = "tools/mock-provider" }
 
-# Dépendances du simulateur de fournisseur (T0.3) ; aucune crate produit ne les utilise.
+# Socle partagé : flux asynchrones, octets, sérialisation ;
+# `reqwest` ne sert qu'aux tests et au kit de conformité.
 async-stream = "0.3"
 bytes = "1"
 reqwest = { version = "0.12", default-features = false, features = ["json", "stream"] }

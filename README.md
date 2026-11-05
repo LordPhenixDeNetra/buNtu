@@ -56,8 +56,8 @@ curl -s http://127.0.0.1:8080/v1/models
   [compatible OpenAI](docs/providers/compatible.md)
 - [Erreurs et dépannage](docs/faq-errors.md)
 - [Campagne de benchmark et limites](docs/benchmarks.md)
-- [Suivi des tâches](docs/status.md) · [Cahier des charges](<buNtu — Cahier des charges et cahier des tâches.md>)
-  · [Guide d'exécution](<Guide d'exécution (agents IA).md>) · [ADR](docs/adr/)
+- [Suivi des tâches](docs/status.md) · [Cahier des charges](docs/cahier-des-charges.md)
+  · [Guide d'exécution](docs/guide-agents.md) · [ADR](docs/adr/)
 
 ## Développement
 

@@ -108,3 +108,16 @@ BUNTU_ADMIN_TOKEN="$(openssl rand -hex 32)" buntu serve --config buntu.toml
 
 Par défaut, buNtu n'écoute que sur `127.0.0.1:8080`. Pour l'exposer au réseau, passez
 `--listen 0.0.0.0:8080` (c'est ce que fait l'image Docker).
+
+## Où vit la configuration
+
+Les fournisseurs et routes créés par la console ou l'API sont enregistrés dans SQLite et
+survivent aux redémarrages. Le fichier `buntu.toml` reste **prioritaire** : une entrée de même
+identifiant y gagne, et la console la montre en lecture seule. Les variables `BUNTU_*`
+surchargent le tout ([ADR-0008](adr/0008-config-source.md)). `[config] mode = "file"` met la
+console en lecture seule (GitOps).
+
+Les clés API saisies dans la console sont chiffrées avec une clé maître :
+`BUNTU_MASTER_KEY` (base64), sinon le fichier `BUNTU_MASTER_KEY_FILE`, sinon `buntu.sqlite.key`,
+créé au premier démarrage. **Sauvegardez ce fichier** : sans lui, les clés enregistrées sont
+illisibles.

@@ -69,3 +69,29 @@ fn master_key_file_must_contain_32_bytes() -> Result<(), Box<dyn Error>> {
     assert!(SecretCipher::from_env("BUNTU_MASTER_KEY_ABSENTE").is_err());
     Ok(())
 }
+
+#[test]
+fn master_key_file_is_created_once_in_base64() -> Result<(), Box<dyn Error>> {
+    let path = std::env::temp_dir().join(format!("buntu-key-auto-{}.key", std::process::id()));
+    let _ = std::fs::remove_file(&path);
+    let (first, created) = SecretCipher::load_or_create(&path)?;
+    assert!(created, "le premier appel crée la clé");
+    let content = std::fs::read_to_string(&path)?;
+    assert_eq!(
+        content.trim().len(),
+        44,
+        "32 octets en base64 : {content:?}"
+    );
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mode = std::fs::metadata(&path)?.permissions().mode() & 0o777;
+        assert_eq!(mode, 0o600);
+    }
+    let blob = first.encrypt(b"valeur")?;
+    let (second, created) = SecretCipher::load_or_create(&path)?;
+    assert!(!created, "le second appel relit la clé existante");
+    assert_eq!(second.decrypt(&blob)?, b"valeur");
+    let _ = std::fs::remove_file(&path);
+    Ok(())
+}

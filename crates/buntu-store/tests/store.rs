@@ -7,8 +7,8 @@ use buntu_store::{ProviderRecord, RequestLogRecord, RouteRecord, Store};
 #[tokio::test]
 async fn migrations_apply_to_an_empty_database() -> Result<(), Box<dyn Error>> {
     let store = Store::open_in_memory().await?;
-    // Deux migrations : 0001 initiale, 0002 colonne `attempts` (T1.24).
-    assert_eq!(store.schema_version().await?, 2);
+    // Trois migrations : 0001 initiale, 0002 `attempts` (T1.24), 0003 couche de configuration.
+    assert_eq!(store.schema_version().await?, 3);
     Ok(())
 }
 
@@ -192,5 +192,52 @@ async fn active_api_token_presence_is_reported() -> Result<(), Box<dyn Error>> {
     assert!(store.has_active_api_token().await?);
     store.revoke_api_token("tok-1").await?;
     assert!(!store.has_active_api_token().await?);
+    Ok(())
+}
+
+#[tokio::test]
+async fn configuration_layer_round_trips() -> Result<(), Box<dyn Error>> {
+    use buntu_store::{StoredKey, StoredRoute, StoredSecret};
+    let store = Store::open_in_memory().await?;
+    let provider = ProviderRecord {
+        id: "p".to_owned(),
+        kind: "openai".to_owned(),
+        base_url: Some("http://x".to_owned()),
+    };
+    let keys = vec![
+        StoredKey {
+            secret: StoredSecret::Encrypted(vec![1, 2, 3]),
+            weight: 2,
+        },
+        StoredKey {
+            secret: StoredSecret::Reference("env:CLE".to_owned()),
+            weight: 1,
+        },
+    ];
+    store.save_provider(&provider, &keys).await?;
+    assert_eq!(store.providers().await?, vec![provider.clone()]);
+    assert_eq!(store.stored_keys("p").await?, keys);
+
+    // Remplacer un fournisseur remplace toutes ses clés, sans doublon.
+    store.save_provider(&provider, &keys[1..]).await?;
+    assert_eq!(store.stored_keys("p").await?, keys[1..].to_vec());
+
+    let route = StoredRoute {
+        alias: "chat".to_owned(),
+        fallbacks: vec!["p/m".to_owned()],
+        timeouts: r#"{"first_byte_ms":5}"#.to_owned(),
+    };
+    store.save_route(&route).await?;
+    store.save_route(&route).await?;
+    assert_eq!(store.stored_routes().await?, vec![route]);
+
+    assert!(store.delete_route("chat").await?);
+    assert!(!store.delete_route("chat").await?);
+    assert!(store.delete_provider("p").await?);
+    assert!(
+        store.stored_keys("p").await?.is_empty(),
+        "les clés suivent leur fournisseur"
+    );
+    assert!(!store.delete_provider("p").await?);
     Ok(())
 }

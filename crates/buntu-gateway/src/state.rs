@@ -38,7 +38,7 @@ impl GatewayState {
             config,
             registry: Arc::new(ProviderRegistry::new()),
             upstream: UpstreamClient::new(),
-            admin: Arc::new(AdminStore::empty()),
+            admin: Arc::new(AdminStore::default()),
             store: None,
             request_log: None,
             fallback: Arc::new(FallbackChain::default()),

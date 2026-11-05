@@ -4,7 +4,7 @@ use std::error::Error;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use buntu_core::config::{ConfigHandle, RawConfig};
+use buntu_core::config::ConfigHandle;
 use buntu_gateway::admin::AdminStore;
 use buntu_gateway::{GatewayState, Readiness, app_with_state};
 use buntu_security::tokens::generate_token;
@@ -24,7 +24,7 @@ impl Drop for Running {
 async fn start(state: GatewayState) -> Result<Running, Box<dyn Error>> {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
     let address = listener.local_addr()?;
-    let router = app_with_state(state.with_admin(Arc::new(AdminStore::new(RawConfig::default()))));
+    let router = app_with_state(state.with_admin(Arc::new(AdminStore::default())));
     let handle = tokio::spawn(async move {
         let _ = axum::serve(listener, router).await;
     });

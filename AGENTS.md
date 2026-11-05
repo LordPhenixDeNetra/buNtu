@@ -6,9 +6,9 @@ cache sémantique, budgets et passerelle MCP. Décisions : `docs/adr/`.
 
 ## Documents de référence
 
-- `buNtu — Cahier des charges et cahier des tâches.md` : périmètre, exigences `FR-*`/`NFR-*`,
+- `docs/cahier-des-charges.md` : périmètre, exigences `FR-*`/`NFR-*`,
   architecture, plan de quatre phases.
-- `Guide d'exécution (agents IA).md` : règles, fiches de tâches, définition de « fait ».
+- `docs/guide-agents.md` : règles, fiches de tâches, définition de « fait ».
 - `docs/status.md` : suivi des tâches (statut, PR, preuve), mis à jour dans le même commit que
   la tâche ; la case correspondante du cahier des charges est cochée en même temps.
 
@@ -22,17 +22,18 @@ machine le prouve. Une seule tâche en cours à la fois.
 - `crates/buntu-providers` — un module par fournisseur : requête, réponse, flux, erreurs.
 - `crates/buntu-gateway` — serveur HTTP, endpoints compatibles, API d'administration, UI.
 - `crates/buntu-store` — configuration et données (SQLite par défaut, PostgreSQL), migrations.
-- `crates/buntu-governance` — clés virtuelles, hiérarchie, budgets, limites de débit.
-- `crates/buntu-cache` — cache exact et sémantique, index vectoriel.
-- `crates/buntu-mcp` — client et passerelle MCP.
 - `crates/buntu-security` — authentification, OIDC/SAML/SCIM, RBAC, audit, secrets, guardrails.
 - `crates/buntu-observe` — métriques, traces, journal des requêtes, exports.
-- `crates/buntu-plugin-wasm` — hôte de plugins WebAssembly.
-- `crates/buntu-cluster` — appartenance au cluster, compteurs partagés, diffusion de config.
 - `crates/buntu-cli` — binaire `buntu` : `serve`, `import`, `bench`, `doctor`, `config validate`.
+- `crates/buntu-conformance` — kit de conformité des fournisseurs (T1.8), non publié.
 - `tools/mock-provider` — fournisseur simulé (T0.3), hors des crates publiées.
 - `xtask/` — `cargo xtask bench` : banc de benchmark scripté (T0.4).
 - `ui/` — interface SvelteKit statique ; `benchmarks/` — banc et résultats ; `docs/adr/`.
+
+Crates prévues par le cahier mais **créées seulement au début de leur tâche** (aucune crate vide
+dans le workspace, règle 4) : `buntu-governance` (clés virtuelles, budgets, limites de débit),
+`buntu-cache` (cache exact et sémantique), `buntu-mcp` (client et passerelle MCP),
+`buntu-plugin-wasm` (plugins WebAssembly), `buntu-cluster` (cluster, compteurs partagés).
 
 ## Commande unique
 
@@ -49,7 +50,7 @@ composant `llvm-tools-preview`.
 
 ### Méthode
 
-0. **Avant chaque tâche, relire sa fiche dans `Guide d'exécution (agents IA).md`** (obligatoire,
+0. **Avant chaque tâche, relire sa fiche dans `docs/guide-agents.md`** (obligatoire,
    à chaque tâche, pas seulement en début de phase) : points spécifiques, pièges, interdits.
    Vérifier la conformité point par point et indiquer explicitement ce qui est fait, ce qui est
    en réserve et tout écart avant de rendre la main.
@@ -112,7 +113,7 @@ Les documents du dépôt sont rédigés en français.
 
 ## État et périmètre
 
-**Le socle est en place (T0.2–T0.7, T1.1–T1.12).** Le workspace Cargo (14 crates), la CI
+**Le socle est en place (T0.2–T0.7, T1.1–T1.12).** Le workspace Cargo (9 crates, plus `tools/mock-provider` et `xtask`), la CI
 complète, le simulateur de fournisseur (`tools/mock-provider`), le banc de benchmark
 (`cargo xtask bench`), le schéma canonique v0 (`buntu-schema`), les ADR et les fichiers du projet
 existent. `buntu serve` démarre un serveur HTTP avec `/health`, `/ready` et arrêt gracieux ;

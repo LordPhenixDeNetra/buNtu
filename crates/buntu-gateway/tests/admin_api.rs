@@ -6,7 +6,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use axum::Router;
-use buntu_core::config::{ConfigHandle, RawConfig};
+use buntu_core::config::ConfigHandle;
 use buntu_gateway::admin::AdminStore;
 use buntu_gateway::{GatewayState, Readiness, app_with_state};
 use serde_json::{Value, json};
@@ -27,7 +27,7 @@ async fn start() -> Result<Running, Box<dyn Error>> {
         Readiness::new(true),
         ConfigHandle::new(buntu_core::config::CompiledConfig::default()),
     )
-    .with_admin(Arc::new(AdminStore::new(RawConfig::default())))
+    .with_admin(Arc::new(AdminStore::default()))
     .with_admin_token(ADMIN_TOKEN);
     let router: Router = app_with_state(state);
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;

@@ -13,9 +13,5 @@ metrics.workspace = true
 metrics-exporter-prometheus.workspace = true
 tokio.workspace = true
 
-[dev-dependencies]
-tokio.workspace = true
-metrics = { workspace = true }
-
 [lints]
 workspace = true

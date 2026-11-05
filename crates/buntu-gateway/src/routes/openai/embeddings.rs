@@ -10,6 +10,7 @@ use serde_json::{Map, Value};
 
 use crate::error_response;
 use crate::executor::HttpExecutor;
+use crate::routes::Journal;
 use crate::state::GatewayState;
 
 use super::response as wire;
@@ -18,13 +19,21 @@ pub async fn embeddings(
     State(state): State<GatewayState>,
     Json(body): Json<Value>,
 ) -> AxumResponse {
-    match run(&state, body).await {
+    let journal = Journal::start(&state, &body);
+    match run(&state, body, &journal).await {
         Ok(response) => response,
-        Err(error) => error_response::response(&error),
+        Err(error) => {
+            journal.failure(None, &error);
+            error_response::response(&error)
+        }
     }
 }
 
-async fn run(state: &GatewayState, body: Value) -> Result<AxumResponse, GatewayError> {
+async fn run(
+    state: &GatewayState,
+    body: Value,
+    journal: &Journal,
+) -> Result<AxumResponse, GatewayError> {
     let request = parse_embeddings(&body)?;
     let config = state.config.snapshot();
     let targets = routing::resolve(&config, &request.model, routing::Capabilities::NONE)?;
@@ -37,6 +46,11 @@ async fn run(state: &GatewayState, body: Value) -> Result<AxumResponse, GatewayE
     for target in &targets {
         match with_timeout(deadline, executor.execute_embeddings(target, &request)).await {
             Ok(response) => {
+                let usage = buntu_schema::Usage {
+                    input_tokens: response.usage.prompt_tokens,
+                    ..Default::default()
+                };
+                journal.success(&target.provider, &target.model, 1, &usage);
                 let mut http = Json(wire::embeddings_to_openai(&response)).into_response();
                 crate::routes::add_routed_headers(&mut http, &target.provider, &target.model, 1);
                 return Ok(http);

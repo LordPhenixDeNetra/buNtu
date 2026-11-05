@@ -785,7 +785,8 @@
         "required": [
           "id",
           "type",
-          "keys"
+          "keys",
+          "source"
         ],
         "properties": {
           "base_url": {
@@ -802,6 +803,10 @@
             "items": {
               "$ref": "#/components/schemas/KeyView"
             }
+          },
+          "source": {
+            "type": "string",
+            "description": "`file` (prioritaire, lecture seule ici) ou `database` (écrit par cette API)."
           },
           "type": {
             "type": "string"
@@ -915,7 +920,8 @@
         "type": "object",
         "required": [
           "alias",
-          "fallbacks"
+          "fallbacks",
+          "source"
         ],
         "properties": {
           "alias": {
@@ -926,6 +932,10 @@
             "items": {
               "type": "string"
             }
+          },
+          "source": {
+            "type": "string",
+            "description": "`file` (prioritaire, lecture seule ici) ou `database` (écrit par cette API)."
           }
         }
       },

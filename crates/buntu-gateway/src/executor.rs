@@ -17,6 +17,7 @@ use buntu_providers::provider::{HttpRequest, Provider};
 use buntu_schema::{EmbeddingsRequest, EmbeddingsResponse, GatewayError, Request, Response};
 use bytes::Bytes;
 use http_body_util::BodyExt;
+use hyper::HeaderMap;
 use hyper::body::Incoming;
 
 use crate::state::GatewayState;
@@ -36,6 +37,13 @@ pub struct Prepared {
     pub base_url: String,
     pub request: HttpRequest,
     pub key_index: usize,
+}
+
+/// Un flux amont ouvert : traducteur, cible retenue et corps à lire.
+pub struct OpenedStream {
+    pub provider: Arc<dyn Provider>,
+    pub target: Target,
+    pub chunks: UpstreamChunks,
 }
 
 impl HttpExecutor {
@@ -74,17 +82,12 @@ impl HttpExecutor {
         Ok((provider, provider_config))
     }
 
-    fn pick_key(provider: &CompiledProvider) -> Result<(usize, String), GatewayError> {
+    fn pick_key(provider: &CompiledProvider) -> Result<usize, GatewayError> {
         match provider.selector.select() {
-            Ok(index) => {
-                let key = provider
-                    .keys
-                    .get(index)
-                    .ok_or_else(|| GatewayError::Internal {
-                        message: "clé sélectionnée hors limites".to_owned(),
-                    })?;
-                Ok((index, key.secret.expose().to_owned()))
-            }
+            Ok(index) if index < provider.keys.len() => Ok(index),
+            Ok(_) => Err(GatewayError::Internal {
+                message: "clé sélectionnée hors limites".to_owned(),
+            }),
             Err(KeySelectionError::AllPaused { retry_after }) => {
                 Err(GatewayError::ProviderRateLimited {
                     retry_after: Some(retry_after),
@@ -96,74 +99,68 @@ impl HttpExecutor {
         }
     }
 
-    fn base_url(provider: &CompiledProvider) -> Result<String, GatewayError> {
-        provider
+    /// Traduit, choisit une clé et injecte l'en-tête d'authentification du fournisseur.
+    fn prepare<F>(&self, target: &Target, build: F) -> Result<Prepared, GatewayError>
+    where
+        F: FnOnce(&dyn Provider) -> Result<HttpRequest, GatewayError>,
+    {
+        let (provider, provider_config) = self.provider_for(target)?;
+        let key_index = Self::pick_key(provider_config)?;
+        let base_url = provider_config
             .base_url
             .clone()
             .ok_or_else(|| GatewayError::Internal {
-                message: format!("`base_url` manquante pour le fournisseur `{}`", provider.id),
-            })
-    }
-
-    fn authorize(
-        &self,
-        request: HttpRequest,
-        kind: &str,
-        secret: &str,
-    ) -> Result<HttpRequest, GatewayError> {
-        let (mut parts, body) = request.into_parts();
-        let (name, value) = match kind {
-            "anthropic" => (
-                hyper::header::HeaderName::from_static("x-api-key"),
-                secret.to_owned(),
-            ),
-            "gemini" => (
-                hyper::header::HeaderName::from_static("x-goog-api-key"),
-                secret.to_owned(),
-            ),
-            _ => (hyper::header::AUTHORIZATION, format!("Bearer {secret}")),
-        };
-        parts.headers.insert(
-            name,
-            hyper::header::HeaderValue::from_str(&value).map_err(|error| {
-                GatewayError::Internal {
-                    message: format!("en-tête d'authentification invalide : {error}"),
-                }
-            })?,
-        );
-        Ok(HttpRequest::from_parts(parts, body))
-    }
-
-    /// Prépare l'appel chat (sélection de clé + authentification incluses).
-    pub fn prepare(&self, target: &Target, request: &Request) -> Result<Prepared, GatewayError> {
-        let (provider, provider_config) = self.provider_for(target)?;
-        let (key_index, secret) = Self::pick_key(provider_config)?;
-        let built = provider.build_request(request)?;
-        let request = self.authorize(built, &provider_config.kind, &secret)?;
+                message: format!(
+                    "`base_url` manquante pour le fournisseur `{}`",
+                    provider_config.id
+                ),
+            })?;
+        let mut request = build(provider.as_ref())?;
+        let (name, value) =
+            provider.auth_header(provider_config.keys[key_index].secret.expose())?;
+        request.headers_mut().insert(name, value);
         Ok(Prepared {
             provider,
-            base_url: Self::base_url(provider_config)?,
+            base_url,
             request,
             key_index,
         })
     }
 
-    /// Variante embeddings.
-    pub fn prepare_embeddings(
+    /// Statut amont non 2xx : traduit l'erreur et met la clé en pause sur 429.
+    fn upstream_error(
         &self,
         target: &Target,
-        request: &EmbeddingsRequest,
-    ) -> Result<Prepared, GatewayError> {
-        let (provider, provider_config) = self.provider_for(target)?;
-        let (key_index, secret) = Self::pick_key(provider_config)?;
-        let built = provider.build_embeddings_request(request)?;
-        let request = self.authorize(built, &provider_config.kind, &secret)?;
-        Ok(Prepared {
-            provider,
-            base_url: Self::base_url(provider_config)?,
-            request,
-            key_index,
-        })
+        prepared: &Prepared,
+        status: u16,
+        headers: &HeaderMap,
+        body: &[u8],
+    ) -> GatewayError {
+        let error = prepared.provider.map_error(status, headers, body);
+        if let GatewayError::ProviderRateLimited {
+            retry_after: Some(delay),
+        } = &error
+            && let Some(provider) = self.config.providers.get(&target.provider)
+        {
+            let _ = provider.selector.pause(prepared.key_index, *delay);
+        }
+        error
+    }
+
+    /// Envoie une requête préparée et lit toute la réponse.
+    async fn send(
+        &self,
+        target: &Target,
+        prepared: Prepared,
+    ) -> Result<(Prepared, Bytes), GatewayError> {
+        let (status, headers, body) = self
+            .upstream
+            .send(&prepared.base_url, prepared.request.clone())
+            .await?;
+        if !(200..300).contains(&status) {
+            return Err(self.upstream_error(target, &prepared, status, &headers, &body));
+        }
+        Ok((prepared, body))
     }
 
     /// Exécute un appel chat complet (non flux) vers la cible.
@@ -172,23 +169,26 @@ impl HttpExecutor {
         target: &Target,
         request: &Request,
     ) -> Result<Response, GatewayError> {
-        let prepared = self.prepare(target, request)?;
-        let (status, headers, body) = self
-            .upstream
-            .send(&prepared.base_url, prepared.request.clone())
-            .await?;
-        if !(200..300).contains(&status) {
-            let error = prepared.provider.map_error(status, &headers, &body);
-            self.pause_on_rate_limit(target, prepared.key_index, &error);
-            return Err(error);
-        }
+        let prepared = self.prepare(target, |provider| provider.build_request(request))?;
+        let (prepared, body) = self.send(target, prepared).await?;
         prepared.provider.parse_response(body)
     }
 
-    /// Ouvre un flux chat : rend le traducteur et le corps amont, sous les timeouts du flux.
-    ///
-    /// Les en-têtes amont doivent arriver avant le premier octet ; les morceaux suivent ensuite
-    /// le budget de [`UpstreamChunks`].
+    /// Exécute un appel embeddings vers la cible.
+    pub async fn execute_embeddings(
+        &self,
+        target: &Target,
+        request: &EmbeddingsRequest,
+    ) -> Result<EmbeddingsResponse, GatewayError> {
+        let prepared = self.prepare(target, |provider| {
+            provider.build_embeddings_request(request)
+        })?;
+        let (prepared, body) = self.send(target, prepared).await?;
+        prepared.provider.parse_embeddings_response(body)
+    }
+
+    /// Ouvre un flux chat sous les timeouts du flux : les en-têtes amont doivent arriver
+    /// avant le premier octet ; les morceaux suivent ensuite le budget de [`UpstreamChunks`].
     pub async fn open_stream(
         &self,
         target: &Target,
@@ -196,7 +196,7 @@ impl HttpExecutor {
         timeouts: Timeouts,
     ) -> Result<(Arc<dyn Provider>, UpstreamChunks), GatewayError> {
         let started = std::time::Instant::now();
-        let prepared = self.prepare(target, request)?;
+        let prepared = self.prepare(target, |provider| provider.build_request(request))?;
         let (status, headers, body) = with_timeout(
             timeouts.first_byte.min(timeouts.total),
             self.upstream
@@ -207,9 +207,7 @@ impl HttpExecutor {
             let chunk = read_limited(body, MAX_ERROR_BODY_BYTES)
                 .await
                 .unwrap_or_default();
-            let error = prepared.provider.map_error(status, &headers, &chunk);
-            self.pause_on_rate_limit(target, prepared.key_index, &error);
-            return Err(error);
+            return Err(self.upstream_error(target, &prepared, status, &headers, &chunk));
         }
         let chunks = UpstreamChunks {
             body,
@@ -218,32 +216,30 @@ impl HttpExecutor {
         Ok((prepared.provider, chunks))
     }
 
-    /// Exécute un appel embeddings vers la cible.
-    pub async fn execute_embeddings(
+    /// Ouvre le flux sur la première cible qui répond : repli avant le premier octet
+    /// uniquement, jamais une fois le flux commencé (T1.5).
+    pub async fn open_first_stream(
         &self,
-        target: &Target,
-        request: &EmbeddingsRequest,
-    ) -> Result<EmbeddingsResponse, GatewayError> {
-        let prepared = self.prepare_embeddings(target, request)?;
-        let (status, headers, body) = self
-            .upstream
-            .send(&prepared.base_url, prepared.request.clone())
-            .await?;
-        if !(200..300).contains(&status) {
-            let error = prepared.provider.map_error(status, &headers, &body);
-            self.pause_on_rate_limit(target, prepared.key_index, &error);
-            return Err(error);
+        targets: &[Target],
+        request: &Request,
+        timeouts: Timeouts,
+    ) -> Result<OpenedStream, GatewayError> {
+        let mut last_error = None;
+        for target in targets {
+            match self.open_stream(target, request, timeouts).await {
+                Ok((provider, chunks)) => {
+                    return Ok(OpenedStream {
+                        provider,
+                        target: target.clone(),
+                        chunks,
+                    });
+                }
+                Err(error) => last_error = Some(error),
+            }
         }
-        prepared.provider.parse_embeddings_response(body)
-    }
-
-    fn pause_on_rate_limit(&self, target: &Target, key_index: usize, error: &GatewayError) {
-        if let GatewayError::ProviderRateLimited { retry_after } = error
-            && let Some(delay) = retry_after
-            && let Some(provider) = self.config.providers.get(&target.provider)
-        {
-            let _ = provider.selector.pause(key_index, *delay);
-        }
+        Err(last_error.unwrap_or_else(|| GatewayError::Internal {
+            message: "aucune cible pour le flux".to_owned(),
+        }))
     }
 }
 

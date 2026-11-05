@@ -49,6 +49,18 @@ impl GeminiProvider {
 }
 
 impl Provider for GeminiProvider {
+    /// `x-goog-api-key` : <https://ai.google.dev/gemini-api/docs/api-key> (consulté le
+    /// 2026-11-05).
+    fn auth_header(
+        &self,
+        secret: &str,
+    ) -> Result<(hyper::header::HeaderName, hyper::header::HeaderValue), GatewayError> {
+        Ok((
+            hyper::header::HeaderName::from_static("x-goog-api-key"),
+            crate::provider::sensitive(secret)?,
+        ))
+    }
+
     fn name(&self) -> &'static str {
         "gemini"
     }

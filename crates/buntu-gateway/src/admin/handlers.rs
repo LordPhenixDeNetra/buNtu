@@ -1,19 +1,20 @@
 //! Gestionnaires de l'API d'administration (T1.16).
 //!
 //! Les secrets ne sortent jamais : [`KeyView::preview`] montre `sk-…a1b2` ou `env:VAR`, jamais la
-//! valeur complète. Les mutations passent par [`AdminStore::mutate`] puis publient la
-//! configuration compilée dans le `ConfigHandle`.
+//! valeur complète. Les listes montrent la configuration effective et la **source** de chaque
+//! entrée ; les mutations visent la couche base (cahier §7.1) via [`AdminStore::mutate`]. Une
+//! entrée définie par le fichier est prioritaire, donc non modifiable par l'API.
 
 use axum::Json;
 use axum::extract::{Path, Query, State};
 use axum::response::{IntoResponse, Response};
-use buntu_core::config::{RawKey, RawProvider, RawRoute};
+use buntu_core::config::{RawConfig, RawKey, RawProvider, RawRoute};
 use buntu_schema::GatewayError;
 use buntu_store::{RequestLogQuery, RequestLogRecord};
 use serde::{Deserialize, Serialize};
 use utoipa::OpenApi;
 
-use crate::admin::AdminApi;
+use crate::admin::{AdminApi, Touched};
 use crate::error_response;
 use crate::state::GatewayState;
 
@@ -31,6 +32,8 @@ pub struct ProviderView {
     pub kind: String,
     pub base_url: Option<String>,
     pub keys: Vec<KeyView>,
+    /// `file` (prioritaire, lecture seule ici) ou `database` (écrit par cette API).
+    pub source: String,
 }
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
@@ -65,6 +68,8 @@ pub struct UpdateProvider {
 pub struct RouteView {
     pub alias: String,
     pub fallbacks: Vec<String>,
+    /// `file` (prioritaire, lecture seule ici) ou `database` (écrit par cette API).
+    pub source: String,
 }
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
@@ -104,6 +109,9 @@ pub struct ErrorEnvelope {
     pub error: ErrorDetail,
 }
 
+const SOURCE_FILE: &str = "file";
+const SOURCE_DATABASE: &str = "database";
+
 fn preview(secret: &str) -> String {
     if let Some(variable) = secret.strip_prefix("env:") {
         return format!("env:{variable}");
@@ -117,7 +125,7 @@ fn preview(secret: &str) -> String {
     format!("{head}…{tail}")
 }
 
-fn provider_view(provider: &RawProvider) -> ProviderView {
+fn provider_view(provider: &RawProvider, source: &str) -> ProviderView {
     ProviderView {
         id: provider.id.clone(),
         kind: provider.kind.clone(),
@@ -130,13 +138,15 @@ fn provider_view(provider: &RawProvider) -> ProviderView {
                 weight: key.weight,
             })
             .collect(),
+        source: source.to_owned(),
     }
 }
 
-fn route_view(route: &RawRoute) -> RouteView {
+fn route_view(route: &RawRoute, source: &str) -> RouteView {
     RouteView {
         alias: route.alias.clone(),
         fallbacks: route.fallbacks.clone(),
+        source: source.to_owned(),
     }
 }
 
@@ -147,6 +157,93 @@ fn to_raw_keys(keys: &[CreateKey]) -> Vec<RawKey> {
             weight: key.weight.unwrap_or(1),
         })
         .collect()
+}
+
+/// Fournisseurs effectifs avec leur source : le fichier, puis la base sans doublon.
+fn providers(state: &GatewayState) -> Vec<ProviderView> {
+    let layers = state.config.layers();
+    let mut views: Vec<ProviderView> = layers
+        .file
+        .providers
+        .iter()
+        .map(|provider| provider_view(provider, SOURCE_FILE))
+        .collect();
+    for provider in &layers.base.providers {
+        if !layers
+            .file
+            .providers
+            .iter()
+            .any(|entry| entry.id == provider.id)
+        {
+            views.push(provider_view(provider, SOURCE_DATABASE));
+        }
+    }
+    views
+}
+
+/// Routes effectives avec leur source.
+fn routes(state: &GatewayState) -> Vec<RouteView> {
+    let layers = state.config.layers();
+    let mut views: Vec<RouteView> = layers
+        .file
+        .routes
+        .iter()
+        .map(|route| route_view(route, SOURCE_FILE))
+        .collect();
+    for route in &layers.base.routes {
+        if !layers
+            .file
+            .routes
+            .iter()
+            .any(|entry| entry.alias == route.alias)
+        {
+            views.push(route_view(route, SOURCE_DATABASE));
+        }
+    }
+    views
+}
+
+fn from_file(kind: &str, name: &str) -> GatewayError {
+    GatewayError::InvalidRequest {
+        message: format!(
+            "{kind} `{name}` est défini dans le fichier de configuration, prioritaire : \
+             modifiez le fichier"
+        ),
+    }
+}
+
+/// Fournisseur de la couche base, à modifier ; refuse une entrée du fichier.
+fn base_provider<'a>(
+    base: &'a mut RawConfig,
+    file: &RawConfig,
+    id: &str,
+) -> Result<&'a mut RawProvider, GatewayError> {
+    if file.providers.iter().any(|entry| entry.id == id) {
+        return Err(from_file("le fournisseur", id));
+    }
+    base.providers
+        .iter_mut()
+        .find(|provider| provider.id == id)
+        .ok_or_else(|| GatewayError::InvalidRequest {
+            message: format!("fournisseur `{id}` inconnu"),
+        })
+}
+
+/// Route de la couche base, à modifier ; refuse une entrée du fichier.
+fn base_route<'a>(
+    base: &'a mut RawConfig,
+    file: &RawConfig,
+    alias: &str,
+) -> Result<&'a mut RawRoute, GatewayError> {
+    if file.routes.iter().any(|entry| entry.alias == alias) {
+        return Err(from_file("la route", alias));
+    }
+    base.routes
+        .iter_mut()
+        .find(|route| route.alias == alias)
+        .ok_or_else(|| GatewayError::InvalidRequest {
+            message: format!("route `{alias}` inconnue"),
+        })
 }
 
 fn paginate<T: Clone>(mut items: Vec<(String, T)>, query: &Pagination) -> (Vec<T>, Option<String>) {
@@ -174,10 +271,6 @@ fn paginate<T: Clone>(mut items: Vec<(String, T)>, query: &Pagination) -> (Vec<T
         page.into_iter().map(|(_, value)| value).collect(),
         next_cursor,
     )
-}
-
-fn published(state: &GatewayState, compiled: buntu_core::config::CompiledConfig) {
-    state.config.store(compiled);
 }
 
 fn created(value: impl Serialize) -> Response {
@@ -211,11 +304,9 @@ pub async fn list_providers(
     State(state): State<GatewayState>,
     Query(query): Query<Pagination>,
 ) -> Response {
-    let raw = state.admin.snapshot();
-    let items: Vec<(String, ProviderView)> = raw
-        .providers
-        .iter()
-        .map(|provider| (provider.id.clone(), provider_view(provider)))
+    let items: Vec<(String, ProviderView)> = providers(&state)
+        .into_iter()
+        .map(|view| (view.id.clone(), view))
         .collect();
     let (data, next_cursor) = paginate(items, &query);
     ok(ProviderPage {
@@ -238,29 +329,32 @@ pub async fn create_provider(
         base_url: body.base_url,
         keys: to_raw_keys(&body.keys),
     };
-    let compiled = match state.admin.mutate(|raw| {
-        if raw.providers.iter().any(|existing| existing.id == id) {
-            return Err(GatewayError::InvalidRequest {
-                message: format!("le fournisseur `{id}` existe déjà"),
-            });
-        }
-        raw.providers.push(provider.clone());
-        Ok(())
-    }) {
-        Ok(compiled) => compiled,
-        Err(error) => return error_response::response(&error),
-    };
-    published(&state, compiled);
-    created(provider_view(&provider))
+    let result = state
+        .admin
+        .mutate(&state, |base, file| {
+            if base.providers.iter().any(|entry| entry.id == id)
+                || file.providers.iter().any(|entry| entry.id == id)
+            {
+                return Err(GatewayError::InvalidRequest {
+                    message: format!("le fournisseur `{id}` existe déjà"),
+                });
+            }
+            base.providers.push(provider.clone());
+            Ok(Touched::Provider(id.clone()))
+        })
+        .await;
+    match result {
+        Ok(()) => created(provider_view(&provider, SOURCE_DATABASE)),
+        Err(error) => error_response::response(&error),
+    }
 }
 
 #[utoipa::path(get, path = "/admin/v1/providers/{id}",
     params(("id" = String, Path, description = "Identifiant du fournisseur")),
     responses((status = 200, body = ProviderView), (status = 404, body = ErrorEnvelope)))]
 pub async fn get_provider(State(state): State<GatewayState>, Path(id): Path<String>) -> Response {
-    let raw = state.admin.snapshot();
-    match raw.providers.iter().find(|provider| provider.id == id) {
-        Some(provider) => ok(provider_view(provider)),
+    match providers(&state).into_iter().find(|view| view.id == id) {
+        Some(view) => ok(view),
         None => not_found(&format!("fournisseur `{id}` inconnu")),
     }
 }
@@ -274,27 +368,23 @@ pub async fn update_provider(
     Path(id): Path<String>,
     Json(body): Json<UpdateProvider>,
 ) -> Response {
-    let compiled = match state.admin.mutate(|raw| {
-        let provider = raw
-            .providers
-            .iter_mut()
-            .find(|provider| provider.id == id)
-            .ok_or_else(|| GatewayError::InvalidRequest {
-                message: format!("fournisseur `{id}` inconnu"),
-            })?;
-        if let Some(base_url) = &body.base_url {
-            provider.base_url = Some(base_url.clone());
-        }
-        if let Some(keys) = &body.keys {
-            provider.keys = to_raw_keys(keys);
-        }
-        Ok(())
-    }) {
-        Ok(compiled) => compiled,
-        Err(error) => return error_response::response(&error),
-    };
-    published(&state, compiled);
-    get_provider(State(state), Path(id)).await
+    let result = state
+        .admin
+        .mutate(&state, |base, file| {
+            let provider = base_provider(base, file, &id)?;
+            if let Some(base_url) = &body.base_url {
+                provider.base_url = Some(base_url.clone());
+            }
+            if let Some(keys) = &body.keys {
+                provider.keys = to_raw_keys(keys);
+            }
+            Ok(Touched::Provider(id.clone()))
+        })
+        .await;
+    match result {
+        Ok(()) => get_provider(State(state), Path(id)).await,
+        Err(error) => error_response::response(&error),
+    }
 }
 
 #[utoipa::path(delete, path = "/admin/v1/providers/{id}",
@@ -304,21 +394,18 @@ pub async fn delete_provider(
     State(state): State<GatewayState>,
     Path(id): Path<String>,
 ) -> Response {
-    let compiled = match state.admin.mutate(|raw| {
-        let before = raw.providers.len();
-        raw.providers.retain(|provider| provider.id != id);
-        if raw.providers.len() == before {
-            return Err(GatewayError::InvalidRequest {
-                message: format!("fournisseur `{id}` inconnu"),
-            });
-        }
-        Ok(())
-    }) {
-        Ok(compiled) => compiled,
-        Err(error) => return error_response::response(&error),
-    };
-    published(&state, compiled);
-    no_content()
+    let result = state
+        .admin
+        .mutate(&state, |base, file| {
+            base_provider(base, file, &id)?;
+            base.providers.retain(|provider| provider.id != id);
+            Ok(Touched::Provider(id.clone()))
+        })
+        .await;
+    match result {
+        Ok(()) => no_content(),
+        Err(error) => error_response::response(&error),
+    }
 }
 
 #[utoipa::path(post, path = "/admin/v1/providers/{id}/keys",
@@ -334,25 +421,20 @@ pub async fn create_key(
         preview: preview(&body.secret),
         weight: body.weight.unwrap_or(1),
     };
-    let compiled = match state.admin.mutate(|raw| {
-        let provider = raw
-            .providers
-            .iter_mut()
-            .find(|provider| provider.id == id)
-            .ok_or_else(|| GatewayError::InvalidRequest {
-                message: format!("fournisseur `{id}` inconnu"),
-            })?;
-        provider.keys.push(RawKey {
-            secret: body.secret.clone(),
-            weight: body.weight.unwrap_or(1),
-        });
-        Ok(())
-    }) {
-        Ok(compiled) => compiled,
-        Err(error) => return error_response::response(&error),
-    };
-    published(&state, compiled);
-    created(view)
+    let result = state
+        .admin
+        .mutate(&state, |base, file| {
+            base_provider(base, file, &id)?.keys.push(RawKey {
+                secret: body.secret.clone(),
+                weight: body.weight.unwrap_or(1),
+            });
+            Ok(Touched::Provider(id.clone()))
+        })
+        .await;
+    match result {
+        Ok(()) => created(view),
+        Err(error) => error_response::response(&error),
+    }
 }
 
 #[utoipa::path(delete, path = "/admin/v1/providers/{id}/keys/{index}",
@@ -364,27 +446,23 @@ pub async fn delete_key(
     State(state): State<GatewayState>,
     Path((id, index)): Path<(String, usize)>,
 ) -> Response {
-    let compiled = match state.admin.mutate(|raw| {
-        let provider = raw
-            .providers
-            .iter_mut()
-            .find(|provider| provider.id == id)
-            .ok_or_else(|| GatewayError::InvalidRequest {
-                message: format!("fournisseur `{id}` inconnu"),
-            })?;
-        if index >= provider.keys.len() {
-            return Err(GatewayError::InvalidRequest {
-                message: format!("clé {index} inexistante pour `{id}`"),
-            });
-        }
-        provider.keys.remove(index);
-        Ok(())
-    }) {
-        Ok(compiled) => compiled,
-        Err(error) => return error_response::response(&error),
-    };
-    published(&state, compiled);
-    no_content()
+    let result = state
+        .admin
+        .mutate(&state, |base, file| {
+            let provider = base_provider(base, file, &id)?;
+            if index >= provider.keys.len() {
+                return Err(GatewayError::InvalidRequest {
+                    message: format!("clé {index} inexistante pour `{id}`"),
+                });
+            }
+            provider.keys.remove(index);
+            Ok(Touched::Provider(id.clone()))
+        })
+        .await;
+    match result {
+        Ok(()) => no_content(),
+        Err(error) => error_response::response(&error),
+    }
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -400,11 +478,9 @@ pub async fn list_routes(
     State(state): State<GatewayState>,
     Query(query): Query<Pagination>,
 ) -> Response {
-    let raw = state.admin.snapshot();
-    let items: Vec<(String, RouteView)> = raw
-        .routes
-        .iter()
-        .map(|route| (route.alias.clone(), route_view(route)))
+    let items: Vec<(String, RouteView)> = routes(&state)
+        .into_iter()
+        .map(|view| (view.alias.clone(), view))
         .collect();
     let (data, next_cursor) = paginate(items, &query);
     ok(RoutePage {
@@ -424,31 +500,34 @@ pub async fn create_route(
     let route = RawRoute {
         alias: body.alias,
         fallbacks: body.fallbacks,
-        timeouts: buntu_core::config::RawConfig::default().timeouts,
+        timeouts: RawConfig::default().timeouts,
     };
-    let compiled = match state.admin.mutate(|raw| {
-        if raw.routes.iter().any(|existing| existing.alias == alias) {
-            return Err(GatewayError::InvalidRequest {
-                message: format!("la route `{alias}` existe déjà"),
-            });
-        }
-        raw.routes.push(route.clone());
-        Ok(())
-    }) {
-        Ok(compiled) => compiled,
-        Err(error) => return error_response::response(&error),
-    };
-    published(&state, compiled);
-    created(route_view(&route))
+    let result = state
+        .admin
+        .mutate(&state, |base, file| {
+            if base.routes.iter().any(|entry| entry.alias == alias)
+                || file.routes.iter().any(|entry| entry.alias == alias)
+            {
+                return Err(GatewayError::InvalidRequest {
+                    message: format!("la route `{alias}` existe déjà"),
+                });
+            }
+            base.routes.push(route.clone());
+            Ok(Touched::Route(alias.clone()))
+        })
+        .await;
+    match result {
+        Ok(()) => created(route_view(&route, SOURCE_DATABASE)),
+        Err(error) => error_response::response(&error),
+    }
 }
 
 #[utoipa::path(get, path = "/admin/v1/routes/{alias}",
     params(("alias" = String, Path, description = "Alias de la route")),
     responses((status = 200, body = RouteView), (status = 404, body = ErrorEnvelope)))]
 pub async fn get_route(State(state): State<GatewayState>, Path(alias): Path<String>) -> Response {
-    let raw = state.admin.snapshot();
-    match raw.routes.iter().find(|route| route.alias == alias) {
-        Some(route) => ok(route_view(route)),
+    match routes(&state).into_iter().find(|view| view.alias == alias) {
+        Some(view) => ok(view),
         None => not_found(&format!("route `{alias}` inconnue")),
     }
 }
@@ -462,24 +541,20 @@ pub async fn update_route(
     Path(alias): Path<String>,
     Json(body): Json<UpdateRoute>,
 ) -> Response {
-    let compiled = match state.admin.mutate(|raw| {
-        let route = raw
-            .routes
-            .iter_mut()
-            .find(|route| route.alias == alias)
-            .ok_or_else(|| GatewayError::InvalidRequest {
-                message: format!("route `{alias}` inconnue"),
-            })?;
-        if let Some(fallbacks) = &body.fallbacks {
-            route.fallbacks = fallbacks.clone();
-        }
-        Ok(())
-    }) {
-        Ok(compiled) => compiled,
-        Err(error) => return error_response::response(&error),
-    };
-    published(&state, compiled);
-    get_route(State(state), Path(alias)).await
+    let result = state
+        .admin
+        .mutate(&state, |base, file| {
+            let route = base_route(base, file, &alias)?;
+            if let Some(fallbacks) = &body.fallbacks {
+                route.fallbacks = fallbacks.clone();
+            }
+            Ok(Touched::Route(alias.clone()))
+        })
+        .await;
+    match result {
+        Ok(()) => get_route(State(state), Path(alias)).await,
+        Err(error) => error_response::response(&error),
+    }
 }
 
 #[utoipa::path(delete, path = "/admin/v1/routes/{alias}",
@@ -489,21 +564,18 @@ pub async fn delete_route(
     State(state): State<GatewayState>,
     Path(alias): Path<String>,
 ) -> Response {
-    let compiled = match state.admin.mutate(|raw| {
-        let before = raw.routes.len();
-        raw.routes.retain(|route| route.alias != alias);
-        if raw.routes.len() == before {
-            return Err(GatewayError::InvalidRequest {
-                message: format!("route `{alias}` inconnue"),
-            });
-        }
-        Ok(())
-    }) {
-        Ok(compiled) => compiled,
-        Err(error) => return error_response::response(&error),
-    };
-    published(&state, compiled);
-    no_content()
+    let result = state
+        .admin
+        .mutate(&state, |base, file| {
+            base_route(base, file, &alias)?;
+            base.routes.retain(|route| route.alias != alias);
+            Ok(Touched::Route(alias.clone()))
+        })
+        .await;
+    match result {
+        Ok(()) => no_content(),
+        Err(error) => error_response::response(&error),
+    }
 }
 
 // ---------------------------------------------------------------------------------------------

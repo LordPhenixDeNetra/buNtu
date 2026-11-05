@@ -303,10 +303,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72f5acc6cb2ba439de613abc23857ec3d78374d8ed5ac84e9d11336e87da8649"
 
 [[package]]
-name = "buntu-cache"
-version = "0.0.1-rc.1"
-
-[[package]]
 name = "buntu-cli"
 version = "0.0.1-rc.1"
 dependencies = [
@@ -318,10 +314,6 @@ dependencies = [
  "serde_json",
  "tokio",
 ]
-
-[[package]]
-name = "buntu-cluster"
-version = "0.0.1-rc.1"
 
 [[package]]
 name = "buntu-conformance"
@@ -390,14 +382,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "buntu-governance"
-version = "0.0.1-rc.1"
-
-[[package]]
-name = "buntu-mcp"
-version = "0.0.1-rc.1"
-
-[[package]]
 name = "buntu-mock-provider"
 version = "0.0.1-rc.1"
 dependencies = [
@@ -419,10 +403,6 @@ dependencies = [
  "metrics-exporter-prometheus",
  "tokio",
 ]
-
-[[package]]
-name = "buntu-plugin-wasm"
-version = "0.0.1-rc.1"
 
 [[package]]
 name = "buntu-providers"

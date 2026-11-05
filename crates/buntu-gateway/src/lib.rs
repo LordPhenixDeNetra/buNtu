@@ -26,16 +26,6 @@ pub use state::GatewayState;
 /// Taille maximale du corps d'une requête : 10 Mo (cahier §8.1).
 pub const MAX_BODY_BYTES: usize = 10 * 1024 * 1024;
 
-/// Routeur de santé seul (tests historiques, sans configuration).
-pub fn app(readiness: Readiness) -> Router {
-    Router::new()
-        .route("/health", get(health::health))
-        .route("/ready", get(health::ready))
-        .with_state(readiness)
-        .layer(DefaultBodyLimit::max(MAX_BODY_BYTES))
-        .layer(RequestBodyLimitLayer::new(MAX_BODY_BYTES))
-}
-
 /// Exposition Prometheus (T1.19) : 503 tant que l'exportateur n'est pas installé.
 async fn metrics_endpoint() -> axum::response::Response {
     match buntu_observe::metrics::render_global() {

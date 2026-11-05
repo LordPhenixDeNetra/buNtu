@@ -1,13 +1,12 @@
-# buNtu â€” fichiers ignorÃ©s par Git
+# buNtu — fichiers ignorés par Git
 #
-# Le code n'existe pas encore (voir AGENTS.md, T0.2) : ce fichier est dÃ©jÃ  prÃªt pour le
-# workspace Cargo et l'interface SvelteKit.
+# Workspace Cargo, console SvelteKit (`ui/`) et lanceur npx (`npx/`).
 
 # --- Rust / Cargo ---
 /target/
 **/*.rs.bk
 *.pdb
-# Cargo.lock est volontairement versionnÃ© : buNtu est un binaire, pas une bibliothÃ¨que.
+# Cargo.lock est volontairement versionné : buNtu est un binaire, pas une bibliothèque.
 
 # --- Node / interface (SvelteKit, lanceur npx) ---
 node_modules/
@@ -25,7 +24,7 @@ lcov.info
 *.profraw
 *.profdata
 
-# --- DonnÃ©es d'exÃ©cution (SQLite) ---
+# --- Données d'exécution (SQLite) ---
 *.sqlite
 *.sqlite3
 *.sqlite-wal
@@ -43,7 +42,7 @@ lcov.info
 *.tmp
 /tmp/
 
-# --- SystÃ¨me et Ã©diteurs ---
+# --- Système et éditeurs ---
 .DS_Store
 Thumbs.db
 .idea/
