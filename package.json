@@ -2,7 +2,7 @@
   "name": "buntu",
   "version": "0.0.0",
   "private": true,
-  "description": "Vérifications documentaires du dépôt buNtu ; le workspace Cargo arrive à T0.2.",
+  "description": "Vérifications documentaires du dépôt buNtu : fichiers requis, liens, documentation générée.",
   "scripts": {
     "test": "node scripts/check-docs.mjs"
   }

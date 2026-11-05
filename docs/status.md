@@ -18,7 +18,8 @@ dans la PR.
 
 ## Tâche en cours
 
-Aucune. Prochaine : **T1.13** (endpoints compatibles OpenAI).
+Aucune. Prochaines : **T0.1** (validation du nom, côté humain), puis la **phase 2** (fiches à
+rédiger au début de l'epic, guide §11).
 
 ## Phase 0 — Fondations (15 j)
 
@@ -121,4 +122,11 @@ ajoutée à ce tableau au début de l'epic, en même temps que la rédaction de 
 | 2026-11-04 | #22 | Lot E3 : T1.13–T1.16 (API publique et d'administration) | verte (1 min 49 sur `main`) |
 | 2026-11-04 | #23 | Lot E4 : T1.17–T1.21 (stockage, journal, métriques, auth, secrets) | verte (1 min 26) |
 | 2026-11-04 | #24 | Lot E5 : T1.22–T1.24 (interface web) | verte (2 min 20 sur `main`) |
-| 2026-11-04 | #25 | Lot E6 : T1.25–T1.27 (release, benchmark, documentation) | à confirmer |
+| 2026-11-04 | #25 | Lot E6 : T1.25–T1.27 (release, benchmark, documentation) | verte |
+| 2026-11-04 | #26 | Release : console construite avant `dist build` | verte |
+| 2026-11-04 | #27 | Release : `cd ui` dans l'étape de préparation de `dist` | verte |
+| 2026-11-04 | #28 | Release : livraison déclenchée après le workflow Release | verte |
+| 2026-11-05 | #29 | Release : casse de l'image cosign, contexte du smoke test, version npm | verte |
+| 2026-11-05 | #30 | Release : sommes de contrôle téléchargées avant signature | verte |
+| 2026-11-05 | #31 | Release : image étiquetée avec le tag de release | verte |
+| 2026-11-05 | #32 | Revue du dépôt (liste de contrôle) | verte |
