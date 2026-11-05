@@ -11,6 +11,7 @@ use buntu_schema::{
 };
 use bytes::Bytes;
 use hyper::HeaderMap;
+use hyper::header::{HeaderName, HeaderValue};
 
 /// Requête HTTP prête à envoyer au fournisseur.
 pub type HttpRequest = hyper::Request<Bytes>;
@@ -64,6 +65,15 @@ impl StreamState {
     }
 }
 
+/// Valeur d'en-tête portant un secret, marquée sensible.
+pub fn sensitive(value: &str) -> Result<HeaderValue, GatewayError> {
+    let mut header = HeaderValue::from_str(value).map_err(|_| GatewayError::Internal {
+        message: "clé API invalide pour un en-tête HTTP".to_owned(),
+    })?;
+    header.set_sensitive(true);
+    Ok(header)
+}
+
 /// Traduction d'un protocole fournisseur vers le canonique.
 pub trait Provider: Send + Sync {
     fn name(&self) -> &'static str;
@@ -82,6 +92,15 @@ pub trait Provider: Send + Sync {
     fn map_error(&self, status: u16, headers: &HeaderMap, body: &[u8]) -> GatewayError;
 
     fn capabilities(&self, model: &str) -> Capabilities;
+
+    /// En-tête d'authentification amont ; par défaut `Authorization: Bearer <clé>`.
+    /// La valeur est marquée sensible (jamais affichée par `Debug`).
+    fn auth_header(&self, secret: &str) -> Result<(HeaderName, HeaderValue), GatewayError> {
+        Ok((
+            hyper::header::AUTHORIZATION,
+            sensitive(&format!("Bearer {secret}"))?,
+        ))
+    }
 
     /// Construit une requête d'embeddings ; par défaut, le fournisseur ne les prend pas en
     /// charge.

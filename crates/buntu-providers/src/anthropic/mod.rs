@@ -55,6 +55,17 @@ impl AnthropicProvider {
 }
 
 impl Provider for AnthropicProvider {
+    /// `x-api-key` : <https://docs.anthropic.com/en/api/messages> (consulté le 2026-11-05).
+    fn auth_header(
+        &self,
+        secret: &str,
+    ) -> Result<(hyper::header::HeaderName, hyper::header::HeaderValue), GatewayError> {
+        Ok((
+            hyper::header::HeaderName::from_static("x-api-key"),
+            crate::provider::sensitive(secret)?,
+        ))
+    }
+
     fn name(&self) -> &'static str {
         "anthropic"
     }
