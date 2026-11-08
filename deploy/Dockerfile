@@ -66,6 +66,10 @@ ENV BUNTU_DB_PATH=/data/buntu.sqlite
 WORKDIR /data
 VOLUME ["/data"]
 EXPOSE 8080
+# Sonde intégrée au binaire (`buntu health`) : l'image n'a ni shell ni `curl`. Si l'écoute est
+# déplacée hors de 8080, passer l'adresse : `buntu health 127.0.0.1:<port>`.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD ["/usr/local/bin/buntu", "health"]
 USER nonroot:nonroot
 ENTRYPOINT ["/usr/local/bin/buntu"]
 CMD ["serve", "--listen", "0.0.0.0:8080"]
