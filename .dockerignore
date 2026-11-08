@@ -1,9 +1,0 @@
-.git
-.gitignore
-**/node_modules
-**/.svelte-kit
-**/build
-**/target
-**/test-results
-**/playwright-report
-benchmarks/results

@@ -1,0 +1,41 @@
+# Exclusions du contexte de `deploy/Dockerfile` (contexte = racine du dépôt).
+#
+# Liste blanche : tout est exclu, puis seul ce qui sert à construire l'application est
+# réintégré. Documentation, tests de bout en bout, benchmarks, CI, données locales, secrets et
+# artefacts de build ne partent jamais dans le contexte.
+# La dernière règle qui correspond l'emporte : https://docs.docker.com/build/concepts/context/
+
+*
+
+# --- Nécessaire au build -------------------------------------------------------------------
+!Cargo.toml
+!Cargo.lock
+!rust-toolchain.toml
+# Membres du workspace : tous déclarés dans Cargo.toml, donc tous requis par Cargo.
+!crates/
+!tools/
+!xtask/
+# Embarquées dans le binaire (`sqlx::migrate!`).
+!migrations/
+# Source du client d'API de la console (`npm run gen:api`).
+!openapi.json
+!ui/
+
+# --- Ré-exclusions dans ce qui est réintégré ------------------------------------------------
+# Artefacts de build : reconstruits dans l'image.
+**/target
+ui/node_modules
+ui/.svelte-kit
+ui/build
+# Tests de bout en bout et rapports de la console : inutiles au build.
+ui/tests
+ui/test-results
+ui/playwright-report
+ui/playwright.config.ts
+# Données locales et secrets, au cas où ils traîneraient dans un dossier réintégré.
+**/*.sqlite*
+**/*.key
+**/*.pem
+**/.env
+**/.env.*
+**/*.log
