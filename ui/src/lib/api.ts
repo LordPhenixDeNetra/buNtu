@@ -49,8 +49,9 @@ api.use({
   }
 });
 
-export function errorMessage(error: unknown): string {
-  if (typeof error === 'string') {
+/** Message d'une erreur d'API ; `fallback` (traduit par l'appelant) sinon. */
+export function errorMessage(error: unknown, fallback: string): string {
+  if (typeof error === 'string' && error !== '') {
     return error;
   }
   if (error && typeof error === 'object' && 'error' in error) {
@@ -59,5 +60,5 @@ export function errorMessage(error: unknown): string {
       return detail.message;
     }
   }
-  return 'Erreur inattendue';
+  return fallback;
 }
