@@ -229,6 +229,9 @@ jobs:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
 
+      - name: Check that every version matches the tag (ADR-0009)
+        run: node scripts/release.mjs check "${{ inputs.tag || github.event.workflow_run.head_branch }}"
+
       - name: Align the package version with the release
         working-directory: npx
         run: npm version --no-git-tag-version --allow-same-version "${{ inputs.tag || github.event.workflow_run.head_branch }}"
