@@ -170,6 +170,7 @@ button {
   background: var(--color-accent);
   color: var(--color-on-accent);
   font-weight: 500;
+  white-space: nowrap;
   cursor: pointer;
   transition:
     filter var(--motion-fast) var(--ease-out),
@@ -325,6 +326,10 @@ tbody tr:hover {
   background: var(--color-surface-2);
 }
 
+td.mono {
+  white-space: nowrap;
+}
+
 td.num,
 th.num {
   text-align: right;
@@ -412,7 +417,8 @@ a.tile:hover {
   font-weight: 600;
   white-space: nowrap;
   --badge-color: var(--color-muted);
-  color: var(--badge-color);
+  /* Texte tiré vers la couleur du texte : >= 5:1 sur fond teinté, dans les deux thèmes. */
+  color: color-mix(in srgb, var(--badge-color) 80%, var(--color-text));
   background: color-mix(in srgb, var(--badge-color) var(--tint-strength), transparent);
 }
 

@@ -52,6 +52,10 @@ dominant des outils de développement.
 de champ ≥ 3,3:1 ; marque 5,15 (clair) et 7,21 (sombre). `--color-border` (1,29:1) reste
 décoratif et ne délimite jamais seul un contrôle.
 
+**Badges sur fond teinté** : la couleur pure tombe à 3,88:1 dans le pire cas (relevé par axe).
+Le texte d'un badge est donc la couleur du statut mélangée à 80 % avec `--color-text`, ce qui
+donne ≥ 5,05:1 (clair) et ≥ 5,68:1 (sombre) sur toutes les surfaces.
+
 ## Typographie
 
 Polices du système, sans téléchargement : l'interface reste embarquée dans le binaire, sous

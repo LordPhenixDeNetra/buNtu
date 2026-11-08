@@ -67,3 +67,59 @@ test('create a provider, a route, then find the request in the journal', async (
     expect(serious, `${path} : ${JSON.stringify(serious, null, 2)}`).toEqual([]);
   }
 });
+
+test('file entries are read-only, deletions are confirmed, focus follows the detail', async ({ page }) => {
+  // ADR-0008 : `e2e` vient du fichier de configuration, `e2e-ui` de la console (test précédent).
+  await page.goto('/providers');
+  const fromFile = page.getByRole('region', { name: 'e2e', exact: true });
+  await expect(fromFile.getByText('fichier', { exact: true })).toBeVisible();
+  await expect(fromFile.getByRole('button', { name: 'Supprimer' })).toHaveCount(0);
+  await expect(fromFile.getByLabel('URL de base')).toBeDisabled();
+
+  // Suppression : dialogue accessible ; « Annuler » ne supprime rien et rend le focus.
+  const fromConsole = page.getByRole('region', { name: 'e2e-ui', exact: true });
+  const remove = fromConsole.getByRole('button', { name: 'Supprimer' });
+  await remove.click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText('Supprimer ce fournisseur et ses clés ?');
+  await dialog.getByRole('button', { name: 'Annuler' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(remove).toBeFocused();
+  await expect(fromConsole).toBeVisible();
+
+  // Journal : le focus va au détail, Échap le ferme et rend le focus au bouton.
+  await page.goto('/logs?provider=e2e');
+  const open = page.getByRole('button', { name: 'Détail' }).first();
+  await open.click();
+  await expect(page.getByRole('heading', { name: 'Détail', level: 2 })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('region', { name: 'Détail' })).toBeHidden();
+  await expect(open).toBeFocused();
+
+  for (const path of ['/', '/providers', '/routes']) {
+    await page.goto(path);
+    const results = await new AxeBuilder({ page }).analyze();
+    const serious = results.violations.filter((violation) =>
+      ['serious', 'critical'].includes(violation.impact ?? '')
+    );
+    expect(serious, `${path} : ${JSON.stringify(serious, null, 2)}`).toEqual([]);
+  }
+});
+
+test.describe('dark theme', () => {
+  // Le sombre est le thème prioritaire du système de design : axe le vérifie aussi.
+  test.use({ colorScheme: 'dark' });
+
+  test('key screens have no serious accessibility violation in dark mode', async ({ page }) => {
+    for (const path of ['/', '/providers', '/routes', '/logs?provider=e2e']) {
+      await page.goto(path);
+      await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+      const results = await new AxeBuilder({ page }).analyze();
+      const serious = results.violations.filter((violation) =>
+        ['serious', 'critical'].includes(violation.impact ?? '')
+      );
+      expect(serious, `${path} : ${JSON.stringify(serious, null, 2)}`).toEqual([]);
+    }
+  });
+});
