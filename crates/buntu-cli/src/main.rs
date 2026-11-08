@@ -1,6 +1,7 @@
 //! Binaire `buntu` : serveur, validation de configuration, version.
 
 mod config_cmd;
+mod health_cmd;
 
 use std::error::Error;
 use std::net::SocketAddr;
@@ -21,6 +22,7 @@ commandes:
   serve [--config FICHIER] [--listen ADRESSE]   démarre la passerelle
   config validate FICHIER                       valide un fichier de configuration
   config schema                                 affiche le schéma JSON de la configuration
+  health [ADRESSE]                              sonde GET /health (défaut 127.0.0.1:8080)
   --version                                     affiche la version
 ";
 
@@ -45,6 +47,17 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
         "serve" => serve_command(parse_serve(arguments)?),
         "config" => config_command(arguments),
+        "health" => {
+            let address: SocketAddr = arguments
+                .first()
+                .map_or(health_cmd::DEFAULT_ADDRESS, String::as_str)
+                .parse()?;
+            if health_cmd::probe(address) {
+                Ok(())
+            } else {
+                Err(format!("passerelle injoignable ou non prête sur {address}").into())
+            }
+        }
         other => Err(format!("commande inconnue : {other}\n{USAGE}").into()),
     }
 }
