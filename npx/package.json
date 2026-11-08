@@ -1,6 +1,6 @@
 {
   "name": "buntu",
-  "version": "0.0.1-rc.1",
+  "version": "0.1.0",
   "description": "Lanceur npx de la passerelle IA buNtu : télécharge le binaire natif et vérifie sa somme SHA-256.",
   "license": "Apache-2.0",
   "bin": {
