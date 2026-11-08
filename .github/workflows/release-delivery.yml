@@ -54,12 +54,18 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # Ce workflow ne tourne pas sur l'événement « push de tag » : `type=semver` ne lit pas
+          # le tag tout seul, il faut lui passer `value` (README de docker/metadata-action,
+          # section `type=semver`, consultée le 2026-11-08). Une pré-release ne reçoit que
+          # `{{version}}` ; `latest` est réservé aux versions finales.
+          flavor: |
+            latest=false
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
+            type=semver,pattern={{version}},value=${{ inputs.tag || github.event.workflow_run.head_branch }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ inputs.tag || github.event.workflow_run.head_branch }}
+            type=semver,pattern={{major}},value=${{ inputs.tag || github.event.workflow_run.head_branch }}
             type=raw,value=${{ inputs.tag || github.event.workflow_run.head_branch }}
-            type=raw,value=latest
+            type=raw,value=latest,enable=${{ !contains(inputs.tag || github.event.workflow_run.head_branch, '-') }}
 
       - name: Build and push multi-arch image
         id: build
@@ -114,7 +120,9 @@ jobs:
             target: x86_64-unknown-linux-musl
           - runner: ubuntu-24.04-arm
             target: aarch64-unknown-linux-musl
-          - runner: macos-14
+          # `macos-14` n'est plus fourni par GitHub (« configuration 'macos-14-arm64-us-default'
+          # is not supported », livraison v0.1.0) ; `macos-latest` est ARM64, comme en CI.
+          - runner: macos-latest
             target: aarch64-apple-darwin
           - runner: windows-latest
             target: x86_64-pc-windows-msvc
