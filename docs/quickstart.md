@@ -81,12 +81,19 @@ repli peut basculer vers une autre cible sans changer le code client.
 ## Image conteneur (après la première release)
 
 ```sh
-docker run --rm -p 8080:8080 ghcr.io/lordphenixdenetra/buntu:latest
+docker run --rm -p 8080:8080 -v buntu-data:/data ghcr.io/lordphenixdenetra/buntu:latest
 curl -s http://127.0.0.1:8080/health   # {"status":"ok"}
 ```
 
+Le volume `/data` garde la base SQLite (journal, jetons, configuration saisie dans la console)
+et la clé maître `buntu.sqlite.key` ; sans lui, tout est perdu à l'arrêt du conteneur. Le jeton
+d'administration du premier démarrage s'affiche dans `docker logs`.
+
 Sans fichier de configuration, la passerelle démarre avec les valeurs par défaut ; montez un
 fichier (`-v "$PWD/buntu.toml:/etc/buntu.toml"`) et passez `--config /etc/buntu.toml`.
+
+Pour construire l'image vous-même, depuis la racine du dépôt :
+`docker build -f deploy/Dockerfile -t buntu .`
 
 ## Étapes suivantes
 

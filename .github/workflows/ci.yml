@@ -157,11 +157,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
       - name: Validate the Dockerfile
-        run: docker build --call=check .
+        run: docker build --call=check -f deploy/Dockerfile .
       - name: Build the linux/amd64 image (no push)
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: deploy/Dockerfile
           platforms: linux/amd64
           push: false
           tags: buntu:ci

@@ -29,6 +29,8 @@ machine le prouve. Une seule tâche en cours à la fois.
 - `tools/mock-provider` — fournisseur simulé (T0.3), hors des crates publiées.
 - `xtask/` — `cargo xtask bench` : banc de benchmark scripté (T0.4).
 - `ui/` — interface SvelteKit statique ; `benchmarks/` — banc et résultats ; `docs/adr/`.
+- `deploy/` — image conteneur : `Dockerfile` et `Dockerfile.dockerignore` (liste blanche),
+  construits depuis la racine (`docker build -f deploy/Dockerfile .`).
 
 Crates prévues par le cahier mais **créées seulement au début de leur tâche** (aucune crate vide
 dans le workspace, règle 4) : `buntu-governance` (clés virtuelles, budgets, limites de débit),
