@@ -26,10 +26,20 @@ Un tag `vX.Y.Z` poussé sur GitHub déclenche :
 1. **Release** (`release.yml`, généré par cargo-dist) : binaires Linux x86-64/ARM64 (musl),
    macOS ARM64 et Windows x86-64, installateurs shell et PowerShell, sommes SHA-256, release
    GitHub avec les notes reprises de `CHANGELOG.md`.
-2. **Release delivery** (`release-delivery.yml`, à la fin de Release) : image multi-arch sur
-   GHCR (`X.Y.Z`, `X.Y`, `X`, `latest`) avec SBOM et provenance, signature cosign, binaires
-   bruts pour le lanceur npm, test de fumée du binaire publié (`--version`, `/ready`),
-   publication de `npx buntu` (si `NPM_TOKEN` est configuré).
+2. **Release delivery** (`release-delivery.yml`, à la fin de Release) : image multi-arch
+   (amd64, arm64) sur GHCR avec SBOM et provenance, signature cosign, binaires bruts pour le
+   lanceur npm, test de fumée du binaire publié (`--version`, `/ready`), publication de
+   `npx buntu` (si le secret `NPM_TOKEN` est configuré).
+
+   Tags de l'image `ghcr.io/lordphenixdenetra/buntu` :
+
+   | Version | Tags |
+   | --- | --- |
+   | finale `vX.Y.Z` | `X.Y.Z`, `X.Y`, `X`, `vX.Y.Z`, `latest` |
+   | pré-release `vX.Y.Z-rc.N` | `X.Y.Z-rc.N`, `vX.Y.Z-rc.N` (jamais `latest`) |
+
+   Paquet npm `buntu` : une version finale part sous l'étiquette `latest`, une pré-release
+   sous `next` (`npx buntu@next`).
 
 crates.io n'est **pas** publié pour l'instant (décision du 2026-11-08 : un nom publié ne se
 libère pas, on attend la validation du nom, T0.1).
