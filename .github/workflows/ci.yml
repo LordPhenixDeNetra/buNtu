@@ -133,6 +133,9 @@ jobs:
       - run: cargo run -q -p buntu-cli -- config schema > config.schema.json
       - run: node scripts/config-reference.mjs --check
       - run: node scripts/check-docs.mjs
+      # Une seule version dans tout le dépôt (ADR-0009).
+      - run: node --test scripts/release.test.mjs
+      - run: node scripts/release.mjs check
       - run: bash scripts/check-quickstart.sh
 
   npx:

@@ -1,0 +1,66 @@
+# git-cliff : CHANGELOG.md généré depuis les commits conventionnels (cahier §12.2, ADR-0009).
+# Référence : https://git-cliff.org/docs/configuration (exemples officiels `keepachangelog.toml`
+# et `cliff.toml`, consultés le 2026-11-08). Lancé par `node scripts/release.mjs bump X.Y.Z`.
+
+[changelog]
+header = """
+# Journal des modifications
+
+Toutes les évolutions notables de buNtu sont consignées ici.
+
+Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le projet respecte
+le [versionnage sémantique](https://semver.org/lang/fr/) (avant 1.0, une mineure peut casser :
+voir `docs/release.md`).\n
+"""
+body = """
+{% if version -%}
+    ## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else -%}
+    ## [Non publié]
+{% endif -%}
+{% for group, commits in commits | group_by(attribute="group") %}
+    ### {{ group | striptags | trim | upper_first }}
+    {% for commit in commits %}
+        - {% if commit.scope %}**{{ commit.scope }}** : {% endif %}\
+            {% if commit.breaking %}[**rupture**] {% endif %}\
+            {{ commit.message | split(pat="\n") | first | upper_first | trim }}\
+    {% endfor %}
+{% endfor %}\n
+"""
+footer = """
+{% for release in releases -%}
+    {% if release.version and release.previous and release.previous.version -%}
+        [{{ release.version | trim_start_matches(pat="v") }}]: \
+            https://github.com/LordPhenixDeNetra/buNtu/compare/{{ release.previous.version }}...{{ release.version }}
+    {% elif release.version -%}
+        [{{ release.version | trim_start_matches(pat="v") }}]: \
+            https://github.com/LordPhenixDeNetra/buNtu/releases/tag/{{ release.version }}
+    {% endif -%}
+{% endfor %}
+"""
+trim = true
+
+[git]
+conventional_commits = true
+# Les fusions de PR (« Merge pull request… ») ne sont pas conventionnelles : exclues.
+filter_unconventional = true
+protect_breaking_commits = true
+# Le commentaire HTML fixe l'ordre des sections ; il est retiré à l'affichage (`striptags`).
+# Sécurité : par la portée `(security)`, jamais par le corps (un commit de documentation qui
+# mentionne « security » n'est pas un correctif de sécurité).
+commit_parsers = [
+    { message = "^(feat|fix)\\(security\\)", group = "<!-- 3 -->Sécurité" },
+    { message = "^feat", group = "<!-- 0 -->Nouveautés" },
+    { message = "^fix", group = "<!-- 1 -->Corrections" },
+    { message = "^perf", group = "<!-- 2 -->Performances" },
+    { message = "^refactor", group = "<!-- 4 -->Refonte interne" },
+    { message = "^doc", group = "<!-- 5 -->Documentation" },
+    { message = "^test", group = "<!-- 6 -->Tests" },
+    { message = "^chore\\(release\\)", skip = true },
+    { message = "^(build|ci|chore|style)", group = "<!-- 7 -->Maintenance" },
+    { message = "^revert", group = "<!-- 8 -->Annulations" },
+]
+filter_commits = false
+tag_pattern = "v[0-9].*"
+topo_order = false
+sort_commits = "oldest"
