@@ -102,8 +102,13 @@ async function download(url, destination) {
   writeFileSync(destination, await fetchBytes(url));
 }
 
+/** Version de ce paquet : `package.json` est le voisin de `cli.js` dans le paquet publié. */
+function packageVersion() {
+  return require("./package.json").version;
+}
+
 async function ensureBinary(options = {}) {
-  const version = options.version ?? require("../package.json").version;
+  const version = options.version ?? packageVersion();
   const triple = options.triple ?? targetFor(platform(), arch());
   const base = options.releaseBaseUrl ?? releaseBase(version);
   const asset = assetName(triple);
@@ -163,6 +168,7 @@ module.exports = {
   ensureBinary,
   fetchBytes,
   fetchText,
+  packageVersion,
   parseChecksum,
   releaseBase,
   sha256File,
