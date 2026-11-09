@@ -9,6 +9,7 @@ import {
   assetName,
   binaryName,
   ensureBinary,
+  packageVersion,
   parseChecksum,
   sha256File,
   targetFor,
@@ -101,4 +102,10 @@ test("une somme divergente interdit l'exécution", async () => {
     server.close();
     rmSync(cacheRoot, { recursive: true, force: true });
   }
+});
+
+test("la version par défaut est celle du paquet publié (package.json voisin de cli.js)", () => {
+  // `npx` n'a que le contenu du paquet : `cli.js` et `package.json` côte à côte, rien au-dessus.
+  const own = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+  assert.equal(packageVersion(), own.version);
 });
