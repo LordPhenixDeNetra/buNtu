@@ -225,8 +225,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success')
-    env:
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    # Publication de confiance npm (OIDC) : aucun jeton stocké. Prérequis côté npm : le paquet
+    # `@buntuu/cli` déclare ce dépôt et ce fichier (`release-delivery.yml`) comme éditeur de
+    # confiance. Exige npm >= 11.5.1, Node >= 22.14 et `id-token: write` (permissions du
+    # workflow). https://docs.npmjs.com/trusted-publishers (consulté le 2026-11-09).
     steps:
       - uses: actions/checkout@v4
         with:
@@ -236,6 +238,9 @@ jobs:
         with:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
+
+      - name: Upgrade npm for trusted publishing (>= 11.5.1)
+        run: npm install -g npm@^11.5.1 && npm --version
 
       - name: Check that every version matches the tag (ADR-0009)
         run: node scripts/release.mjs check "${{ inputs.tag || github.event.workflow_run.head_branch }}"
@@ -248,11 +253,9 @@ jobs:
         working-directory: npx
         run: npm test
 
-      - name: Publish with provenance
-        if: ${{ env.NPM_TOKEN != '' }}
+      - name: Publish (trusted publishing, provenance attached by npm)
         working-directory: npx
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           RELEASE_TAG: ${{ inputs.tag || github.event.workflow_run.head_branch }}
         run: |
           version="${RELEASE_TAG#v}"
