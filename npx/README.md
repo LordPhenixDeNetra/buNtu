@@ -1,15 +1,15 @@
-# `@buntu/cli` — lanceur npm
+# `@buntuu/cli` — lanceur npm
 
 Télécharge le binaire natif correspondant à la plateforme depuis la release GitHub
 `v<version>` (même version que ce paquet), **vérifie la somme SHA-256** publiée, puis exécute
 le binaire avec les arguments reçus.
 
 ```sh
-npx @buntu/cli --version
-npx @buntu/cli serve --listen 0.0.0.0:8080
+npx @buntuu/cli --version
+npx @buntuu/cli serve --listen 0.0.0.0:8080
 
 # ou installation globale : la commande s'appelle `buntu`
-npm install -g @buntu/cli
+npm install -g @buntuu/cli
 buntu --version
 ```
 
@@ -18,4 +18,4 @@ buntu --version
 - Cache : `~/.cache/buntu/<version>/` ; un binaire dont la somme ne correspond plus est
   retéléchargé.
 - Aucun binaire n'est exécuté avant la vérification de l'empreinte.
-- Paquet préfixé (`@buntu/`) : npm refuse le nom `buntu` seul, jugé trop proche de `bun`.
+- Paquet préfixé (`@buntuu/`) : npm refuse le nom `buntu` seul, jugé trop proche de `bun`.
