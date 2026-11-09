@@ -29,7 +29,7 @@ Un tag `vX.Y.Z` poussé sur GitHub déclenche :
 2. **Release delivery** (`release-delivery.yml`, à la fin de Release) : image multi-arch
    (amd64, arm64) sur GHCR avec SBOM et provenance, signature cosign, binaires bruts pour le
    lanceur npm, test de fumée du binaire publié (`--version`, `/ready`), publication de
-   `npx buntu` (si le secret `NPM_TOKEN` est configuré).
+   `npx @buntu/cli` (si le secret `NPM_TOKEN` est configuré).
 
    Tags de l'image `ghcr.io/lordphenixdenetra/buntu` :
 
@@ -38,8 +38,10 @@ Un tag `vX.Y.Z` poussé sur GitHub déclenche :
    | finale `vX.Y.Z` | `X.Y.Z`, `X.Y`, `X`, `vX.Y.Z`, `latest` |
    | pré-release `vX.Y.Z-rc.N` | `X.Y.Z-rc.N`, `vX.Y.Z-rc.N` (jamais `latest`) |
 
-   Paquet npm `buntu` : une version finale part sous l'étiquette `latest`, une pré-release
-   sous `next` (`npx buntu@next`).
+   Paquet npm `@buntu/cli` (organisation npm `buntu` ; le nom `buntu` seul est refusé par npm,
+   jugé trop proche de `bun`) : une version finale part sous l'étiquette `latest`, une
+   pré-release sous `next` (`npx @buntu/cli@next`). Le jeton `NPM_TOKEN` doit pouvoir publier
+   dans l'organisation.
 
 crates.io n'est **pas** publié pour l'instant (décision du 2026-11-08 : un nom publié ne se
 libère pas, on attend la validation du nom, T0.1).
@@ -81,7 +83,7 @@ git push origin vX.Y.Z
 - [ ] Workflows **Release** puis **Release delivery** verts.
 - [ ] Release GitHub : 5 archives, sommes `.sha256` et leurs signatures `.sigstore.json`.
 - [ ] `docker run --rm ghcr.io/lordphenixdenetra/buntu:X.Y.Z --version`.
-- [ ] `npx buntu@X.Y.Z --version` (si le lanceur npm est publié).
+- [ ] `npx @buntu/cli@X.Y.Z --version` (si le lanceur npm est publié).
 - [ ] `docs/status.md` : ligne de la release dans l'historique.
 
 ## Correctif et retrait

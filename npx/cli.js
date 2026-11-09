@@ -2,7 +2,7 @@
 "use strict";
 
 /**
- * Lanceur `npx buntu` (T1.25).
+ * Lanceur npm `@buntu/cli` (T1.25) : `npx @buntu/cli`.
  *
  * Télécharge le binaire natif publié dans la release GitHub du même numéro de version,
  * vérifie sa somme SHA-256 avant toute exécution, puis lui passe les arguments reçus.
