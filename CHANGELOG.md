@@ -6,6 +6,17 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 le [versionnage sémantique](https://semver.org/lang/fr/) (avant 1.0, une mineure peut casser :
 voir `docs/release.md`).
 
+## [0.1.2] - 2026-11-09
+
+### Corrections
+
+- **npm** : Read the launcher version from its own package.json
+
+### Maintenance
+
+- **npm** : Publish the launcher under the buntuu npm organisation
+- **release** : Publish the npm launcher with npm trusted publishing
+
 ## [0.1.1] - 2026-11-09
 
 ### Corrections
