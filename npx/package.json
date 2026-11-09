@@ -1,6 +1,6 @@
 {
   "name": "@buntuu/cli",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Lanceur npx de la passerelle IA buNtu : télécharge le binaire natif et vérifie sa somme SHA-256.",
   "license": "Apache-2.0",
   "repository": {
