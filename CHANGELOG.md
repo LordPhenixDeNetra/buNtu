@@ -6,6 +6,16 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 le [versionnage sémantique](https://semver.org/lang/fr/) (avant 1.0, une mineure peut casser :
 voir `docs/release.md`).
 
+## [0.1.1] - 2026-11-09
+
+### Corrections
+
+- **release** : Publish semver image tags and the macOS launcher binary
+
+### Maintenance
+
+- **npm** : Publish the launcher as @buntu/cli
+
 ## [0.1.0] - 2026-11-08
 
 Première **alpha publique** (cahier §14) : une passerelle IA auto-hébergée, en un seul binaire,
