@@ -109,3 +109,11 @@ test("la version par défaut est celle du paquet publié (package.json voisin de
   const own = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
   assert.equal(packageVersion(), own.version);
 });
+
+test("package.json déclare le dépôt GitHub (exigé par la provenance npm)", () => {
+  // Sans ce champ, npm refuse la publication de confiance : « repository.url is "", expected
+  // to match "https://github.com/LordPhenixDeNetra/buNtu" from provenance » (livraison v0.1.2).
+  const own = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+  assert.equal(own.repository?.url, "git+https://github.com/LordPhenixDeNetra/buNtu.git");
+  assert.equal(own.repository?.directory, "npx");
+});
