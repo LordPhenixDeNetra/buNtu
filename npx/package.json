@@ -1,5 +1,5 @@
 {
-  "name": "buntu",
+  "name": "@buntu/cli",
   "version": "0.1.0",
   "description": "Lanceur npx de la passerelle IA buNtu : télécharge le binaire natif et vérifie sa somme SHA-256.",
   "license": "Apache-2.0",
