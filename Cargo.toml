@@ -16,7 +16,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 license = "Apache-2.0"
 rust-version = "1.90"
@@ -32,16 +32,16 @@ expect_used = "deny"
 [workspace.dependencies]
 # Crates internes : la version explicite évite que cargo-deny les traite comme des
 # dépendances « wildcard » (règle `bans.wildcards`). Elles seront publiées ensemble ensuite.
-buntu-schema = { version = "0.1.1", path = "crates/buntu-schema" }
-buntu-core = { version = "0.1.1", path = "crates/buntu-core" }
-buntu-providers = { version = "0.1.1", path = "crates/buntu-providers" }
-buntu-gateway = { version = "0.1.1", path = "crates/buntu-gateway" }
-buntu-store = { version = "0.1.1", path = "crates/buntu-store" }
-buntu-security = { version = "0.1.1", path = "crates/buntu-security" }
-buntu-observe = { version = "0.1.1", path = "crates/buntu-observe" }
-buntu-cli = { version = "0.1.1", path = "crates/buntu-cli" }
+buntu-schema = { version = "0.1.2", path = "crates/buntu-schema" }
+buntu-core = { version = "0.1.2", path = "crates/buntu-core" }
+buntu-providers = { version = "0.1.2", path = "crates/buntu-providers" }
+buntu-gateway = { version = "0.1.2", path = "crates/buntu-gateway" }
+buntu-store = { version = "0.1.2", path = "crates/buntu-store" }
+buntu-security = { version = "0.1.2", path = "crates/buntu-security" }
+buntu-observe = { version = "0.1.2", path = "crates/buntu-observe" }
+buntu-cli = { version = "0.1.2", path = "crates/buntu-cli" }
 # Simulateur de fournisseur (T0.3) : dépendance de test uniquement, jamais publiée.
-buntu-mock-provider = { version = "0.1.1", path = "tools/mock-provider" }
+buntu-mock-provider = { version = "0.1.2", path = "tools/mock-provider" }
 
 # Socle partagé : flux asynchrones, octets, sérialisation ;
 # `reqwest` ne sert qu'aux tests et au kit de conformité.
