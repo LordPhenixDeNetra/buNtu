@@ -22,6 +22,7 @@ Toute erreur de la passerelle a la forme OpenAI :
 | `provider_unavailable` | 502 | `api_error` | provider | Fournisseur en panne, connexion refusée | Vérifier `base_url` et l'état du fournisseur |
 | `timeout` | 504 | `api_error` | provider | Premier octet ou durée totale dépassés | Augmenter `timeouts.*` ou changer de cible |
 | `all_targets_failed` | 502 | `api_error` | provider | Toutes les cibles de l'alias ont échoué | Lire le message (tentatives détaillées) et corriger les cibles |
+| `not_found` | 404 | `invalid_request_error` | client | Route inconnue sous `/v1`, `/admin` ou `/anthropic` | Vérifier le chemin et la méthode |
 | `internal_error` | 500 | `server_error` | gateway | Bug interne, journal indisponible | Consulter les journaux du processus et `docs/status.md` |
 
 ## Erreurs de configuration (`buntu config validate`)

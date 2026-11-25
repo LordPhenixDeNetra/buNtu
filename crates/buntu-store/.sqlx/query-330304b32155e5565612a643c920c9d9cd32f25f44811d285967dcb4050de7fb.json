@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO providers (id, kind, base_url) VALUES (?, ?, ?) ON CONFLICT(id) DO UPDATE SET kind = excluded.kind, base_url = excluded.base_url",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "330304b32155e5565612a643c920c9d9cd32f25f44811d285967dcb4050de7fb"
+}

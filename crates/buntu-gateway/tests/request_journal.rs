@@ -108,3 +108,31 @@ fallbacks = ["mock/fake-model"]
     assert_eq!(unknown.map(|log| log.model.as_str()), Some("inconnu"));
     Ok(())
 }
+
+/// Revue 2026-11-05 [4] : à l'arrêt, les lignes encore en file sont écrites, sans attendre le
+/// vidage périodique.
+#[tokio::test]
+async fn pending_lines_are_written_at_shutdown() -> Result<(), Box<dyn Error>> {
+    let store = Store::open_in_memory().await?;
+    let config = from_str("", &MapEnvironment::default())?;
+    let state = GatewayState::new(Readiness::new(true), ConfigHandle::new(config))
+        .with_storage(Arc::new(store.clone()));
+    let writer = state.take_log_writer().ok_or("tâche du journal absente")?;
+    assert!(state.take_log_writer().is_none(), "rendue une seule fois");
+    state.record_request(buntu_store::RequestLogRecord {
+        id: "req-shutdown".to_owned(),
+        model: "chat".to_owned(),
+        provider: "mock".to_owned(),
+        status: 200,
+        latency_ms: 1,
+        input_tokens: 1,
+        output_tokens: 1,
+        created_at: 0,
+        attempts: 1,
+        rowid: 0,
+    });
+    drop(state);
+    tokio::time::timeout(Duration::from_millis(500), writer).await??;
+    assert_eq!(store.request_log("req-shutdown").await?.provider, "mock");
+    Ok(())
+}

@@ -1,12 +1,13 @@
 //! État partagé de la passerelle : configuration, traducteurs, client amont et administration.
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use buntu_core::config::ConfigHandle;
 use buntu_core::fallback::FallbackChain;
 use buntu_observe::request_log::RequestLog;
 use buntu_security::tokens::{hash_token, verify_token};
 use buntu_store::Store;
+use tokio::task::JoinHandle;
 
 use crate::admin::AdminStore;
 use crate::health::Readiness;
@@ -25,6 +26,8 @@ pub struct GatewayState {
     pub store: Option<Arc<Store>>,
     /// Journal asynchrone : `try_send`, jamais bloquant (T1.18).
     pub request_log: Option<RequestLog>,
+    /// Tâche d'écriture du journal, à attendre à l'arrêt (voir [`Self::take_log_writer`]).
+    log_writer: Arc<Mutex<Option<JoinHandle<()>>>>,
     /// Chaîne de repli unique : son budget de réessais vaut pour **toutes** les requêtes (T1.5).
     pub fallback: Arc<FallbackChain>,
     /// Empreinte du jeton admin fourni au démarrage (`BUNTU_ADMIN_TOKEN`), jamais le clair.
@@ -41,6 +44,7 @@ impl GatewayState {
             admin: Arc::new(AdminStore::default()),
             store: None,
             request_log: None,
+            log_writer: Arc::default(),
             fallback: Arc::new(FallbackChain::default()),
             admin_token_hash: None,
         }
@@ -69,10 +73,18 @@ impl GatewayState {
 
     /// Branche le stockage SQLite et démarre l'écriture asynchrone du journal.
     pub fn with_storage(mut self, store: Arc<Store>) -> Self {
-        let (log, _task) = RequestLog::start((*store).clone());
+        let (log, task) = RequestLog::start((*store).clone());
         self.store = Some(store);
         self.request_log = Some(log);
+        self.log_writer = Arc::new(Mutex::new(Some(task)));
         self
+    }
+
+    /// Rend la tâche d'écriture du journal (une seule fois). Elle vide le canal et se termine
+    /// quand le dernier état est libéré : l'attendre après l'arrêt du serveur évite de perdre
+    /// les dernières lignes.
+    pub fn take_log_writer(&self) -> Option<JoinHandle<()>> {
+        self.log_writer.lock().ok()?.take()
     }
 
     /// Enregistre une requête sans jamais bloquer le chemin chaud.

@@ -2,6 +2,7 @@
 
 mod config_cmd;
 mod health_cmd;
+mod secrets_cmd;
 
 use std::error::Error;
 use std::net::SocketAddr;
@@ -23,6 +24,7 @@ commandes:
   config validate FICHIER                       valide un fichier de configuration
   config schema                                 affiche le schéma JSON de la configuration
   health [ADRESSE]                              sonde GET /health (défaut 127.0.0.1:8080)
+  secrets rotate NOUVELLE_CLE                   réchiffre les clés avec une nouvelle clé maître
   --version                                     affiche la version
 ";
 
@@ -47,6 +49,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
         "serve" => serve_command(parse_serve(arguments)?),
         "config" => config_command(arguments),
+        "secrets" => secrets_cmd::command(&arguments),
         "health" => {
             let address: SocketAddr = arguments
                 .first()
@@ -92,7 +95,7 @@ fn serve_command(options: ServeOptions) -> Result<(), Box<dyn Error>> {
         .build()?;
     runtime.block_on(async move {
         // Stockage (journal, jetons, couche base de la configuration), chemin réglable.
-        let database = std::env::var("BUNTU_DB_PATH").unwrap_or_else(|_| "buntu.sqlite".to_owned());
+        let database = database_path();
         let store = match buntu_store::Store::open(&format!("sqlite://{database}")).await {
             Ok(store) => Some(store),
             Err(error) => {
@@ -131,6 +134,7 @@ fn serve_command(options: ServeOptions) -> Result<(), Box<dyn Error>> {
             state = state.with_storage(Arc::new(store));
         }
         state = admin_token(state).await?;
+        let log_writer = state.take_log_writer();
         serve(
             listener,
             app_with_state(state),
@@ -139,6 +143,14 @@ fn serve_command(options: ServeOptions) -> Result<(), Box<dyn Error>> {
             ServerConfig::default(),
         )
         .await?;
+        // Le routeur est libéré : la tâche du journal vide son canal puis se termine.
+        if let Some(task) = log_writer
+            && tokio::time::timeout(LOG_FLUSH_DEADLINE, task)
+                .await
+                .is_err()
+        {
+            eprintln!("buNtu: journal non vidé dans le délai d'arrêt");
+        }
         Ok::<(), Box<dyn Error>>(())
     })
 }
@@ -166,6 +178,14 @@ fn master_key(database: &str, has_store: bool) -> Result<Option<SecretCipher>, B
     }
     Ok(Some(cipher))
 }
+
+/// Chemin de la base SQLite : `BUNTU_DB_PATH`, sinon `buntu.sqlite`.
+fn database_path() -> String {
+    std::env::var("BUNTU_DB_PATH").unwrap_or_else(|_| "buntu.sqlite".to_owned())
+}
+
+/// Délai laissé au journal pour écrire ses dernières lignes après l'arrêt du serveur.
+const LOG_FLUSH_DEADLINE: Duration = Duration::from_secs(5);
 
 /// Longueur minimale d'un jeton admin fourni par l'environnement.
 const MIN_ADMIN_TOKEN_CHARS: usize = 32;

@@ -3,11 +3,12 @@
 //! Les fichiers produits par `ui/` (`npm run build`) sont compilés dans le binaire par
 //! `rust-embed` : le binaire release sert l'UI **sans Node installé**. Les fichiers hachés de
 //! `_app/immutable/` reçoivent un cache long ; le reste est en `no-cache` (SPA). Toute route
-//! inconnue renvoie `index.html` pour la navigation côté client.
+//! inconnue renvoie `index.html` pour la navigation côté client, sauf sous les préfixes d'API
+//! (`/v1`, `/admin`, `/anthropic`), qui répondent par une 404 JSON.
 
 use axum::extract::Path;
 use axum::http::{StatusCode, header};
-use axum::response::{IntoResponse, Response};
+use axum::response::{IntoResponse, Json, Response};
 use rust_embed::RustEmbed;
 
 #[derive(RustEmbed)]
@@ -19,9 +20,36 @@ pub async fn index() -> Response {
     serve("index.html")
 }
 
-/// Ressource statique ou repli SPA.
+/// Préfixes réservés à l'API : jamais de repli SPA (un client recevrait du HTML).
+const API_PREFIXES: &[&str] = &["v1", "admin", "anthropic"];
+
+/// Ressource statique ou repli SPA ; 404 JSON sous les préfixes d'API.
 pub async fn asset(Path(path): Path<String>) -> Response {
+    let first = path
+        .trim_start_matches('/')
+        .split('/')
+        .next()
+        .unwrap_or_default();
+    if API_PREFIXES.contains(&first) {
+        return api_not_found(&path);
+    }
     serve(&path)
+}
+
+fn api_not_found(path: &str) -> Response {
+    let body = serde_json::json!({
+        "error": {
+            "message": format!("unknown route `/{}`", path.trim_start_matches('/')),
+            "type": "invalid_request_error",
+            "code": "not_found",
+        }
+    });
+    (
+        StatusCode::NOT_FOUND,
+        [("x-buntu-error-source", "client")],
+        Json(body),
+    )
+        .into_response()
 }
 
 fn serve(path: &str) -> Response {

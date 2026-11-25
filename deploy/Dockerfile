@@ -32,6 +32,8 @@ COPY xtask ./xtask
 COPY migrations ./migrations
 COPY openapi.json ./
 COPY --from=ui /src/ui/build ./ui/build
+# Requêtes sqlx vérifiées sur le cache `crates/buntu-store/.sqlx/` : aucune base au build.
+ENV SQLX_OFFLINE=true
 ARG TARGETARCH
 # Caches BuildKit : registre Cargo et répertoire `target` réutilisés d'un build à l'autre ;
 # le binaire est copié hors du cache dans la même étape.

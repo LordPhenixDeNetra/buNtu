@@ -3,7 +3,13 @@
 //! Le schéma vit dans `migrations/` à la racine du dépôt ; les migrations sont **en avant
 //! seulement** (jamais de retour arrière destructif).
 //!
-//! Référence : <https://docs.rs/sqlx/latest/sqlx/sqlite/index.html> (consultée le 2026-11-04).
+//! Les requêtes passent par les macros `sqlx::query!` : elles sont vérifiées à la compilation
+//! contre le schéma. Sans base, la compilation lit le cache hors ligne `.sqlx/` de la crate,
+//! régénéré par `scripts/sqlx-prepare.sh` et contrôlé par la CI. Deux requêtes restent
+//! dynamiques : le filtre du journal (construit à la volée) et la version de schéma (table
+//! interne de sqlx).
+//!
+//! Référence : <https://docs.rs/sqlx/latest/sqlx/macro.query.html> (consultée le 2026-11-25).
 
 use std::str::FromStr;
 use std::time::Duration;
@@ -23,6 +29,8 @@ pub enum StoreError {
     Migration(#[from] sqlx::migrate::MigrateError),
     #[error("unknown entity")]
     NotFound,
+    #[error("key rotation: {0}")]
+    Rotation(String),
 }
 
 /// Un fournisseur persisté.
@@ -102,6 +110,16 @@ pub struct Store {
     pool: SqlitePool,
 }
 
+/// Erreur de décodage d'une valeur stockée (JSON, entier hors bornes).
+fn decode_error(error: impl std::error::Error + Send + Sync + 'static) -> StoreError {
+    StoreError::Database(sqlx::Error::Decode(Box::new(error)))
+}
+
+/// Poids stocké (INTEGER, `CHECK (weight > 0)`) vers `u32`.
+fn weight(value: i64) -> Result<u32, StoreError> {
+    u32::try_from(value).map_err(decode_error)
+}
+
 impl Store {
     /// Ouvre (ou crée) une base SQLite et applique les migrations.
     ///
@@ -140,6 +158,9 @@ impl Store {
     }
 
     /// Version de schéma appliquée par la dernière migration.
+    ///
+    /// Requête dynamique : `_sqlx_migrations` est créée par sqlx à l'exécution, pas par les
+    /// migrations du dépôt, et n'existe donc pas dans la base qui sert à vérifier les macros.
     pub async fn schema_version(&self) -> Result<i64, StoreError> {
         let row = sqlx::query("SELECT COALESCE(MAX(version), 0) AS version FROM _sqlx_migrations")
             .fetch_one(&self.pool)
@@ -148,41 +169,35 @@ impl Store {
     }
 
     pub async fn insert_provider(&self, provider: &ProviderRecord) -> Result<(), StoreError> {
-        sqlx::query("INSERT INTO providers (id, kind, base_url) VALUES (?, ?, ?)")
-            .bind(&provider.id)
-            .bind(&provider.kind)
-            .bind(&provider.base_url)
-            .execute(&self.pool)
-            .await?;
+        sqlx::query!(
+            "INSERT INTO providers (id, kind, base_url) VALUES (?, ?, ?)",
+            provider.id,
+            provider.kind,
+            provider.base_url,
+        )
+        .execute(&self.pool)
+        .await?;
         Ok(())
     }
 
     pub async fn provider(&self, id: &str) -> Result<ProviderRecord, StoreError> {
-        let row = sqlx::query("SELECT id, kind, base_url FROM providers WHERE id = ?")
-            .bind(id)
-            .fetch_optional(&self.pool)
-            .await?
-            .ok_or(StoreError::NotFound)?;
-        Ok(ProviderRecord {
-            id: row.try_get("id")?,
-            kind: row.try_get("kind")?,
-            base_url: row.try_get("base_url")?,
-        })
+        sqlx::query_as!(
+            ProviderRecord,
+            "SELECT id, kind, base_url FROM providers WHERE id = ?",
+            id
+        )
+        .fetch_optional(&self.pool)
+        .await?
+        .ok_or(StoreError::NotFound)
     }
 
     pub async fn providers(&self) -> Result<Vec<ProviderRecord>, StoreError> {
-        let rows = sqlx::query("SELECT id, kind, base_url FROM providers ORDER BY id")
-            .fetch_all(&self.pool)
-            .await?;
-        rows.into_iter()
-            .map(|row| {
-                Ok(ProviderRecord {
-                    id: row.try_get("id")?,
-                    kind: row.try_get("kind")?,
-                    base_url: row.try_get("base_url")?,
-                })
-            })
-            .collect()
+        Ok(sqlx::query_as!(
+            ProviderRecord,
+            "SELECT id, kind, base_url FROM providers ORDER BY id"
+        )
+        .fetch_all(&self.pool)
+        .await?)
     }
 
     /// Insère une clé : le chiffré seul est stocké (T1.21).
@@ -192,58 +207,57 @@ impl Store {
         secret_ciphertext: &[u8],
         weight: u32,
     ) -> Result<i64, StoreError> {
-        let result = sqlx::query(
+        let result = sqlx::query!(
             "INSERT INTO provider_keys (provider_id, secret_ciphertext, weight) VALUES (?, ?, ?)",
+            provider_id,
+            secret_ciphertext,
+            weight,
         )
-        .bind(provider_id)
-        .bind(secret_ciphertext)
-        .bind(weight)
         .execute(&self.pool)
         .await?;
         Ok(result.last_insert_rowid())
     }
 
     pub async fn keys(&self, provider_id: &str) -> Result<Vec<KeyRecord>, StoreError> {
-        let rows = sqlx::query(
+        let rows = sqlx::query!(
             "SELECT id, provider_id, secret_ciphertext, weight FROM provider_keys \
              WHERE provider_id = ? ORDER BY id",
+            provider_id
         )
-        .bind(provider_id)
         .fetch_all(&self.pool)
         .await?;
         rows.into_iter()
             .map(|row| {
                 Ok(KeyRecord {
-                    id: row.try_get("id")?,
-                    provider_id: row.try_get("provider_id")?,
-                    secret_ciphertext: row.try_get("secret_ciphertext")?,
-                    weight: row.try_get("weight")?,
+                    id: row.id,
+                    provider_id: row.provider_id,
+                    secret_ciphertext: row.secret_ciphertext,
+                    weight: weight(row.weight)?,
                 })
             })
             .collect()
     }
 
     pub async fn insert_route(&self, alias: &str, fallbacks: &[String]) -> Result<(), StoreError> {
-        let fallbacks = serde_json::to_string(fallbacks)
-            .map_err(|error| StoreError::Database(sqlx::Error::Decode(Box::new(error))))?;
-        sqlx::query("INSERT INTO routes (alias, fallbacks) VALUES (?, ?)")
-            .bind(alias)
-            .bind(fallbacks)
-            .execute(&self.pool)
-            .await?;
+        let fallbacks = serde_json::to_string(fallbacks).map_err(decode_error)?;
+        sqlx::query!(
+            "INSERT INTO routes (alias, fallbacks) VALUES (?, ?)",
+            alias,
+            fallbacks
+        )
+        .execute(&self.pool)
+        .await?;
         Ok(())
     }
 
     pub async fn route(&self, alias: &str) -> Result<RouteRecord, StoreError> {
-        let row = sqlx::query("SELECT alias, fallbacks FROM routes WHERE alias = ?")
-            .bind(alias)
+        let row = sqlx::query!("SELECT alias, fallbacks FROM routes WHERE alias = ?", alias)
             .fetch_optional(&self.pool)
             .await?
             .ok_or(StoreError::NotFound)?;
-        let fallbacks: String = row.try_get("fallbacks")?;
         Ok(RouteRecord {
-            alias: row.try_get("alias")?,
-            fallbacks: serde_json::from_str(&fallbacks).unwrap_or_default(),
+            alias: row.alias,
+            fallbacks: serde_json::from_str(&row.fallbacks).unwrap_or_default(),
         })
     }
 
@@ -256,32 +270,34 @@ impl Store {
         keys: &[StoredKey],
     ) -> Result<(), StoreError> {
         let mut transaction = self.pool.begin().await?;
-        sqlx::query(
+        sqlx::query!(
             "INSERT INTO providers (id, kind, base_url) VALUES (?, ?, ?) \
              ON CONFLICT(id) DO UPDATE SET kind = excluded.kind, base_url = excluded.base_url",
+            provider.id,
+            provider.kind,
+            provider.base_url,
         )
-        .bind(&provider.id)
-        .bind(&provider.kind)
-        .bind(&provider.base_url)
         .execute(&mut *transaction)
         .await?;
-        sqlx::query("DELETE FROM provider_keys WHERE provider_id = ?")
-            .bind(&provider.id)
-            .execute(&mut *transaction)
-            .await?;
+        sqlx::query!(
+            "DELETE FROM provider_keys WHERE provider_id = ?",
+            provider.id
+        )
+        .execute(&mut *transaction)
+        .await?;
         for key in keys {
             let (ciphertext, reference): (&[u8], Option<&str>) = match &key.secret {
                 StoredSecret::Encrypted(blob) => (blob, None),
                 StoredSecret::Reference(reference) => (&[], Some(reference)),
             };
-            sqlx::query(
+            sqlx::query!(
                 "INSERT INTO provider_keys (provider_id, secret_ciphertext, reference, weight) \
                  VALUES (?, ?, ?, ?)",
+                provider.id,
+                ciphertext,
+                reference,
+                key.weight,
             )
-            .bind(&provider.id)
-            .bind(ciphertext)
-            .bind(reference)
-            .bind(key.weight)
             .execute(&mut *transaction)
             .await?;
         }
@@ -291,8 +307,7 @@ impl Store {
 
     /// Supprime un fournisseur (ses clés suivent) ; `false` s'il n'existe pas.
     pub async fn delete_provider(&self, id: &str) -> Result<bool, StoreError> {
-        let result = sqlx::query("DELETE FROM providers WHERE id = ?")
-            .bind(id)
+        let result = sqlx::query!("DELETE FROM providers WHERE id = ?", id)
             .execute(&self.pool)
             .await?;
         Ok(result.rows_affected() == 1)
@@ -300,40 +315,64 @@ impl Store {
 
     /// Clés d'un fournisseur, dans l'ordre d'insertion.
     pub async fn stored_keys(&self, provider_id: &str) -> Result<Vec<StoredKey>, StoreError> {
-        let rows = sqlx::query(
+        let rows = sqlx::query!(
             "SELECT secret_ciphertext, reference, weight FROM provider_keys \
              WHERE provider_id = ? ORDER BY id",
+            provider_id
         )
-        .bind(provider_id)
         .fetch_all(&self.pool)
         .await?;
         rows.into_iter()
             .map(|row| {
-                let reference: Option<String> = row.try_get("reference")?;
-                let secret = match reference {
+                let secret = match row.reference {
                     Some(reference) => StoredSecret::Reference(reference),
-                    None => StoredSecret::Encrypted(row.try_get("secret_ciphertext")?),
+                    None => StoredSecret::Encrypted(row.secret_ciphertext),
                 };
                 Ok(StoredKey {
                     secret,
-                    weight: row.try_get("weight")?,
+                    weight: weight(row.weight)?,
                 })
             })
             .collect()
     }
 
+    /// Réchiffre toutes les clés chiffrées (pas les références `env:`) dans une seule
+    /// transaction : rotation de la clé maître (T1.21). Tout ou rien ; rend le nombre de clés.
+    pub async fn reencrypt_keys<F>(&self, reencrypt: F) -> Result<usize, StoreError>
+    where
+        F: Fn(&[u8]) -> Result<Vec<u8>, String>,
+    {
+        let mut transaction = self.pool.begin().await?;
+        let rows = sqlx::query!(
+            "SELECT id, secret_ciphertext FROM provider_keys WHERE reference IS NULL ORDER BY id"
+        )
+        .fetch_all(&mut *transaction)
+        .await?;
+        for row in &rows {
+            let fresh = reencrypt(&row.secret_ciphertext).map_err(StoreError::Rotation)?;
+            sqlx::query!(
+                "UPDATE provider_keys SET secret_ciphertext = ? WHERE id = ?",
+                fresh,
+                row.id
+            )
+            .execute(&mut *transaction)
+            .await?;
+        }
+        transaction.commit().await?;
+        Ok(rows.len())
+    }
+
     /// Crée ou remplace une route.
     pub async fn save_route(&self, route: &StoredRoute) -> Result<(), StoreError> {
-        let fallbacks = serde_json::to_string(&route.fallbacks)
-            .map_err(|error| StoreError::Database(sqlx::Error::Decode(Box::new(error))))?;
-        sqlx::query(
+        let fallbacks = serde_json::to_string(&route.fallbacks).map_err(decode_error)?;
+        sqlx::query!(
             "INSERT INTO routes (alias, fallbacks, timeouts) VALUES (?, ?, ?) \
              ON CONFLICT(alias) DO UPDATE SET fallbacks = excluded.fallbacks, \
              timeouts = excluded.timeouts",
+            route.alias,
+            fallbacks,
+            route.timeouts,
         )
-        .bind(&route.alias)
-        .bind(fallbacks)
-        .bind(&route.timeouts)
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -341,8 +380,7 @@ impl Store {
 
     /// Supprime une route ; `false` si elle n'existe pas.
     pub async fn delete_route(&self, alias: &str) -> Result<bool, StoreError> {
-        let result = sqlx::query("DELETE FROM routes WHERE alias = ?")
-            .bind(alias)
+        let result = sqlx::query!("DELETE FROM routes WHERE alias = ?", alias)
             .execute(&self.pool)
             .await?;
         Ok(result.rows_affected() == 1)
@@ -350,18 +388,15 @@ impl Store {
 
     /// Toutes les routes de la couche base, triées par alias.
     pub async fn stored_routes(&self) -> Result<Vec<StoredRoute>, StoreError> {
-        let rows = sqlx::query("SELECT alias, fallbacks, timeouts FROM routes ORDER BY alias")
+        let rows = sqlx::query!("SELECT alias, fallbacks, timeouts FROM routes ORDER BY alias")
             .fetch_all(&self.pool)
             .await?;
         rows.into_iter()
             .map(|row| {
-                let fallbacks: String = row.try_get("fallbacks")?;
                 Ok(StoredRoute {
-                    alias: row.try_get("alias")?,
-                    fallbacks: serde_json::from_str(&fallbacks).map_err(|error| {
-                        StoreError::Database(sqlx::Error::Decode(Box::new(error)))
-                    })?,
-                    timeouts: row.try_get("timeouts")?,
+                    alias: row.alias,
+                    fallbacks: serde_json::from_str(&row.fallbacks).map_err(decode_error)?,
+                    timeouts: row.timeouts,
                 })
             })
             .collect()
@@ -378,20 +413,21 @@ impl Store {
     ) -> Result<(), StoreError> {
         let mut transaction = self.pool.begin().await?;
         for record in records {
-            sqlx::query(
+            let latency_ms = i64::try_from(record.latency_ms).unwrap_or(i64::MAX);
+            sqlx::query!(
                 "INSERT INTO request_log \
                  (id, model, provider, status, latency_ms, input_tokens, output_tokens, created_at, attempts) \
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                record.id,
+                record.model,
+                record.provider,
+                record.status,
+                latency_ms,
+                record.input_tokens,
+                record.output_tokens,
+                record.created_at,
+                record.attempts,
             )
-            .bind(&record.id)
-            .bind(&record.model)
-            .bind(&record.provider)
-            .bind(i64::from(record.status))
-            .bind(record.latency_ms as i64)
-            .bind(i64::from(record.input_tokens))
-            .bind(i64::from(record.output_tokens))
-            .bind(record.created_at)
-            .bind(i64::from(record.attempts))
             .execute(&mut *transaction)
             .await?;
         }
@@ -400,6 +436,9 @@ impl Store {
     }
 
     /// Journal filtré, trié du plus récent au plus ancien, paginé par curseur (rowid).
+    ///
+    /// Requête dynamique (`QueryBuilder`) : les filtres sont optionnels et combinables, ce
+    /// qu'une macro vérifiée ne sait pas exprimer sans une requête par combinaison.
     pub async fn query_request_logs(
         &self,
         query: &RequestLogQuery,
@@ -429,15 +468,27 @@ impl Store {
 
     /// Détail d'une requête par identifiant.
     pub async fn request_log(&self, id: &str) -> Result<RequestLogRecord, StoreError> {
-        let row = sqlx::query(
-            "SELECT rowid, id, model, provider, status, latency_ms, input_tokens, output_tokens, \
-             created_at, attempts FROM request_log WHERE id = ?",
+        let row = sqlx::query!(
+            r#"SELECT rowid AS "rowid!: i64", id, model, provider, status, latency_ms,
+               input_tokens, output_tokens, created_at, attempts
+               FROM request_log WHERE id = ?"#,
+            id
         )
-        .bind(id)
         .fetch_optional(&self.pool)
         .await?
         .ok_or(StoreError::NotFound)?;
-        log_from_row(row)
+        Ok(RequestLogRecord {
+            id: row.id,
+            model: row.model,
+            provider: row.provider,
+            status: u16::try_from(row.status).map_err(decode_error)?,
+            latency_ms: u64::try_from(row.latency_ms).map_err(decode_error)?,
+            input_tokens: u32::try_from(row.input_tokens).map_err(decode_error)?,
+            output_tokens: u32::try_from(row.output_tokens).map_err(decode_error)?,
+            created_at: row.created_at,
+            attempts: u32::try_from(row.attempts).map_err(decode_error)?,
+            rowid: row.rowid,
+        })
     }
 
     pub async fn recent_request_logs(
@@ -458,19 +509,20 @@ impl Store {
         token_hash: &str,
         label: &str,
     ) -> Result<(), StoreError> {
-        sqlx::query("INSERT INTO api_tokens (id, token_hash, label) VALUES (?, ?, ?)")
-            .bind(id)
-            .bind(token_hash)
-            .bind(label)
-            .execute(&self.pool)
-            .await?;
+        sqlx::query!(
+            "INSERT INTO api_tokens (id, token_hash, label) VALUES (?, ?, ?)",
+            id,
+            token_hash,
+            label
+        )
+        .execute(&self.pool)
+        .await?;
         Ok(())
     }
 
     /// Révoque un jeton ; `false` s'il n'existe pas.
     pub async fn revoke_api_token(&self, id: &str) -> Result<bool, StoreError> {
-        let result = sqlx::query("UPDATE api_tokens SET revoked = 1 WHERE id = ?")
-            .bind(id)
+        let result = sqlx::query!("UPDATE api_tokens SET revoked = 1 WHERE id = ?", id)
             .execute(&self.pool)
             .await?;
         Ok(result.rows_affected() == 1)
@@ -478,28 +530,28 @@ impl Store {
 
     /// Au moins un jeton API non révoqué existe (amorçage de l'authentification admin).
     pub async fn has_active_api_token(&self) -> Result<bool, StoreError> {
-        let row =
-            sqlx::query("SELECT EXISTS (SELECT 1 FROM api_tokens WHERE revoked = 0) AS present")
-                .fetch_one(&self.pool)
-                .await?;
-        let present: i64 = row.try_get("present")?;
+        let present = sqlx::query_scalar!(
+            r#"SELECT EXISTS (SELECT 1 FROM api_tokens WHERE revoked = 0) AS "present!: i64""#
+        )
+        .fetch_one(&self.pool)
+        .await?;
         Ok(present == 1)
     }
 
     /// Un jeton est actif s'il existe et n'est pas révoqué.
     pub async fn api_token_is_active(&self, token_hash: &str) -> Result<bool, StoreError> {
-        let row = sqlx::query("SELECT revoked FROM api_tokens WHERE token_hash = ?")
-            .bind(token_hash)
-            .fetch_optional(&self.pool)
-            .await?
-            .ok_or(StoreError::NotFound)?;
-        let revoked: i64 = row.try_get("revoked")?;
+        let revoked = sqlx::query_scalar!(
+            "SELECT revoked FROM api_tokens WHERE token_hash = ?",
+            token_hash
+        )
+        .fetch_optional(&self.pool)
+        .await?
+        .ok_or(StoreError::NotFound)?;
         Ok(revoked == 0)
     }
 }
 
 fn log_from_row(row: sqlx::sqlite::SqliteRow) -> Result<RequestLogRecord, StoreError> {
-    use sqlx::Row;
     Ok(RequestLogRecord {
         id: row.try_get("id")?,
         model: row.try_get("model")?,

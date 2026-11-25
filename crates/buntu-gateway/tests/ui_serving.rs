@@ -127,3 +127,29 @@ fn collect(
     }
     Ok(())
 }
+
+/// Revue 2026-11-05 [4] : sous les préfixes d'API, une route inconnue répond 404 en JSON au lieu
+/// de la page de la console.
+#[tokio::test]
+async fn unknown_api_routes_answer_json_404() -> Result<(), Box<dyn Error>> {
+    let (address, handle) = start().await?;
+    for path in [
+        "/v1/inconnu",
+        "/admin/v1/inconnu",
+        "/anthropic/v1/inconnu",
+        "/v1",
+    ] {
+        let response = reqwest::get(format!("http://{address}{path}")).await?;
+        assert_eq!(response.status(), 404, "{path}");
+        let body: serde_json::Value = response.json().await?;
+        assert_eq!(body["error"]["code"], "not_found", "{path}");
+    }
+    let response = reqwest::get(format!("http://{address}/v1x")).await?;
+    assert_eq!(
+        response.status(),
+        200,
+        "un préfixe partiel reste une route cliente"
+    );
+    handle.abort();
+    Ok(())
+}

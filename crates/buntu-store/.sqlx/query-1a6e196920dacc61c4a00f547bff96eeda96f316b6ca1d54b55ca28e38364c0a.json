@@ -1,0 +1,50 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT secret_ciphertext, reference, weight FROM provider_keys WHERE provider_id = ? ORDER BY id",
+  "describe": {
+    "columns": [
+      {
+        "name": "secret_ciphertext",
+        "ordinal": 0,
+        "type_info": "Blob",
+        "origin": {
+          "Table": {
+            "table": "provider_keys",
+            "name": "secret_ciphertext"
+          }
+        }
+      },
+      {
+        "name": "reference",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "provider_keys",
+            "name": "reference"
+          }
+        }
+      },
+      {
+        "name": "weight",
+        "ordinal": 2,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "provider_keys",
+            "name": "weight"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "1a6e196920dacc61c4a00f547bff96eeda96f316b6ca1d54b55ca28e38364c0a"
+}

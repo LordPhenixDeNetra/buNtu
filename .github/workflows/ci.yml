@@ -130,6 +130,9 @@ jobs:
         working-directory: ui
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+      # Cache hors ligne des requêtes sqlx à jour (T1.17) : régénéré contre les migrations.
+      - run: bash scripts/sqlx-prepare.sh
+      - run: test -z "$(git status --porcelain -- crates/buntu-store/.sqlx)" || { git status --short -- crates/buntu-store/.sqlx; echo "cache sqlx périmé : lancer scripts/sqlx-prepare.sh"; exit 1; }
       - run: cargo run -q -p buntu-cli -- config schema > config.schema.json
       - run: node scripts/config-reference.mjs --check
       - run: node scripts/check-docs.mjs

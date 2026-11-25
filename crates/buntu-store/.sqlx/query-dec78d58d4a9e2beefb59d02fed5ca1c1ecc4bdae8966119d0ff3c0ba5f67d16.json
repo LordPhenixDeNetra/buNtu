@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO request_log (id, model, provider, status, latency_ms, input_tokens, output_tokens, created_at, attempts) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 9
+    },
+    "nullable": []
+  },
+  "hash": "dec78d58d4a9e2beefb59d02fed5ca1c1ecc4bdae8966119d0ff3c0ba5f67d16"
+}
