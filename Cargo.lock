@@ -412,6 +412,7 @@ dependencies = [
  "bytes",
  "hyper",
  "serde_json",
+ "zeroize",
 ]
 
 [[package]]

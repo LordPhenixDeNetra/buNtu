@@ -81,7 +81,7 @@ export interface paths {
         delete: operations["delete_key"];
         options?: never;
         head?: never;
-        patch?: never;
+        patch: operations["update_key"];
         trace?: never;
     };
     "/admin/v1/requests": {
@@ -146,6 +146,22 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["update_route"];
+        trace?: never;
+    };
+    "/admin/v1/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["stats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
 }
@@ -227,6 +243,24 @@ export interface components {
             fallbacks: string[];
             /** @description `file` (prioritaire, lecture seule ici) ou `database` (écrit par cette API). */
             source: string;
+        };
+        /** @description Agrégats du journal sur une fenêtre glissante (vue d'ensemble de la console). */
+        StatsView: {
+            /** Format: int64 */
+            errors: number;
+            /** Format: int64 */
+            latency_p50_ms?: number | null;
+            /** Format: int64 */
+            latency_p95_ms?: number | null;
+            /** Format: int64 */
+            requests: number;
+            /** Format: int64 */
+            window_seconds: number;
+        };
+        /** @description Modification d'une clé : seul son poids change (le secret ne se relit jamais). */
+        UpdateKey: {
+            /** Format: int32 */
+            weight: number;
         };
         UpdateProvider: {
             base_url?: string | null;
@@ -497,6 +531,48 @@ export interface operations {
             };
         };
     };
+    update_key: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Identifiant du fournisseur */
+                id: string;
+                /** @description Position de la clé */
+                index: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateKey"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
     list_requests: {
         parameters: {
             query?: {
@@ -703,6 +779,36 @@ export interface operations {
                 };
             };
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    stats: {
+        parameters: {
+            query?: {
+                /** @description Fenêtre en secondes, 60 à 2 592 000 (défaut 86 400) */
+                window_seconds?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatsView"];
+                };
+            };
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };

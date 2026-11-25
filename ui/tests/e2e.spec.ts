@@ -22,6 +22,19 @@ test('create a provider, a route, then find the request in the journal', async (
   // La clé n'est jamais réaffichée en clair ; seul l'aperçu est visible.
   await expect(page.getByText('test-key-0001')).toHaveCount(0);
   await expect(page.getByText('tes…0001').first()).toBeVisible();
+  // Revue [5] — une notification visible est retraduite quand la langue change.
+  await expect(page.getByText('Fournisseur créé.')).toBeVisible();
+  await page.locator('#langue').selectOption('en');
+  await expect(page.getByText('Provider created.')).toBeVisible();
+  await page.locator('#langue').selectOption('fr');
+
+  // Revue [7.3] — le poids d'une clé se modifie depuis la console.
+  const weight = page.getByRole('spinbutton', { name: 'Poids tes…0001' });
+  await weight.fill('3');
+  await weight.press('Tab');
+  await expect(page.getByText('Poids enregistré.')).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('spinbutton', { name: 'Poids tes…0001' })).toHaveValue('3');
 
   // Revue [5.1] — l'API répond en anglais, la console traduit le `code` de l'erreur.
   await createProvider.getByLabel('Identifiant').fill('e2e-ui');

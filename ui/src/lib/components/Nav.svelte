@@ -1,20 +1,12 @@
 <script lang="ts">
-  import LayoutDashboard from '@lucide/svelte/icons/layout-dashboard';
-  import Server from '@lucide/svelte/icons/server';
-  import Route from '@lucide/svelte/icons/route';
-  import ScrollText from '@lucide/svelte/icons/scroll-text';
   import Sun from '@lucide/svelte/icons/sun';
   import Moon from '@lucide/svelte/icons/moon';
+  import Command from '@lucide/svelte/icons/command';
   import { page } from '$app/state';
   import { locale, setLocale, t } from '$lib/i18n';
   import { theme, toggleTheme } from '$lib/theme';
-
-  const sections = [
-    { href: '/', key: 'nav.overview', icon: LayoutDashboard },
-    { href: '/providers', key: 'nav.providers', icon: Server },
-    { href: '/routes', key: 'nav.routes', icon: Route },
-    { href: '/logs', key: 'nav.logs', icon: ScrollText }
-  ];
+  import { sections } from '$lib/sections';
+  import { paletteRequested } from '$lib/palette';
 
   function isCurrent(href: string): boolean {
     return href === '/' ? page.url.pathname === '/' : page.url.pathname.startsWith(href);
@@ -62,14 +54,25 @@
   </nav>
 
   <div class="settings">
+    <button
+      class="btn-secondary btn-icon"
+      type="button"
+      aria-label={$t('palette.open')}
+      aria-keyshortcuts="Control+K Meta+K"
+      title={`${$t('palette.open')} (Ctrl/⌘ K)`}
+      onclick={() => paletteRequested.set(true)}
+    >
+      <Command size={18} />
+    </button>
     <label for="langue" class="sr-only">{$t('lang.label')}</label>
     <select
       id="langue"
       value={$locale}
       onchange={(event) => setLocale(event.currentTarget.value as 'fr' | 'en')}
     >
-      <option value="fr">FR</option>
-      <option value="en">EN</option>
+      <!-- Nom de chaque langue dans cette langue, avec `lang` : bien prononcé par les lecteurs d'écran. -->
+      <option value="fr" lang="fr">{$t('lang.fr')}</option>
+      <option value="en" lang="en">{$t('lang.en')}</option>
     </select>
     <button
       class="btn-secondary btn-icon"

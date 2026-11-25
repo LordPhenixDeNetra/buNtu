@@ -35,7 +35,6 @@ pub struct HttpExecutor {
 pub struct Prepared {
     pub provider: Arc<dyn Provider>,
     pub base_url: String,
-    pub request: HttpRequest,
     pub key_index: usize,
 }
 
@@ -100,7 +99,7 @@ impl HttpExecutor {
     }
 
     /// Traduit, choisit une clé et injecte l'en-tête d'authentification du fournisseur.
-    fn prepare<F>(&self, target: &Target, build: F) -> Result<Prepared, GatewayError>
+    fn prepare<F>(&self, target: &Target, build: F) -> Result<(Prepared, HttpRequest), GatewayError>
     where
         F: FnOnce(&dyn Provider) -> Result<HttpRequest, GatewayError>,
     {
@@ -110,21 +109,20 @@ impl HttpExecutor {
             .base_url
             .clone()
             .ok_or_else(|| GatewayError::Internal {
-                message: format!(
-                    "`base_url` manquante pour le fournisseur `{}`",
-                    provider_config.id
-                ),
+                message: format!("missing `base_url` for provider `{}`", provider_config.id),
             })?;
         let mut request = build(provider.as_ref())?;
         let (name, value) =
             provider.auth_header(provider_config.keys[key_index].secret.expose())?;
         request.headers_mut().insert(name, value);
-        Ok(Prepared {
-            provider,
-            base_url,
+        Ok((
+            Prepared {
+                provider,
+                base_url,
+                key_index,
+            },
             request,
-            key_index,
-        })
+        ))
     }
 
     /// Statut amont non 2xx : traduit l'erreur et met la clé en pause sur 429.
@@ -151,12 +149,9 @@ impl HttpExecutor {
     async fn send(
         &self,
         target: &Target,
-        prepared: Prepared,
+        (prepared, request): (Prepared, HttpRequest),
     ) -> Result<(Prepared, Bytes), GatewayError> {
-        let (status, headers, body) = self
-            .upstream
-            .send(&prepared.base_url, prepared.request.clone())
-            .await?;
+        let (status, headers, body) = self.upstream.send(&prepared.base_url, request).await?;
         if !(200..300).contains(&status) {
             return Err(self.upstream_error(target, &prepared, status, &headers, &body));
         }
@@ -169,8 +164,12 @@ impl HttpExecutor {
         target: &Target,
         request: &Request,
     ) -> Result<Response, GatewayError> {
-        let prepared = self.prepare(target, |provider| provider.build_request(request))?;
-        let (prepared, body) = self.send(target, prepared).await?;
+        let (prepared, body) = self
+            .send(
+                target,
+                self.prepare(target, |provider| provider.build_request(request))?,
+            )
+            .await?;
         prepared.provider.parse_response(body)
     }
 
@@ -196,11 +195,11 @@ impl HttpExecutor {
         timeouts: Timeouts,
     ) -> Result<(Arc<dyn Provider>, UpstreamChunks), GatewayError> {
         let started = std::time::Instant::now();
-        let prepared = self.prepare(target, |provider| provider.build_request(request))?;
+        let (prepared, http_request) =
+            self.prepare(target, |provider| provider.build_request(request))?;
         let (status, headers, body) = with_timeout(
             timeouts.first_byte.min(timeouts.total),
-            self.upstream
-                .send_stream(&prepared.base_url, prepared.request.clone()),
+            self.upstream.send_stream(&prepared.base_url, http_request),
         )
         .await?;
         if !(200..300).contains(&status) {

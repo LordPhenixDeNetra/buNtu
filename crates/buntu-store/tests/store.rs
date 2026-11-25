@@ -2,7 +2,7 @@
 
 use std::error::Error;
 
-use buntu_store::{ProviderRecord, RequestLogRecord, RouteRecord, Store};
+use buntu_store::{ProviderRecord, RequestLogRecord, RequestStats, RouteRecord, Store};
 
 #[tokio::test]
 async fn migrations_apply_to_an_empty_database() -> Result<(), Box<dyn Error>> {
@@ -239,5 +239,40 @@ async fn configuration_layer_round_trips() -> Result<(), Box<dyn Error>> {
         "les clés suivent leur fournisseur"
     );
     assert!(!store.delete_provider("p").await?);
+    Ok(())
+}
+
+/// Revue 2026-11-05 [7.3] : la vue d'ensemble lit des agrégats calculés sur toute la fenêtre,
+/// pas sur un échantillon des dernières lignes.
+#[tokio::test]
+async fn request_stats_cover_the_whole_window() -> Result<(), Box<dyn Error>> {
+    let store = Store::open_in_memory().await?;
+    let empty = store.request_stats(0).await?;
+    assert_eq!((empty.requests, empty.latency_p50_ms), (0, None));
+    // 200 requêtes dans la fenêtre (latences 1 à 200 ms, 1 sur 10 en erreur), 5 avant.
+    let batch: Vec<RequestLogRecord> = (1..=205)
+        .map(|index: u32| RequestLogRecord {
+            id: format!("stat-{index}"),
+            model: "chat".to_owned(),
+            provider: "mock".to_owned(),
+            status: if index.is_multiple_of(10) { 502 } else { 200 },
+            latency_ms: u64::from(index.saturating_sub(5)),
+            input_tokens: 1,
+            output_tokens: 1,
+            created_at: if index <= 5 { 999 } else { 1_000 },
+            attempts: 1,
+            rowid: 0,
+        })
+        .collect();
+    store.insert_request_logs(&batch).await?;
+    assert_eq!(
+        store.request_stats(1_000).await?,
+        RequestStats {
+            requests: 200,
+            errors: 20,
+            latency_p50_ms: Some(100),
+            latency_p95_ms: Some(190),
+        }
+    );
     Ok(())
 }

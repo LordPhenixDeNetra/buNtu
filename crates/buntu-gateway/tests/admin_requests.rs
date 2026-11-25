@@ -115,3 +115,49 @@ async fn journal_is_paginated_filtered_and_has_a_detail() -> Result<(), Box<dyn 
     handle.abort();
     Ok(())
 }
+
+/// Revue 2026-11-05 [7.3] : agrégats calculés côté serveur sur la fenêtre demandée.
+#[tokio::test]
+async fn stats_aggregate_the_window_server_side() -> Result<(), Box<dyn Error>> {
+    let (address, store, handle) = start().await?;
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)?
+        .as_secs() as i64;
+    for (index, (status, latency_ms, age)) in [(200, 10, 10), (502, 30, 20), (200, 20, 7200)]
+        .into_iter()
+        .enumerate()
+    {
+        store
+            .insert_request_log(&RequestLogRecord {
+                id: format!("stat-{index}"),
+                model: "chat".to_owned(),
+                provider: "mock".to_owned(),
+                status,
+                latency_ms,
+                input_tokens: 1,
+                output_tokens: 1,
+                created_at: now - age,
+                attempts: 1,
+                rowid: 0,
+            })
+            .await?;
+    }
+    let hour: Value = admin_get(format!(
+        "http://{address}/admin/v1/stats?window_seconds=3600"
+    ))
+    .await?
+    .json()
+    .await?;
+    assert_eq!(hour["requests"], 2, "{hour}");
+    assert_eq!(hour["errors"], 1);
+    assert_eq!(hour["latency_p50_ms"], 10);
+    assert_eq!(hour["latency_p95_ms"], 30);
+    let day: Value = admin_get(format!("http://{address}/admin/v1/stats"))
+        .await?
+        .json()
+        .await?;
+    assert_eq!(day["window_seconds"], 86_400);
+    assert_eq!(day["requests"], 3);
+    handle.abort();
+    Ok(())
+}

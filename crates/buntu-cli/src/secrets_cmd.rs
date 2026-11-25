@@ -11,7 +11,7 @@ use std::path::Path;
 use buntu_security::secrets::SecretCipher;
 use buntu_store::{Store, StoreError};
 
-pub const USAGE: &str = "usage: buntu secrets rotate <FICHIER_NOUVELLE_CLE>";
+pub const USAGE: &str = "usage: buntu secrets rotate <NEW_KEY_FILE>";
 
 pub fn command(arguments: &[String]) -> Result<(), Box<dyn Error>> {
     match arguments {
@@ -27,18 +27,15 @@ fn rotate(new_key: &Path) -> Result<(), Box<dyn Error>> {
         .build()?;
     runtime.block_on(async {
         let store = Store::open(&format!("sqlite://{database}")).await?;
-        let current = crate::master_key(&database, true)?.ok_or("clé maître actuelle absente")?;
+        let current = crate::master_key(&database, true)?.ok_or("current master key missing")?;
         let (next, created) = SecretCipher::load_or_create(new_key)?;
         let count = reencrypt(&store, &current, &next).await?;
         if created {
-            println!(
-                "buNtu: nouvelle clé maître créée dans {}",
-                new_key.display()
-            );
+            println!("buNtu: new master key created in {}", new_key.display());
         }
         println!(
-            "buNtu: {count} clé(s) réchiffrée(s). Avant le prochain démarrage, pointez \
-             BUNTU_MASTER_KEY_FILE vers {} (ou remplacez {database}.key par ce fichier).",
+            "buNtu: {count} key(s) re-encrypted. Before the next start, point \
+             BUNTU_MASTER_KEY_FILE to {} (or replace {database}.key with this file).",
             new_key.display()
         );
         Ok::<(), Box<dyn Error>>(())

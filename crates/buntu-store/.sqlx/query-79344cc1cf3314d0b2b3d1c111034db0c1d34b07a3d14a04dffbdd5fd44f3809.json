@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT latency_ms FROM request_log WHERE created_at >= ? \n             ORDER BY latency_ms LIMIT 1 OFFSET ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "latency_ms",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "request_log",
+            "name": "latency_ms"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "79344cc1cf3314d0b2b3d1c111034db0c1d34b07a3d14a04dffbdd5fd44f3809"
+}

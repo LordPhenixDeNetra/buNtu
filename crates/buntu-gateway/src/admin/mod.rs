@@ -55,6 +55,7 @@ pub async fn require_token(
         handlers::update_provider,
         handlers::delete_provider,
         handlers::create_key,
+        handlers::update_key,
         handlers::delete_key,
         handlers::list_routes,
         handlers::create_route,
@@ -63,12 +64,14 @@ pub async fn require_token(
         handlers::delete_route,
         handlers::list_requests,
         handlers::get_request,
+        handlers::stats,
     ),
     components(schemas(
         handlers::KeyView,
         handlers::ProviderView,
         handlers::ProviderPage,
         handlers::CreateKey,
+        handlers::UpdateKey,
         handlers::CreateProvider,
         handlers::UpdateProvider,
         handlers::RouteView,
@@ -79,6 +82,7 @@ pub async fn require_token(
         handlers::ErrorEnvelope,
         handlers::RequestLogView,
         handlers::RequestLogPage,
+        handlers::StatsView,
     ))
 )]
 pub struct AdminApi;

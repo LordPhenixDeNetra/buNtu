@@ -233,3 +233,45 @@ async fn openapi_endpoint_serves_the_specification() -> Result<(), Box<dyn Error
     assert!(body["paths"]["/admin/v1/routes"].is_object());
     Ok(())
 }
+
+/// Revue 2026-11-05 [7.3] : le poids d'une clé se modifie sans toucher à son secret.
+#[tokio::test]
+async fn key_weight_can_be_changed() -> Result<(), Box<dyn Error>> {
+    let running = start().await?;
+    let base = format!("http://{}", running.address);
+    assert_eq!(
+        create_provider(&base, "p1", "sk-weight-0001")
+            .await?
+            .status(),
+        201
+    );
+
+    let patched = client()
+        .patch(format!("{base}/admin/v1/providers/p1/keys/0"))
+        .json(&json!({ "weight": 5 }))
+        .send()
+        .await?;
+    assert_eq!(patched.status(), 204);
+    let provider: Value = client()
+        .get(format!("{base}/admin/v1/providers/p1"))
+        .send()
+        .await?
+        .json()
+        .await?;
+    assert_eq!(provider["keys"][0]["weight"], 5);
+    assert_eq!(provider["keys"][0]["preview"], "sk-…0001");
+
+    let zero = client()
+        .patch(format!("{base}/admin/v1/providers/p1/keys/0"))
+        .json(&json!({ "weight": 0 }))
+        .send()
+        .await?;
+    assert_eq!(zero.status(), 400, "le validateur refuse un poids nul");
+    let missing = client()
+        .patch(format!("{base}/admin/v1/providers/p1/keys/9"))
+        .json(&json!({ "weight": 1 }))
+        .send()
+        .await?;
+    assert_eq!(missing.status(), 400);
+    Ok(())
+}

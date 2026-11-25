@@ -15,7 +15,14 @@ export const dictionary: Record<Locale, Record<string, string>> = {
     'theme.light': 'Thème clair',
     'theme.dark': 'Thème sombre',
     'lang.label': 'Langue',
-    'loading': 'Chargement…',
+    'lang.fr': 'Français',
+    'lang.en': 'English',
+    'palette.title': 'Palette de commandes',
+    'palette.placeholder': 'Rechercher une commande…',
+    'palette.empty': 'Aucune commande trouvée.',
+    'palette.theme': 'Changer de thème',
+    'palette.language': 'Changer de langue (English)',
+    'palette.open': 'Commandes',
     'error.title': 'Erreur',
     'error.unexpected': 'Erreur inattendue',
     'apiError.provider_rate_limited': 'Fournisseur saturé (limite de débit)',
@@ -26,7 +33,6 @@ export const dictionary: Record<Locale, Record<string, string>> = {
     'apiError.budget_exceeded': 'Budget dépassé',
     'apiError.all_targets_failed': 'Toutes les cibles ont échoué',
     'apiError.internal_error': 'Erreur interne',
-    'retry': 'Réessayer',
     'common.cancel': 'Annuler',
     'common.close': 'Fermer',
     'common.confirm': 'Confirmer',
@@ -47,7 +53,8 @@ export const dictionary: Record<Locale, Record<string, string>> = {
     'overview.fromFile': 'du fichier',
     'overview.fromConsole': 'de la console',
     'overview.traffic': 'Trafic récent',
-    'overview.sample': 'sur les {n} dernières requêtes',
+    'overview.window.one': 'sur la dernière heure',
+    'overview.window.other': 'sur les {n} dernières heures',
     'overview.requests': 'Requêtes',
     'overview.errorRate': 'Taux d’erreur',
     'overview.latencyP50': 'Latence médiane',
@@ -88,8 +95,8 @@ export const dictionary: Record<Locale, Record<string, string>> = {
     'providers.noKeys': 'Aucune clé.',
     'providers.addKey': 'Ajouter une clé',
     'providers.newKey': 'Nouvelle clé',
-    'providers.keyPreview': 'Aperçu',
     'providers.weight': 'Poids',
+    'providers.weightSaved': 'Poids enregistré.',
     'providers.delete': 'Supprimer',
     'providers.confirmDelete': 'Supprimer ce fournisseur et ses clés ?',
     'providers.confirmDeleteKey': 'Retirer cette clé ? Les requêtes ne l’utiliseront plus.',
@@ -141,7 +148,14 @@ export const dictionary: Record<Locale, Record<string, string>> = {
     'theme.light': 'Light theme',
     'theme.dark': 'Dark theme',
     'lang.label': 'Language',
-    'loading': 'Loading…',
+    'lang.fr': 'Français',
+    'lang.en': 'English',
+    'palette.title': 'Command palette',
+    'palette.placeholder': 'Search a command…',
+    'palette.empty': 'No command found.',
+    'palette.theme': 'Toggle theme',
+    'palette.language': 'Switch language (Français)',
+    'palette.open': 'Commands',
     'error.title': 'Error',
     'error.unexpected': 'Unexpected error',
     'apiError.provider_rate_limited': 'Provider rate limited',
@@ -152,7 +166,6 @@ export const dictionary: Record<Locale, Record<string, string>> = {
     'apiError.budget_exceeded': 'Budget exceeded',
     'apiError.all_targets_failed': 'All targets failed',
     'apiError.internal_error': 'Internal error',
-    'retry': 'Retry',
     'common.cancel': 'Cancel',
     'common.close': 'Close',
     'common.confirm': 'Confirm',
@@ -173,7 +186,8 @@ export const dictionary: Record<Locale, Record<string, string>> = {
     'overview.fromFile': 'from the file',
     'overview.fromConsole': 'from the console',
     'overview.traffic': 'Recent traffic',
-    'overview.sample': 'over the last {n} requests',
+    'overview.window.one': 'over the last hour',
+    'overview.window.other': 'over the last {n} hours',
     'overview.requests': 'Requests',
     'overview.errorRate': 'Error rate',
     'overview.latencyP50': 'Median latency',
@@ -213,8 +227,8 @@ export const dictionary: Record<Locale, Record<string, string>> = {
     'providers.noKeys': 'No key.',
     'providers.addKey': 'Add a key',
     'providers.newKey': 'New key',
-    'providers.keyPreview': 'Preview',
     'providers.weight': 'Weight',
+    'providers.weightSaved': 'Weight saved.',
     'providers.delete': 'Delete',
     'providers.confirmDelete': 'Delete this provider and its keys?',
     'providers.confirmDeleteKey': 'Remove this key? Requests will stop using it.',
@@ -259,9 +273,21 @@ export const dictionary: Record<Locale, Record<string, string>> = {
 
 export const locale = writable<Locale>('fr');
 
+/**
+ * Forme plurielle d'une clé selon `Intl.PluralRules` : `<clé>.one`, `<clé>.other`… quand la clé
+ * nue n'existe pas et que `n` est un nombre.
+ */
+function plural(locale: Locale, key: string, n: unknown): string | undefined {
+  if (typeof n !== 'number') {
+    return undefined;
+  }
+  const forms = dictionary[locale];
+  return forms[`${key}.${new Intl.PluralRules(locale).select(n)}`] ?? forms[`${key}.other`];
+}
+
 export const t = derived(locale, ($locale) => {
   return (key: string, params: Record<string, string | number> = {}): string => {
-    let text = dictionary[$locale][key] ?? key;
+    let text = dictionary[$locale][key] ?? plural($locale, key, params.n) ?? key;
     for (const [name, value] of Object.entries(params)) {
       text = text.replace(`{${name}}`, String(value));
     }

@@ -10,31 +10,35 @@
   import { api } from '$lib/api';
   import type { components } from '$lib/api/schema';
   import { locale, t } from '$lib/i18n';
-  import { formatCount, formatDate, formatMs, formatPercent, percentile } from '$lib/format';
+  import { formatCount, formatDate, formatMs, formatPercent } from '$lib/format';
   import StatusBadge from '$lib/components/StatusBadge.svelte';
 
   type LogView = components['schemas']['RequestLogView'];
+  type StatsView = components['schemas']['StatsView'];
 
-  /** Taille de l'échantillon de trafic affiché (dernières requêtes). */
-  const SAMPLE = 100;
+  /** Dernières requêtes lues pour la liste des erreurs récentes. */
+  const RECENT = 100;
+  /** Fenêtre des métriques de trafic, calculées par le serveur sur tout le journal. */
+  const WINDOW_HOURS = 24;
 
   let loading = $state(true);
   let ready = $state<boolean | null>(null);
   let providers = $state({ total: 0, file: 0 });
   let routes = $state({ total: 0, file: 0 });
   let logs = $state<LogView[]>([]);
+  let stats = $state<StatsView | null>(null);
 
   const errors = $derived(logs.filter((log) => log.status >= 400));
-  const latencies = $derived(logs.map((log) => log.latency_ms));
-  const p50 = $derived(percentile(latencies, 0.5));
-  const p95 = $derived(percentile(latencies, 0.95));
 
   onMount(async () => {
-    const [health, providerPage, routePage, logPage] = await Promise.all([
+    const [health, providerPage, routePage, logPage, statsPage] = await Promise.all([
       fetch('/ready').then((response) => response.ok).catch(() => false),
       api.GET('/admin/v1/providers', { params: { query: { limit: 100 } } }),
       api.GET('/admin/v1/routes', { params: { query: { limit: 100 } } }),
-      api.GET('/admin/v1/requests', { params: { query: { limit: SAMPLE } } })
+      api.GET('/admin/v1/requests', { params: { query: { limit: RECENT } } }),
+      api.GET('/admin/v1/stats', {
+        params: { query: { window_seconds: WINDOW_HOURS * 3600 } }
+      })
     ]);
     ready = health;
     const providerList = providerPage.data?.data ?? [];
@@ -48,6 +52,7 @@
       file: routeList.filter((route) => route.source === 'file').length
     };
     logs = logPage.data?.data ?? [];
+    stats = statsPage.data ?? null;
     loading = false;
   });
 </script>
@@ -99,28 +104,28 @@
     <h2 id="tile-traffic" class="tile-title"><Gauge size={16} />{$t('overview.traffic')}</h2>
     {#if loading}
       <div class="skeleton metric-skeleton"></div>
-    {:else if logs.length === 0}
+    {:else if !stats || stats.requests === 0}
       <p class="muted">{$t('overview.noTraffic')}</p>
     {:else}
       <dl class="stats">
         <div>
           <dt>{$t('overview.requests')}</dt>
-          <dd class="mono">{formatCount(logs.length, $locale)}</dd>
+          <dd class="mono">{formatCount(stats.requests, $locale)}</dd>
         </div>
         <div>
           <dt>{$t('overview.errorRate')}</dt>
-          <dd class="mono">{formatPercent(errors.length / logs.length, $locale)}</dd>
+          <dd class="mono">{formatPercent(stats.errors / stats.requests, $locale)}</dd>
         </div>
         <div>
           <dt>{$t('overview.latencyP50')}</dt>
-          <dd class="mono">{p50 === null ? '—' : formatMs(p50, $locale)}</dd>
+          <dd class="mono">{stats.latency_p50_ms == null ? '—' : formatMs(stats.latency_p50_ms, $locale)}</dd>
         </div>
         <div>
           <dt>{$t('overview.latencyP95')}</dt>
-          <dd class="mono">{p95 === null ? '—' : formatMs(p95, $locale)}</dd>
+          <dd class="mono">{stats.latency_p95_ms == null ? '—' : formatMs(stats.latency_p95_ms, $locale)}</dd>
         </div>
       </dl>
-      <p class="muted small">{$t('overview.sample', { n: logs.length })}</p>
+      <p class="muted small">{$t('overview.window', { n: WINDOW_HOURS })}</p>
     {/if}
   </section>
 

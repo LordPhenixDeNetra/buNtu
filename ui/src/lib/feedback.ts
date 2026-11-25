@@ -4,10 +4,16 @@ import { writable } from 'svelte/store';
 
 export type ToastKind = 'success' | 'error';
 
+/**
+ * Texte d'une notification, traduit à l'affichage (et non à la création) : changer de langue
+ * retraduit aussi les notifications déjà visibles.
+ */
+export type ToastText = { key: string } | { error: unknown };
+
 export interface Toast {
   id: number;
   kind: ToastKind;
-  message: string;
+  text: ToastText;
 }
 
 export const toasts = writable<Toast[]>([]);
@@ -21,9 +27,9 @@ export function dismissToast(id: number): void {
   toasts.update((list) => list.filter((toast) => toast.id !== id));
 }
 
-export function notify(kind: ToastKind, message: string): void {
+export function notify(kind: ToastKind, text: ToastText): void {
   const id = nextId++;
-  toasts.update((list) => [...list, { id, kind, message }]);
+  toasts.update((list) => [...list, { id, kind, text }]);
   if (kind === 'success') {
     setTimeout(() => dismissToast(id), SUCCESS_MS);
   }

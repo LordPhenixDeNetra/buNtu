@@ -1,0 +1,28 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT COUNT(*) AS \"requests!: i64\", COALESCE(SUM(status >= 400), 0) AS \"errors!: i64\"\n               FROM request_log WHERE created_at >= ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "requests!: i64",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": "Expression"
+      },
+      {
+        "name": "errors!: i64",
+        "ordinal": 1,
+        "type_info": "Integer",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "cbb039a263b9c1d814f2b90e5d86ce17d28d5c74feda40b98407699851dff9f9"
+}

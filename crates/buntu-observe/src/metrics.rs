@@ -75,7 +75,7 @@ pub fn install_global() -> Result<&'static PrometheusHandle, String> {
     let _ = GLOBAL_HANDLE.set(handle);
     GLOBAL_HANDLE
         .get()
-        .ok_or_else(|| "exportateur Prometheus non installé".to_owned())
+        .ok_or_else(|| "Prometheus exporter not installed".to_owned())
 }
 
 /// Rend l'exposition Prometheus si l'exportateur est installé.

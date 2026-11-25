@@ -43,3 +43,18 @@ test.describe('admin token prompt', () => {
     await expect(prompt).toHaveCount(0);
   });
 });
+
+test('command palette opens with Ctrl+K and navigates', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await page.keyboard.press('Control+k');
+  const search = page.getByRole('combobox', { name: 'Rechercher une commande…' });
+  await expect(search).toBeFocused();
+  await search.fill('theme');
+  await expect(page.getByRole('listbox').getByRole('option')).toHaveText(['Changer de thème']);
+  await search.fill('rout');
+  await expect(page.getByRole('listbox').getByRole('option')).toHaveCount(1);
+  await search.press('Enter');
+  await expect(page).toHaveURL(/\/routes$/);
+  await expect(page.getByRole('dialog', { name: 'Palette de commandes' })).toBeHidden();
+});
