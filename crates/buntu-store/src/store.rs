@@ -94,6 +94,15 @@ pub struct RequestLogRecord {
     pub rowid: i64,
 }
 
+/// Agrégats du journal sur une fenêtre de temps, calculés par SQLite sur toutes ses lignes.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RequestStats {
+    pub requests: i64,
+    pub errors: i64,
+    pub latency_p50_ms: Option<i64>,
+    pub latency_p95_ms: Option<i64>,
+}
+
 /// Filtres du journal, paginés par curseur (rowid).
 #[derive(Debug, Clone, Default)]
 pub struct RequestLogQuery {
@@ -489,6 +498,44 @@ impl Store {
             attempts: u32::try_from(row.attempts).map_err(decode_error)?,
             rowid: row.rowid,
         })
+    }
+
+    /// Agrégats des requêtes reçues depuis `since` (secondes Unix) : nombre, erreurs (statut
+    /// ≥ 400) et latences p50/p95 (rang le plus proche).
+    pub async fn request_stats(&self, since: i64) -> Result<RequestStats, StoreError> {
+        let counts = sqlx::query!(
+            r#"SELECT COUNT(*) AS "requests!: i64", COALESCE(SUM(status >= 400), 0) AS "errors!: i64"
+               FROM request_log WHERE created_at >= ?"#,
+            since
+        )
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(RequestStats {
+            requests: counts.requests,
+            errors: counts.errors,
+            latency_p50_ms: self.latency_rank(since, counts.requests, 0.50).await?,
+            latency_p95_ms: self.latency_rank(since, counts.requests, 0.95).await?,
+        })
+    }
+
+    /// Latence au quantile `quantile` (rang le plus proche : ⌈q × n⌉).
+    async fn latency_rank(
+        &self,
+        since: i64,
+        count: i64,
+        quantile: f64,
+    ) -> Result<Option<i64>, StoreError> {
+        if count == 0 {
+            return Ok(None);
+        }
+        let offset = ((quantile * count as f64).ceil() as i64 - 1).max(0);
+        Ok(sqlx::query_scalar!(
+            "SELECT latency_ms FROM request_log WHERE created_at >= ? \n             ORDER BY latency_ms LIMIT 1 OFFSET ?",
+            since,
+            offset
+        )
+        .fetch_optional(&self.pool)
+        .await?)
     }
 
     pub async fn recent_request_logs(

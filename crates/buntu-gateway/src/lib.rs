@@ -15,7 +15,7 @@ pub mod upstream;
 use axum::Router;
 use axum::extract::DefaultBodyLimit;
 use axum::response::IntoResponse;
-use axum::routing::{delete, get, post};
+use axum::routing::{get, patch, post};
 use tower_http::limit::RequestBodyLimitLayer;
 
 pub use error_response::response as error_response;
@@ -82,7 +82,7 @@ pub fn app_with_state(state: GatewayState) -> Router {
         )
         .route(
             "/admin/v1/providers/{id}/keys/{index}",
-            delete(admin::handlers::delete_key),
+            patch(admin::handlers::update_key).delete(admin::handlers::delete_key),
         )
         .route(
             "/admin/v1/routes",
@@ -97,6 +97,7 @@ pub fn app_with_state(state: GatewayState) -> Router {
         .route("/admin/v1/openapi.json", get(admin::handlers::openapi_json))
         .route("/admin/v1/requests", get(admin::handlers::list_requests))
         .route("/admin/v1/requests/{id}", get(admin::handlers::get_request))
+        .route("/admin/v1/stats", get(admin::handlers::stats))
         // Toute l'API d'administration exige un jeton (revue 2026-11-05, point 1a).
         .route_layer(axum::middleware::from_fn_with_state(
             state.clone(),

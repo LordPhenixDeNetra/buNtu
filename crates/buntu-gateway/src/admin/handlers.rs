@@ -49,6 +49,12 @@ pub struct CreateKey {
     pub weight: Option<u32>,
 }
 
+/// Modification d'une clé : seul son poids change (le secret ne se relit jamais).
+#[derive(Debug, Clone, Deserialize, utoipa::ToSchema)]
+pub struct UpdateKey {
+    pub weight: u32,
+}
+
 #[derive(Debug, Clone, Deserialize, utoipa::ToSchema)]
 pub struct CreateProvider {
     pub id: String,
@@ -465,6 +471,37 @@ pub async fn delete_key(
     }
 }
 
+#[utoipa::path(patch, path = "/admin/v1/providers/{id}/keys/{index}",
+    params(
+        ("id" = String, Path, description = "Identifiant du fournisseur"),
+        ("index" = usize, Path, description = "Position de la clé")),
+    request_body = UpdateKey,
+    responses((status = 204), (status = 400, body = ErrorEnvelope), (status = 404, body = ErrorEnvelope)))]
+pub async fn update_key(
+    State(state): State<GatewayState>,
+    Path((id, index)): Path<(String, usize)>,
+    Json(body): Json<UpdateKey>,
+) -> Response {
+    let result = state
+        .admin
+        .mutate(&state, |base, file| {
+            let provider = base_provider(base, file, &id)?;
+            let key = provider
+                .keys
+                .get_mut(index)
+                .ok_or_else(|| GatewayError::InvalidRequest {
+                    message: format!("key {index} does not exist for `{id}`"),
+                })?;
+            key.weight = body.weight;
+            Ok(Touched::Provider(id.clone()))
+        })
+        .await;
+    match result {
+        Ok(()) => no_content(),
+        Err(error) => error_response::response(&error),
+    }
+}
+
 // ---------------------------------------------------------------------------------------------
 // Routes
 // ---------------------------------------------------------------------------------------------
@@ -685,6 +722,53 @@ pub async fn get_request(State(state): State<GatewayState>, Path(id): Path<Strin
     match store.request_log(&id).await {
         Ok(record) => ok(RequestLogView::from(&record)),
         Err(_) => not_found(&format!("unknown request `{id}`")),
+    }
+}
+
+/// Agrégats du journal sur une fenêtre glissante (vue d'ensemble de la console).
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+pub struct StatsView {
+    pub window_seconds: i64,
+    pub requests: i64,
+    pub errors: i64,
+    pub latency_p50_ms: Option<i64>,
+    pub latency_p95_ms: Option<i64>,
+}
+
+#[derive(Debug, Clone, Default, Deserialize)]
+pub struct StatsQuery {
+    pub window_seconds: Option<i64>,
+}
+
+/// Fenêtre par défaut : 24 h ; bornée entre 1 min et 30 jours.
+const DEFAULT_STATS_WINDOW: i64 = 24 * 3600;
+const MAX_STATS_WINDOW: i64 = 30 * 24 * 3600;
+
+#[utoipa::path(get, path = "/admin/v1/stats",
+    params(("window_seconds" = Option<i64>, Query, description = "Fenêtre en secondes, 60 à 2 592 000 (défaut 86 400)")),
+    responses((status = 200, body = StatsView), (status = 500, body = ErrorEnvelope)))]
+pub async fn stats(State(state): State<GatewayState>, Query(query): Query<StatsQuery>) -> Response {
+    let Some(store) = state.store.clone() else {
+        return journal_unavailable();
+    };
+    let window = query
+        .window_seconds
+        .unwrap_or(DEFAULT_STATS_WINDOW)
+        .clamp(60, MAX_STATS_WINDOW);
+    match store
+        .request_stats(crate::routes::unix_now() - window)
+        .await
+    {
+        Ok(stats) => ok(StatsView {
+            window_seconds: window,
+            requests: stats.requests,
+            errors: stats.errors,
+            latency_p50_ms: stats.latency_p50_ms,
+            latency_p95_ms: stats.latency_p95_ms,
+        }),
+        Err(error) => error_response::response(&GatewayError::Internal {
+            message: error.to_string(),
+        }),
     }
 }
 

@@ -329,6 +329,64 @@
             }
           }
         }
+      },
+      "patch": {
+        "tags": [
+          "handlers"
+        ],
+        "operationId": "update_key",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Identifiant du fournisseur",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "index",
+            "in": "path",
+            "description": "Position de la clé",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateKey"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {},
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/admin/v1/requests": {
@@ -639,6 +697,46 @@
           }
         }
       }
+    },
+    "/admin/v1/stats": {
+      "get": {
+        "tags": [
+          "handlers"
+        ],
+        "operationId": "stats",
+        "parameters": [
+          {
+            "name": "window_seconds",
+            "in": "query",
+            "description": "Fenêtre en secondes, 60 à 2 592 000 (défaut 86 400)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatsView"
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -936,6 +1034,57 @@
           "source": {
             "type": "string",
             "description": "`file` (prioritaire, lecture seule ici) ou `database` (écrit par cette API)."
+          }
+        }
+      },
+      "StatsView": {
+        "type": "object",
+        "description": "Agrégats du journal sur une fenêtre glissante (vue d'ensemble de la console).",
+        "required": [
+          "window_seconds",
+          "requests",
+          "errors"
+        ],
+        "properties": {
+          "errors": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "latency_p50_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "latency_p95_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "requests": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "window_seconds": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "UpdateKey": {
+        "type": "object",
+        "description": "Modification d'une clé : seul son poids change (le secret ne se relit jamais).",
+        "required": [
+          "weight"
+        ],
+        "properties": {
+          "weight": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
           }
         }
       },
