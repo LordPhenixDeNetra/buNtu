@@ -92,7 +92,7 @@ rust-embed = "8"
 schemars = "1"
 
 # E4 — stockage, journal, métriques et sécurité (T1.17–T1.21).
-sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros"] }
+sqlx = { version = "0.9", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros"] }
 metrics = "0.24"
 metrics-exporter-prometheus = { version = "0.18", default-features = false }
 argon2 = "0.5"
