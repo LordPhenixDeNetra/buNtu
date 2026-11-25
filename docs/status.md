@@ -18,15 +18,15 @@ dans la PR.
 
 ## Tâche en cours
 
-**T0.1** (validation du nom, côté humain) : [ADR-0001](adr/0001-nom.md) proposé, recherche de
-marques et réservations à faire. Ensuite : la **phase 2** (fiches à rédiger au début de l'epic,
+**T0.1** (validation du nom, côté humain) : nom « buNtu » conservé ([ADR-0001](adr/0001-nom.md)) ;
+en attente de la réponse de Canonical, de la recherche TMview/USPTO et des réservations. Ensuite : la **phase 2** (fiches à rédiger au début de l'epic,
 guide §11).
 
 ## Phase 0 — Fondations (15 j)
 
 | ID | Tâche | Statut | PR | Date | Preuve |
 | --- | --- | --- | --- | --- | --- |
-| T0.1 | Valider le nom (marques EUIPO/USPTO, réservations) | en cours (humain) | — | 2026-11-05 | ADR-0001 proposé : disponibilités vérifiées (crates.io et npm libres ; GitHub `buntu`, Docker Hub `buntu`, `buntu.dev`, `buntu.ai` pris ; `buntu.io` probablement libre) ; restent recherche TMview/USPTO, point « Ubuntu » et réservations |
+| T0.1 | Valider le nom (marques EUIPO/USPTO, réservations) | en cours (humain) | — | 2026-11-25 | **décision : conserver « buNtu »** (origine wolof « porte »), risque Canonical accepté et documenté, avis demandé à Canonical (ADR-0001) ; restent la réponse de Canonical, la recherche TMview/USPTO et les réservations ; clause de repli avec candidats vérifiés (`jaarale`, `buntgate`…) |
 | T0.2 | Workspace Cargo + CI | fait | #2 | 2026-11-03 | 13 crates, lints, CI verte ; PR volontairement fautive rouge |
 | T0.3 | Simulateur de fournisseur | fait | #4 | 2026-11-03 | 9 tests ; plafond 30 024 req/s noté dans `benchmarks/README.md` |
 | T0.4 | Banc de benchmark scripté | fait (réserve) | #9 | 2026-11-03 | `cargo xtask bench` → JSON + Markdown ; ±10 % P99 non atteignable sur poste colocalisé, mesuré et documenté dans `benchmarks/README.md`, à vérifier en T1.26 (§11.2) |
