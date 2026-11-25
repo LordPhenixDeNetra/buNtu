@@ -105,7 +105,7 @@ impl FallbackChain {
                             tokio::time::sleep(self.backoff.delay(attempt - 1)).await;
                             continue;
                         }
-                        failures.push(format!("{} ({} tentative(s))", target.label(), attempt));
+                        failures.push(format!("{} ({} attempt(s))", target.label(), attempt));
                         last_error = Some(error);
                         break;
                     }
@@ -119,7 +119,7 @@ impl FallbackChain {
                 last: Box::new(last),
             }),
             None => Err(GatewayError::Internal {
-                message: "aucune cible à essayer".to_owned(),
+                message: "no target to try".to_owned(),
             }),
         }
     }

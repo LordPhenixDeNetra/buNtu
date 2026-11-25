@@ -10,14 +10,14 @@ use serde_json::Value;
 
 pub fn parse(body: &[u8]) -> Result<Response, GatewayError> {
     let value: Value = serde_json::from_slice(body).map_err(|error| GatewayError::Internal {
-        message: format!("réponse OpenAI illisible : {error}"),
+        message: format!("unreadable OpenAI response: {error}"),
     })?;
 
     let choices = value
         .get("choices")
         .and_then(Value::as_array)
         .ok_or_else(|| GatewayError::Internal {
-            message: "réponse OpenAI sans `choices`".to_owned(),
+            message: "OpenAI response without `choices`".to_owned(),
         })?;
 
     let mut parsed = Vec::with_capacity(choices.len());
@@ -26,7 +26,7 @@ pub fn parse(body: &[u8]) -> Result<Response, GatewayError> {
         let message = choice
             .get("message")
             .ok_or_else(|| GatewayError::Internal {
-                message: "choix OpenAI sans `message`".to_owned(),
+                message: "OpenAI choice without `message`".to_owned(),
             })?;
         parsed.push(Choice {
             index: choice
@@ -62,7 +62,7 @@ fn parse_message(value: &Value) -> Result<Message, GatewayError> {
         Some("tool") => Role::Tool,
         Some(other) => {
             return Err(GatewayError::Internal {
-                message: format!("rôle OpenAI inconnu : {other}"),
+                message: format!("unknown OpenAI role: {other}"),
             });
         }
     };
@@ -85,7 +85,7 @@ fn parse_message(value: &Value) -> Result<Message, GatewayError> {
                     }),
                     other => {
                         return Err(GatewayError::Internal {
-                            message: format!("type de contenu OpenAI inconnu : {other:?}"),
+                            message: format!("unknown OpenAI content type: {other:?}"),
                         });
                     }
                 }

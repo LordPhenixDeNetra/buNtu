@@ -38,7 +38,7 @@ pub fn build(
 
 fn internal_error(message: String) -> GatewayError {
     GatewayError::Internal {
-        message: format!("requête Anthropic : {message}"),
+        message: format!("Anthropic request: {message}"),
     }
 }
 
@@ -99,9 +99,7 @@ pub fn body(request: &Request, default_max_tokens: u32) -> Result<Value, Gateway
                 .unwrap_or_default();
             body.insert(
                 "system".to_owned(),
-                Value::String(format!(
-                    "{system}\nRéponds uniquement par un objet JSON valide."
-                )),
+                Value::String(format!("{system}\nRespond only with a valid JSON object.")),
             );
         } else if matches!(format, ResponseFormat::Text) {
             // Comportement par défaut d'Anthropic.
@@ -139,7 +137,7 @@ fn split_system(messages: &[Message]) -> Result<(String, Vec<Value>), GatewayErr
                 for part in &message.content {
                     let ContentPart::ToolResult(result) = part else {
                         return Err(unsupported(
-                            "message « tool » sans résultat d'outil".to_owned(),
+                            "`tool` message without a tool result".to_owned(),
                         ));
                     };
                     results.push(json!({
@@ -174,7 +172,7 @@ fn split_system(messages: &[Message]) -> Result<(String, Vec<Value>), GatewayErr
                         }
                         other => {
                             return Err(unsupported(format!(
-                                "contenu non traduit pour Anthropic : {other:?}"
+                                "content not translated for Anthropic: {other:?}"
                             )));
                         }
                     }

@@ -86,12 +86,13 @@ fn parse_request(body: &Value) -> Result<Request, GatewayError> {
     let model = body
         .get("model")
         .and_then(Value::as_str)
-        .ok_or_else(|| invalid("`model` est requis"))?
+        .ok_or_else(|| invalid("`model` is required"))?
         .to_owned();
-    let max_tokens =
-        body.get("max_tokens")
-            .and_then(Value::as_u64)
-            .ok_or_else(|| invalid("`max_tokens` est requis par l'API Anthropic"))? as u32;
+    let max_tokens = body
+        .get("max_tokens")
+        .and_then(Value::as_u64)
+        .ok_or_else(|| invalid("`max_tokens` is required by the Anthropic API"))?
+        as u32;
 
     let mut messages = Vec::new();
     if let Some(system) = body.get("system") {
@@ -102,7 +103,7 @@ fn parse_request(body: &Value) -> Result<Request, GatewayError> {
                 .filter_map(|block| block.get("text").and_then(Value::as_str))
                 .collect::<Vec<_>>()
                 .join("\n"),
-            _ => return Err(invalid("`system` invalide")),
+            _ => return Err(invalid("invalid `system`")),
         };
         if !text.is_empty() {
             messages.push(Message {
@@ -117,12 +118,12 @@ fn parse_request(body: &Value) -> Result<Request, GatewayError> {
     let raw_messages = body
         .get("messages")
         .and_then(Value::as_array)
-        .ok_or_else(|| invalid("`messages` est requis"))?;
+        .ok_or_else(|| invalid("`messages` is required"))?;
     for message in raw_messages {
         let role = match message.get("role").and_then(Value::as_str) {
             Some("user") => Role::User,
             Some("assistant") => Role::Assistant,
-            other => return Err(invalid(format!("rôle Anthropic inconnu : {other:?}"))),
+            other => return Err(invalid(format!("unknown Anthropic role: {other:?}"))),
         };
         messages.push(Message {
             role,
@@ -142,7 +143,7 @@ fn parse_request(body: &Value) -> Result<Request, GatewayError> {
                 name: tool
                     .get("name")
                     .and_then(Value::as_str)
-                    .ok_or_else(|| invalid("outil Anthropic sans `name`"))?
+                    .ok_or_else(|| invalid("Anthropic tool without `name`"))?
                     .to_owned(),
                 description: tool
                     .get("description")
@@ -234,14 +235,14 @@ fn parse_content(value: Option<&Value>) -> Result<Vec<ContentPart>, GatewayError
                     }
                     other => {
                         return Err(invalid(format!(
-                            "bloc de contenu Anthropic non pris en charge : {other:?}"
+                            "unsupported Anthropic content block: {other:?}"
                         )));
                     }
                 }
             }
             Ok(content)
         }
-        Some(other) => Err(invalid(format!("contenu Anthropic invalide : {other}"))),
+        Some(other) => Err(invalid(format!("invalid Anthropic content: {other}"))),
     }
 }
 
@@ -272,10 +273,8 @@ fn parse_tool_choice(value: Option<&Value>) -> Result<ToolChoice, GatewayError> 
             .get("name")
             .and_then(Value::as_str)
             .map(|name| ToolChoice::Named(name.to_owned()))
-            .ok_or_else(|| invalid("tool_choice `tool` sans `name`")),
-        other => Err(invalid(format!(
-            "tool_choice Anthropic inconnu : {other:?}"
-        ))),
+            .ok_or_else(|| invalid("tool_choice `tool` without `name`")),
+        other => Err(invalid(format!("unknown Anthropic tool_choice: {other:?}"))),
     }
 }
 

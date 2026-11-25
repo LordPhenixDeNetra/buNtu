@@ -8,7 +8,8 @@ Toute erreur de la passerelle a la forme OpenAI :
 { "error": { "message": "…", "type": "invalid_request_error", "code": "invalid_request" } }
 ```
 
-- `code` est **stable** : c'est ce que les clients doivent tester.
+- `code` est **stable** : c'est ce que les clients doivent tester. `message` est en anglais et
+  peut évoluer ; la console traduit le `code` et affiche ce détail à la suite.
 - `x-buntu-error-source` indique l'origine : `client`, `provider`, `budget` ou `gateway`.
 - `retry-after` est présent quand la passerelle connaît le délai de reprise.
 
@@ -27,12 +28,12 @@ Toute erreur de la passerelle a la forme OpenAI :
 
 | Message | Cause | Correction |
 | --- | --- | --- |
-| `variable d'environnement 'X' absente` | clé déclarée `env:X` sans variable | exporter `X` ou changer la référence |
-| `poids doit être supérieur à zéro` | `weight = 0` | utiliser un poids ≥ 1 |
-| `aucune cible pour l'alias` | route sans `fallbacks`, ou fallback mal formé | format `fournisseur/modèle`, fournisseur déclaré |
-| `fournisseur inconnu` | fallback vers un `id` absent de `[[providers]]` | corriger l'identifiant |
-| `base_url manquante` | fournisseur sans `base_url` au moment de servir | ajouter `base_url` (http/https selon le fournisseur) |
-| `TOML invalide` | syntaxe du fichier | corriger le TOML signalé avec sa ligne |
+| ``environment variable `X` missing`` | clé déclarée `env:X` sans variable | exporter `X` ou changer la référence |
+| `weight must be greater than zero` | `weight = 0` | utiliser un poids ≥ 1 |
+| `at least one fallback target is required`, ``expected `provider/model` `` | route sans `fallbacks`, ou fallback mal formé | format `fournisseur/modèle`, fournisseur déclaré |
+| `unknown provider` | fallback vers un `id` absent de `[[providers]]` | corriger l'identifiant |
+| `invalid base_url (http:// or https:// expected)` | `base_url` absente ou sans schéma au moment de servir | ajouter `base_url` (http/https selon le fournisseur) |
+| `invalid TOML` | syntaxe du fichier | corriger le TOML signalé avec sa ligne |
 
 ## Dépannage rapide
 

@@ -27,19 +27,19 @@ pub use file::{
 /// Erreurs de configuration, toujours accompagnées du chemin du champ fautif.
 #[derive(Debug, thiserror::Error)]
 pub enum ConfigError {
-    #[error("lecture impossible de `{path}` : {source}")]
+    #[error("cannot read `{path}`: {source}")]
     Read {
         path: String,
         source: std::io::Error,
     },
-    #[error("TOML invalide dans `{path}` : {source}")]
+    #[error("invalid TOML in `{path}`: {source}")]
     Toml {
         path: String,
         source: toml::de::Error,
     },
-    #[error("configuration invalide en `{path}` : {message}")]
+    #[error("invalid configuration at `{path}`: {message}")]
     Invalid { path: String, message: String },
-    #[error("variable d'environnement `{variable}` absente pour `{path}`")]
+    #[error("environment variable `{variable}` missing for `{path}`")]
     MissingEnv { path: String, variable: String },
 }
 
@@ -181,7 +181,7 @@ pub fn from_str(
     content: &str,
     environment: &dyn Environment,
 ) -> Result<CompiledConfig, ConfigError> {
-    let raw = file::parse_str(content, "<mémoire>")?;
+    let raw = file::parse_str(content, "<memory>")?;
     let raw = env::apply(raw, environment)?;
     compiled::compile(&raw, environment)
 }

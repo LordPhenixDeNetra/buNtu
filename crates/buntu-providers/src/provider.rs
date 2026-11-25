@@ -68,7 +68,7 @@ impl StreamState {
 /// Valeur d'en-tête portant un secret, marquée sensible.
 pub fn sensitive(value: &str) -> Result<HeaderValue, GatewayError> {
     let mut header = HeaderValue::from_str(value).map_err(|_| GatewayError::Internal {
-        message: "clé API invalide pour un en-tête HTTP".to_owned(),
+        message: "API key is not a valid HTTP header value".to_owned(),
     })?;
     header.set_sensitive(true);
     Ok(header)
@@ -109,14 +109,14 @@ pub trait Provider: Send + Sync {
         _request: &EmbeddingsRequest,
     ) -> Result<HttpRequest, GatewayError> {
         Err(GatewayError::InvalidRequest {
-            message: format!("{} ne prend pas en charge les embeddings", self.name()),
+            message: format!("{} does not support embeddings", self.name()),
         })
     }
 
     /// Traduit une réponse d'embeddings ; par défaut, non pris en charge.
     fn parse_embeddings_response(&self, _body: Bytes) -> Result<EmbeddingsResponse, GatewayError> {
         Err(GatewayError::InvalidRequest {
-            message: format!("{} ne prend pas en charge les embeddings", self.name()),
+            message: format!("{} does not support embeddings", self.name()),
         })
     }
 }

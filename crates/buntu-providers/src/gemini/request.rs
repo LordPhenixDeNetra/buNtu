@@ -43,7 +43,7 @@ pub fn build(base: &str, request: &Request) -> Result<hyper::Request<bytes::Byte
 
 fn internal_error(message: String) -> GatewayError {
     GatewayError::Internal {
-        message: format!("requête Gemini : {message}"),
+        message: format!("Gemini request: {message}"),
     }
 }
 
@@ -146,7 +146,7 @@ fn split_messages(messages: &[Message]) -> Result<(String, Vec<Value>), GatewayE
                         ContentPart::Image { source, .. } => {
                             let ImageSource::Base64 { media_type, data } = source else {
                                 return Err(unsupported(
-                                    "Gemini attend une image encodée en base64".to_owned(),
+                                    "Gemini expects a base64-encoded image".to_owned(),
                                 ));
                             };
                             parts.push(json!({
@@ -166,7 +166,7 @@ fn split_messages(messages: &[Message]) -> Result<(String, Vec<Value>), GatewayE
                         })),
                         other => {
                             return Err(unsupported(format!(
-                                "contenu non traduit pour Gemini : {other:?}"
+                                "content not translated for Gemini: {other:?}"
                             )));
                         }
                     }

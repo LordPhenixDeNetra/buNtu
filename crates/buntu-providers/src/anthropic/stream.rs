@@ -19,13 +19,13 @@ pub fn parse(state: &mut StreamState, chunk: Bytes) -> Result<Vec<StreamEvent>, 
 
     for line in state.take_lines() {
         let text = std::str::from_utf8(&line).map_err(|error| GatewayError::Internal {
-            message: format!("ligne SSE Anthropic non UTF-8 : {error}"),
+            message: format!("Anthropic SSE line is not UTF-8: {error}"),
         })?;
         let Some(data) = text.strip_prefix("data: ") else {
             continue;
         };
         let value: Value = serde_json::from_str(data).map_err(|error| GatewayError::Internal {
-            message: format!("événement Anthropic illisible : {error}"),
+            message: format!("unreadable Anthropic event: {error}"),
         })?;
 
         match value.get("type").and_then(Value::as_str) {
@@ -121,7 +121,7 @@ pub fn parse(state: &mut StreamState, chunk: Bytes) -> Result<Vec<StreamEvent>, 
                     .get("error")
                     .and_then(|error| error.get("message"))
                     .and_then(Value::as_str)
-                    .unwrap_or("erreur pendant le flux Anthropic")
+                    .unwrap_or("error during the Anthropic stream")
                     .to_owned();
                 return Err(GatewayError::ProviderUnavailable { message });
             }

@@ -35,7 +35,7 @@ fn serve(path: &str) -> Response {
             None => {
                 return (
                     StatusCode::SERVICE_UNAVAILABLE,
-                    "interface non compilée : exécutez `npm run build` dans ui/",
+                    "console not built: run `npm run build` in ui/",
                 )
                     .into_response();
             }

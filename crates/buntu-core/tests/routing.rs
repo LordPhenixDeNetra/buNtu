@@ -85,7 +85,7 @@ fn direct_target_resolves() -> Result<(), Box<dyn Error>> {
 fn unknown_alias_is_rejected() -> Result<(), Box<dyn Error>> {
     match resolve(&config()?, "inconnu", Capabilities::NONE) {
         Err(GatewayError::InvalidRequest { message }) => {
-            assert!(message.contains("inconnu"), "message : {message}");
+            assert!(message.contains("unknown"), "message : {message}");
         }
         other => panic!("erreur attendue, obtenu : {other:?}"),
     }
@@ -96,10 +96,7 @@ fn unknown_alias_is_rejected() -> Result<(), Box<dyn Error>> {
 fn unknown_provider_is_rejected() -> Result<(), Box<dyn Error>> {
     match resolve(&config()?, "zzz/modele", Capabilities::NONE) {
         Err(GatewayError::InvalidRequest { message }) => {
-            assert!(
-                message.contains("fournisseur inconnu"),
-                "message : {message}"
-            );
+            assert!(message.contains("unknown provider"), "message : {message}");
         }
         other => panic!("erreur attendue, obtenu : {other:?}"),
     }

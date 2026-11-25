@@ -141,8 +141,8 @@ async fn all_targets_failed_reports_attempts_and_last_error() -> Result<(), Box<
     match result {
         Err(GatewayError::AllTargetsFailed { attempts, last }) => {
             assert_eq!(attempts.len(), 2);
-            assert!(attempts[0].contains("a/modele-a (2 tentative(s))"));
-            assert!(attempts[1].contains("b/modele-b (2 tentative(s))"));
+            assert!(attempts[0].contains("a/modele-a (2 attempt(s))"));
+            assert!(attempts[1].contains("b/modele-b (2 attempt(s))"));
             assert!(matches!(
                 last.as_ref(),
                 GatewayError::ProviderUnavailable { .. }
@@ -174,7 +174,7 @@ async fn exhausted_budget_stops_retrying_across_targets() -> Result<(), Box<dyn 
             assert!(
                 attempts
                     .iter()
-                    .all(|entry| entry.contains("1 tentative(s)"))
+                    .all(|entry| entry.contains("1 attempt(s)"))
             );
         }
         other => panic!("erreur attendue, obtenu : {other:?}"),

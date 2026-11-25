@@ -157,7 +157,7 @@ impl Provider for OpenAiCompatibleProvider {
 
         let mut body_value: Value =
             serde_json::from_slice(&body).map_err(|error| GatewayError::Internal {
-                message: format!("corps OpenAI-compatible illisible : {error}"),
+                message: format!("unreadable OpenAI-compatible body: {error}"),
             })?;
         if !self.quirks.parallel_tools
             && !request.tools.is_empty()
@@ -166,23 +166,23 @@ impl Provider for OpenAiCompatibleProvider {
             object.insert("parallel_tool_calls".to_owned(), Value::Bool(false));
         }
         let bytes = serde_json::to_vec(&body_value).map_err(|error| GatewayError::Internal {
-            message: format!("corps OpenAI-compatible non sérialisable : {error}"),
+            message: format!("OpenAI-compatible body not serializable: {error}"),
         })?;
         if let Some(base_url) = &self.base_url {
             let path = parts.uri.path().to_owned();
             let uri = format!("{}{path}", base_url.trim_end_matches('/'));
             parts.uri = uri.parse().map_err(|error| GatewayError::Internal {
-                message: format!("URL compatible invalide : {error}"),
+                message: format!("invalid compatible URL: {error}"),
             })?;
         }
         for (name, value) in &self.headers {
             let header_name: hyper::header::HeaderName =
                 name.parse().map_err(|error| GatewayError::Internal {
-                    message: format!("en-tête compatible invalide : {error}"),
+                    message: format!("invalid compatible header: {error}"),
                 })?;
             let header_value: hyper::header::HeaderValue =
                 value.parse().map_err(|error| GatewayError::Internal {
-                    message: format!("valeur d'en-tête compatible invalide : {error}"),
+                    message: format!("invalid compatible header value: {error}"),
                 })?;
             parts.headers.insert(header_name, header_value);
         }

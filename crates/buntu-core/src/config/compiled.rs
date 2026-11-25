@@ -123,7 +123,7 @@ pub fn compile(
         .parse()
         .map_err(|error| ConfigError::Invalid {
             path: "server.listen".to_owned(),
-            message: format!("adresse invalide : {error}"),
+            message: format!("invalid address: {error}"),
         })?;
 
     let timeouts = compile_timeouts(&raw.timeouts, "timeouts", Timeouts::default())?;
@@ -134,7 +134,7 @@ pub fn compile(
         if providers.insert(compiled.id.clone(), compiled).is_some() {
             return Err(ConfigError::Invalid {
                 path: format!("providers[{index}].id"),
-                message: "identifiant de fournisseur en double".to_owned(),
+                message: "duplicate provider id".to_owned(),
             });
         }
     }
@@ -145,7 +145,7 @@ pub fn compile(
         if routes.insert(compiled.alias.clone(), compiled).is_some() {
             return Err(ConfigError::Invalid {
                 path: format!("routes[{index}].alias"),
-                message: "alias de route en double".to_owned(),
+                message: "duplicate route alias".to_owned(),
             });
         }
     }
@@ -171,20 +171,20 @@ fn compile_provider(
     if id.is_empty() {
         return Err(ConfigError::Invalid {
             path: format!("providers[{index}].id"),
-            message: "identifiant vide".to_owned(),
+            message: "empty id".to_owned(),
         });
     }
     if provider.kind.trim().is_empty() {
         return Err(ConfigError::Invalid {
             path: format!("providers[{index}].type"),
-            message: "type vide".to_owned(),
+            message: "empty type".to_owned(),
         });
     }
     if !PROVIDER_KINDS.contains(&provider.kind.trim()) {
         return Err(ConfigError::Invalid {
             path: format!("providers[{index}].type"),
             message: format!(
-                "type inconnu `{}` (attendu : {})",
+                "unknown type `{}` (expected: {})",
                 provider.kind.trim(),
                 PROVIDER_KINDS.join(", ")
             ),
@@ -193,7 +193,7 @@ fn compile_provider(
     if provider.keys.is_empty() {
         return Err(ConfigError::Invalid {
             path: format!("providers[{index}].keys"),
-            message: "au moins une clé est requise".to_owned(),
+            message: "at least one key is required".to_owned(),
         });
     }
 
@@ -202,7 +202,7 @@ fn compile_provider(
         if key.weight == 0 {
             return Err(ConfigError::Invalid {
                 path: format!("providers[{index}].keys[{key_index}].weight"),
-                message: "le poids doit être supérieur à zéro".to_owned(),
+                message: "weight must be greater than zero".to_owned(),
             });
         }
         let path = format!("providers[{index}].keys[{key_index}].secret");
@@ -250,7 +250,7 @@ fn resolve_secret(
     if reference.starts_with("secret:") {
         return Err(ConfigError::Invalid {
             path: path.to_owned(),
-            message: "les références `secret:` arrivent avec T1.21".to_owned(),
+            message: "`secret:` references are not supported yet (T1.21)".to_owned(),
         });
     }
     Ok(SecretValue::new(reference.to_owned()))
@@ -266,13 +266,13 @@ fn compile_route(
     if alias.is_empty() {
         return Err(ConfigError::Invalid {
             path: format!("routes[{index}].alias"),
-            message: "alias vide".to_owned(),
+            message: "empty alias".to_owned(),
         });
     }
     if route.fallbacks.is_empty() {
         return Err(ConfigError::Invalid {
             path: format!("routes[{index}].fallbacks"),
-            message: "au moins une cible de repli est requise".to_owned(),
+            message: "at least one fallback target is required".to_owned(),
         });
     }
 
@@ -302,18 +302,18 @@ fn parse_target(
 ) -> Result<CompiledTarget, ConfigError> {
     let (provider, model) = target.split_once('/').ok_or_else(|| ConfigError::Invalid {
         path: path.to_owned(),
-        message: "attendu `fournisseur/modèle`".to_owned(),
+        message: "expected `provider/model`".to_owned(),
     })?;
     if provider.trim().is_empty() || model.trim().is_empty() {
         return Err(ConfigError::Invalid {
             path: path.to_owned(),
-            message: "fournisseur ou modèle vide".to_owned(),
+            message: "empty provider or model".to_owned(),
         });
     }
     if !providers.contains_key(provider) {
         return Err(ConfigError::Invalid {
             path: path.to_owned(),
-            message: format!("fournisseur inconnu `{provider}`"),
+            message: format!("unknown provider `{provider}`"),
         });
     }
     Ok(CompiledTarget {
@@ -343,7 +343,7 @@ fn duration_from_ms(
         None => Ok(None),
         Some(0) => Err(ConfigError::Invalid {
             path: format!("{path}.{field}"),
-            message: "le délai doit être supérieur à zéro".to_owned(),
+            message: "timeout must be greater than zero".to_owned(),
         }),
         Some(millis) => Ok(Some(Duration::from_millis(millis))),
     }
@@ -364,13 +364,13 @@ fn check_hook_names(names: &[String], section: &str) -> Result<(), ConfigError> 
         if name.trim().is_empty() {
             return Err(ConfigError::Invalid {
                 path: format!("{section}[{index}]"),
-                message: "nom de hook vide".to_owned(),
+                message: "empty hook name".to_owned(),
             });
         }
         if !seen.insert(name.as_str()) {
             return Err(ConfigError::Invalid {
                 path: format!("{section}[{index}]"),
-                message: "hook en double".to_owned(),
+                message: "duplicate hook".to_owned(),
             });
         }
     }

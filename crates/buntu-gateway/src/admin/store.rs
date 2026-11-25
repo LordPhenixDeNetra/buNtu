@@ -48,8 +48,8 @@ impl AdminStore {
         let _guard = self.lock.lock().await;
         if state.config.snapshot().mode == ConfigMode::File {
             return Err(invalid(
-                "configuration en mode `file` : l'API d'administration est en lecture seule, \
-                 modifiez le fichier de configuration",
+                "configuration is in `file` mode: the admin API is read-only, \
+                 edit the configuration file instead",
             ));
         }
         let layers = state.config.layers();
@@ -119,8 +119,8 @@ impl AdminStore {
         } else {
             let cipher = self.cipher.as_ref().ok_or_else(|| {
                 invalid(
-                    "clé maître absente : définissez BUNTU_MASTER_KEY (ou son fichier) pour \
-                     persister une clé, ou passez une référence `env:VAR`",
+                    "master key missing: set BUNTU_MASTER_KEY (or its file) to \
+                     persist a key, or pass an `env:VAR` reference",
                 )
             })?;
             StoredSecret::Encrypted(
@@ -150,14 +150,14 @@ pub async fn load_base(
                 StoredSecret::Encrypted(blob) => {
                     let cipher = cipher.ok_or_else(|| {
                         internal(&format!(
-                            "clé maître requise pour déchiffrer les clés de `{}`",
+                            "master key required to decrypt the keys of `{}`",
                             record.id
                         ))
                     })?;
                     let plain = cipher
                         .decrypt(&blob)
                         .map_err(|error| internal(&error.to_string()))?;
-                    String::from_utf8(plain).map_err(|_| internal("clé déchiffrée non UTF-8"))?
+                    String::from_utf8(plain).map_err(|_| internal("decrypted key is not UTF-8"))?
                 }
             };
             keys.push(RawKey {
@@ -196,5 +196,5 @@ fn internal(message: &str) -> GatewayError {
 }
 
 fn storage(error: buntu_store::StoreError) -> GatewayError {
-    internal(&format!("stockage : {error}"))
+    internal(&format!("storage: {error}"))
 }

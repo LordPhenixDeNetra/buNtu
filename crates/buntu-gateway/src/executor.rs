@@ -70,14 +70,14 @@ impl HttpExecutor {
     ) -> Result<(Arc<dyn Provider>, &CompiledProvider), GatewayError> {
         let provider_config = self.config.providers.get(&target.provider).ok_or_else(|| {
             GatewayError::InvalidRequest {
-                message: format!("fournisseur inconnu : `{}`", target.provider),
+                message: format!("unknown provider: `{}`", target.provider),
             }
         })?;
         let provider =
             self.registry
                 .get(&provider_config.kind)
                 .ok_or_else(|| GatewayError::Internal {
-                    message: format!("aucun traducteur pour le type `{}`", provider_config.kind),
+                    message: format!("no translator for type `{}`", provider_config.kind),
                 })?;
         Ok((provider, provider_config))
     }
@@ -86,7 +86,7 @@ impl HttpExecutor {
         match provider.selector.select() {
             Ok(index) if index < provider.keys.len() => Ok(index),
             Ok(_) => Err(GatewayError::Internal {
-                message: "clé sélectionnée hors limites".to_owned(),
+                message: "selected key out of bounds".to_owned(),
             }),
             Err(KeySelectionError::AllPaused { retry_after }) => {
                 Err(GatewayError::ProviderRateLimited {
@@ -238,7 +238,7 @@ impl HttpExecutor {
             }
         }
         Err(last_error.unwrap_or_else(|| GatewayError::Internal {
-            message: "aucune cible pour le flux".to_owned(),
+            message: "no target for the stream".to_owned(),
         }))
     }
 }
@@ -263,7 +263,7 @@ impl UpstreamChunks {
                 Ok(None) => return None,
                 Ok(Some(Err(error))) => {
                     return Some(Err(GatewayError::ProviderUnavailable {
-                        message: format!("flux amont interrompu : {error}"),
+                        message: format!("upstream stream interrupted: {error}"),
                     }));
                 }
                 Ok(Some(Ok(frame))) => {

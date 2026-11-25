@@ -17,7 +17,7 @@ pub fn map(status: u16, headers: &HeaderMap, body: &[u8]) -> GatewayError {
         },
         500 | 502 | 503 | 504 => GatewayError::ProviderUnavailable { message },
         other => GatewayError::ProviderUnavailable {
-            message: format!("statut {other} : {message}"),
+            message: format!("status {other}: {message}"),
         },
     }
 }
@@ -39,5 +39,5 @@ fn message_of(body: &[u8]) -> String {
         .and_then(|error| error.get("message"))
         .and_then(Value::as_str)
         .map(|message| message.chars().take(200).collect())
-        .unwrap_or_else(|| "erreur Gemini sans message".to_owned())
+        .unwrap_or_else(|| "Gemini error without a message".to_owned())
 }

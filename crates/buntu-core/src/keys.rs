@@ -11,13 +11,13 @@ use std::time::{Duration, Instant};
 /// Erreur de construction ou de sélection d'une clé.
 #[derive(Debug, thiserror::Error)]
 pub enum KeySelectionError {
-    #[error("aucune clé à sélectionner")]
+    #[error("no key to select")]
     Empty,
-    #[error("le poids d'une clé doit être supérieur à zéro")]
+    #[error("a key weight must be greater than zero")]
     ZeroWeight,
-    #[error("index de clé hors limites : {index} (taille {len})")]
+    #[error("key index out of bounds: {index} (size {len})")]
     IndexOutOfRange { index: usize, len: usize },
-    #[error("toutes les clés sont en pause")]
+    #[error("all keys are paused")]
     AllPaused { retry_after: Duration },
 }
 

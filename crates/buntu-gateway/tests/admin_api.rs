@@ -212,7 +212,7 @@ async fn invalid_configuration_is_rejected_by_the_same_validator() -> Result<(),
         body["error"]["message"]
             .as_str()
             .unwrap_or_default()
-            .contains("clé"),
+            .contains("key"),
         "message : {body}"
     );
     Ok(())

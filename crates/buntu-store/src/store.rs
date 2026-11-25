@@ -17,11 +17,11 @@ pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("../../migrations"
 /// Erreur de stockage.
 #[derive(Debug, thiserror::Error)]
 pub enum StoreError {
-    #[error("base de données : {0}")]
+    #[error("database: {0}")]
     Database(#[from] sqlx::Error),
-    #[error("migration : {0}")]
+    #[error("migration: {0}")]
     Migration(#[from] sqlx::migrate::MigrateError),
-    #[error("entité inconnue")]
+    #[error("unknown entity")]
     NotFound,
 }
 

@@ -71,7 +71,7 @@ impl UpstreamClient {
             .inner
             .as_ref()
             .map_err(|error| GatewayError::Internal {
-                message: format!("client TLS indisponible : {error}"),
+                message: format!("TLS client unavailable: {error}"),
             })?;
         let request = absolute_request(base_url, request)?;
         let response = client
@@ -90,11 +90,11 @@ pub async fn read_limited(body: Incoming, limit: usize) -> Result<Bytes, Gateway
         Ok(collected) => Ok(collected.to_bytes()),
         Err(error) if error.is::<http_body_util::LengthLimitError>() => {
             Err(GatewayError::ProviderUnavailable {
-                message: format!("réponse amont trop volumineuse (> {limit} octets)"),
+                message: format!("upstream response too large (> {limit} bytes)"),
             })
         }
         Err(error) => Err(GatewayError::ProviderUnavailable {
-            message: format!("lecture de la réponse amont : {error}"),
+            message: format!("reading upstream response: {error}"),
         }),
     }
 }
@@ -125,7 +125,7 @@ fn connection_error(error: hyper_util::client::legacy::Error) -> GatewayError {
         source = cause.source();
     }
     GatewayError::ProviderUnavailable {
-        message: format!("connexion au fournisseur : {message}"),
+        message: format!("connecting to provider: {message}"),
     }
 }
 
@@ -133,7 +133,7 @@ fn absolute_request(base_url: &str, request: HttpRequest) -> Result<HttpRequest,
     let base = base_url.trim_end_matches('/');
     if !base.starts_with("http://") && !base.starts_with("https://") {
         return Err(GatewayError::ProviderUnavailable {
-            message: format!("base_url invalide (http:// ou https:// attendu) : {base}"),
+            message: format!("invalid base_url (http:// or https:// expected): {base}"),
         });
     }
     let path = request
@@ -146,7 +146,7 @@ fn absolute_request(base_url: &str, request: HttpRequest) -> Result<HttpRequest,
     parts.uri = uri
         .parse()
         .map_err(|error| GatewayError::ProviderUnavailable {
-            message: format!("URL amont invalide : {error}"),
+            message: format!("invalid upstream URL: {error}"),
         })?;
     Ok(HttpRequest::from_parts(parts, body))
 }
