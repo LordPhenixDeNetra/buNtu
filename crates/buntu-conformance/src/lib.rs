@@ -10,12 +10,13 @@
 //! conformance_suite!(MonFournisseur::default(), "mon-fournisseur", text_simple, tool_call);
 //! ```
 //!
-//! Le mode `--live` (variable `BUNTU_LIVE=1`) est prévu pour T1.9 : la même batterie pourra être
-//! jouée contre la vraie API, la nuit, sans changer les attentes.
+//! Le mode réel (`BUNTU_LIVE=1`, module [`live`]) joue la batterie contre la vraie API d'un
+//! fournisseur, avec des attentes structurelles : `cargo test -p buntu-conformance --test live`.
 
 pub mod cases;
 pub mod fake;
 pub mod fixtures;
+pub mod live;
 pub mod runner;
 
 pub use cases::{Case, CaseKind, cases, find};
