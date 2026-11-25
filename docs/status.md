@@ -44,7 +44,7 @@ guide §11).
 | T1.4 | Sélection pondérée des clés | fait | #12 | 2026-11-03 | 1 M de tirages à ± 1 % des poids ; criterion **13,9 ns** (< 50 ns) ; toutes clés en pause → erreur explicite ; pauses réinitialisées au rechargement (documenté) |
 | T1.5 | Réessais | fait | #13 | 2026-11-03 | 6 tests : classification par statut (429/500/502/503/504 vs 400/401/403/404/422), flux déjà commencé jamais réessayé, gigue complète plafonnée ; 100 % de 503 → **taux de réessai 20,095 %** |
 | T1.6 | Chaîne de repli et alias | fait | #14 | 2026-11-03 | 11 tests : alias dans l'ordre, cible directe, erreurs, filtre de capacités ; **UC2 avec deux vrais simulateurs** (503 puis 200) → 200, en-têtes `x-buntu-provider`/`x-buntu-model`/`x-buntu-attempts` = 3 ; toutes cibles en échec → dernière erreur + liste |
-| T1.7 | Quatre timeouts | fait (réserve) | #15 | 2026-11-03 | 10 tests : défauts, surcharges globales et par route, premier octet et total via `TimedExecutor`, budgets de flux premier/inter/total, **abandon du futur amont prouvé**, timeout réel sur simulateur (200 ms coupé à 50 ms) ; réserve : connexion et inter-morceaux branchés dans le client hyper-util (T1.8+) |
+| T1.7 | Quatre timeouts | fait | #15 | 2026-11-03 | 10 tests : défauts, surcharges globales et par route, premier octet et total via `TimedExecutor`, budgets de flux premier/inter/total, **abandon du futur amont prouvé**, timeout réel sur simulateur (200 ms coupé à 50 ms) ; réserve levée le 2026-11-05 par #33 (revue 1e) : premier octet, inter-morceaux et total appliqués aux vrais appels amont, connexion 5 s, corps amont plafonnés |
 | T1.8 | Kit de conformité | fait | #16 | 2026-11-03 | trait `Provider` + crate `buntu-conformance` : 14 cas rejoués par `wiremock`, macro `conformance_suite!` ; **15/15 verts** dont le fournisseur volontairement cassé détecté ; mode `BUNTU_LIVE` prêt |
 
 ## Phase 1 — E2 Fournisseurs
@@ -60,10 +60,10 @@ guide §11).
 
 | ID | Tâche | Statut | PR | Date | Preuve |
 | --- | --- | --- | --- | --- | --- |
-| T1.13 | Endpoints OpenAI (`chat`, `embeddings`, `models`) | fait (réserve) | #22 | 2026-11-04 | client amont hyper-util + `base_url` par fournisseur ; `/v1/chat/completions` (JSON + SSE avec `[DONE]`), `/v1/embeddings`, `/v1/models` ; **6 tests d'intégration** contre le simulateur (texte, flux, vecteurs, modèles, erreurs 400/502) ; scripts SDK **Python + TypeScript** + job CI `sdk` ; réserve : preuve SDK à confirmer par la CI, TLS amont non branché (T1.21) |
-| T1.14 | Endpoint natif Anthropic | fait (réserve) | #22 | 2026-11-04 | `/anthropic/v1/messages` entrant (`max_tokens` requis, `system` extrait, blocs texte/image/tool_use/tool_result), routage vers **n'importe quel fournisseur**, réponse et flux à **événements nommés** (`message_start`, `content_block_delta`, `message_stop`) ; **4 tests d'intégration** (cible Anthropic, cible OpenAI traduite, flux, erreur normalisée) ; SDK **Anthropic** Python ajouté au job `sdk` ; réserve : preuve SDK à confirmer en CI |
+| T1.13 | Endpoints OpenAI (`chat`, `embeddings`, `models`) | fait | #22 | 2026-11-04 | client amont hyper-util + `base_url` par fournisseur ; `/v1/chat/completions` (JSON + SSE avec `[DONE]`), `/v1/embeddings`, `/v1/models` ; **6 tests d'intégration** contre le simulateur (texte, flux, vecteurs, modèles, erreurs 400/502) ; scripts SDK **Python + TypeScript** + job CI `sdk` ; réserves levées : TLS amont (rustls) le 2026-11-05 par #33 (revue 1f) ; preuve SDK confirmée par le job CI `sdk` vert |
+| T1.14 | Endpoint natif Anthropic | fait | #22 | 2026-11-04 | `/anthropic/v1/messages` entrant (`max_tokens` requis, `system` extrait, blocs texte/image/tool_use/tool_result), routage vers **n'importe quel fournisseur**, réponse et flux à **événements nommés** (`message_start`, `content_block_delta`, `message_stop`) ; **4 tests d'intégration** (cible Anthropic, cible OpenAI traduite, flux, erreur normalisée) ; SDK **Anthropic** Python ajouté au job `sdk` ; réserve levée : preuve SDK Anthropic confirmée par le job CI `sdk` vert |
 | T1.15 | Erreurs normalisées + en-têtes `x-buntu-*` | fait | #22 | 2026-11-04 | 8 codes stables + statut HTTP + type OpenAI ; `x-buntu-error-source` et `retry-after` ; **9 tests `insta`** (8 snapshots + anti-secret) ; aucun message ne contient clé, en-tête d'authentification ou corps de requête |
-| T1.16 | API d'administration + OpenAPI | fait (réserve) | #22 | 2026-11-04 | CRUD fournisseurs/clés/routes sur la configuration brute, **validation par le même code que `config validate`**, pagination par curseur (max 100), **aperçu de clé seulement** (`sk-…a1b2` / `env:VAR`) ; `openapi.json` généré par `utoipa` + **test de diff** (échec si obsolète) ; **5 tests** (CRUD, pagination, anti-fuite, validation, OpenAPI) ; réserve : mutations en mémoire (persistance avec T1.17), authentification admin en T1.20 |
+| T1.16 | API d'administration + OpenAPI | fait | #22 | 2026-11-04 | CRUD fournisseurs/clés/routes sur la configuration brute, **validation par le même code que `config validate`**, pagination par curseur (max 100), **aperçu de clé seulement** (`sk-…a1b2` / `env:VAR`) ; `openapi.json` généré par `utoipa` + **test de diff** (échec si obsolète) ; **5 tests** (CRUD, pagination, anti-fuite, validation, OpenAPI) ; réserves levées le 2026-11-05 : authentification admin par #33 (revue 1a, jeton Bearer) ; mutations persistées en SQLite par #34 (ADR-0008) |
 
 ## Phase 1 — E4 Stockage, journaux, sécurité de base
 
@@ -87,7 +87,7 @@ guide §11).
 
 | ID | Tâche | Statut | PR | Date | Preuve |
 | --- | --- | --- | --- | --- | --- |
-| T1.25 | Release automatisée (cargo-dist, Docker multi-arch, npx, cosign/SBOM) | fait (réserve) | #25 | 2026-11-04 | `dist-workspace.toml` + `release.yml` générés par **cargo-dist 0.34** (5 cibles musl/darwin/windows, installateurs shell/powershell), **build local vérifié** (zip + SHA-256 concordant) ; `Dockerfile` multi-stage → **image distroless non root** (3,4 Mio) testée localement (`--version`, `/health` 200, `/ready` 200, UI embarquée servie) ; `release-delivery.yml` (buildx multi-arch, cosign keyless, SBOM, binaires bruts) ; lanceur `npx/` avec **vérification SHA-256** et **5 tests Node** ; réserve : release `v0.0.1-rc.1` et image arm64 à confirmer en CI après tag |
+| T1.25 | Release automatisée (cargo-dist, Docker multi-arch, npx, cosign/SBOM) | fait | #25 | 2026-11-04 | `dist-workspace.toml` + `release.yml` générés par **cargo-dist 0.34** (5 cibles musl/darwin/windows, installateurs shell/powershell), **build local vérifié** (zip + SHA-256 concordant) ; `Dockerfile` multi-stage → **image distroless non root** (3,4 Mio) testée localement (`--version`, `/health` 200, `/ready` 200, UI embarquée servie) ; `release-delivery.yml` (buildx multi-arch, cosign keyless, SBOM, binaires bruts) ; lanceur `npx/` avec **vérification SHA-256** et **5 tests Node** ; réserve levée le 2026-11-09 : releases v0.1.0 à v0.1.3 publiées (#42 à #50), image amd64 + arm64 sur GHCR, binaires des 4 plateformes, lanceur `@buntuu/cli` publié par la CI avec provenance |
 | T1.26 | Première campagne de benchmark publiée | fait (réserve) | #25 | 2026-11-04 | `cargo xtask bench` étendu (route réelle `/v1/chat/completions`, surcoût passerelle, démarrage à froid, taille binaire) ; 3 exécutions × 500/1 000/2 000 req/s ; campagne **publiée** (`benchmarks/results/2026-11-04-e6/`, `docs/benchmarks.md`, graphique SVG) ; surcoût médian 0,7–2,3 ms, binaire **4,5 Mio** (NFR-PERF-11 tenu), cold start 523 ms ; réserve : protocole §11.2 multi-machines non exécuté, dispersion > 10 % en colocation |
 | T1.27 | Documentation : démarrage, guides, référence générée | fait (réserve) | #25 | 2026-11-04 | `docs/quickstart.md` dont les commandes sont **exécutées en CI** (`scripts/check-quickstart.sh` : santé, chat, modèles, console), **5 guides** fournisseurs (dont Ollama), `docs/faq-errors.md` (8 codes stables), référence de configuration **générée** (`buntu config schema` → schemars → `config.schema.json` → `docs/config-reference.md`, diff vérifié en CI), README refondu, liens contrôlés ; réserve : test « personne extérieure UC1 < 5 min » non réalisé |
 ## Phases suivantes
@@ -95,6 +95,19 @@ guide §11).
 Le détail des tâches des phases 2 à 4 reste dans le cahier des charges. Chaque phase sera
 ajoutée à ce tableau au début de l'epic, en même temps que la rédaction de ses fiches
 (guide §11).
+
+## Releases publiées
+
+Procédure : [docs/release.md](release.md). Chaque release est vérifiée depuis les registres
+publics (release GitHub, `ghcr.io/lordphenixdenetra/buntu`, `npx @buntuu/cli`).
+
+| Version | Date | PR | Livraison |
+| --- | --- | --- | --- |
+| v0.0.1-rc.1 | 2026-11-04 | #25 | pré-release : binaires, image `v0.0.1-rc.1` (amd64 + arm64) ; npm non publié |
+| v0.1.0 | 2026-11-08 | #42 | première alpha publique ; image sans tags SemVer et binaire macOS absent (corrigés par #43) ; npm refusé (nom `buntu` trop proche de `bun`) |
+| v0.1.1 | 2026-11-09 | #45 | image et binaires complets ; npm `@buntuu/cli@0.1.1` publié à la main, lanceur défectueux (corrigé par #47) |
+| v0.1.2 | 2026-11-09 | #48 | image et binaires ; npm refusé à la vérification de provenance (champ `repository`, corrigé par #49) |
+| v0.1.3 | 2026-11-09 | #50 | **complète** : 4 plateformes, image amd64 + arm64, `npx @buntuu/cli@0.1.3` publié par la CI sans jeton, avec provenance |
 
 ## Historique des fusions
 
@@ -131,3 +144,22 @@ ajoutée à ce tableau au début de l'epic, en même temps que la rédaction de 
 | 2026-11-05 | #30 | Release : sommes de contrôle téléchargées avant signature | verte |
 | 2026-11-05 | #31 | Release : image étiquetée avec le tag de release | verte |
 | 2026-11-05 | #32 | Revue du dépôt (liste de contrôle) | verte |
+| 2026-11-05 | #33 | Revue 1a–1f : authentification admin, journal, budget de réessais, flux, timeouts, TLS amont | verte |
+| 2026-11-05 | #34 | Revue section 2 : configuration en couches (ADR-0008), chemin de requête partagé | verte |
+| 2026-11-05 | #35 | T0.1 : ADR-0001 proposé (disponibilité du nom) | verte |
+| 2026-11-05 | #36 | T0.1 : premiers résultats de marques (politique de Canonical) | verte |
+| 2026-11-08 | #37 | Console : système de design et jetons CSS | verte |
+| 2026-11-08 | #38 | Console : refonte sur le système de design | verte |
+| 2026-11-08 | #39 | Image : `deploy/Dockerfile` durci, `.dockerignore` en liste blanche | verte |
+| 2026-11-08 | #40 | `buntu health` et `HEALTHCHECK` de l'image | verte |
+| 2026-11-08 | #41 | Gestion des versions et procédure de release (ADR-0009) | verte |
+| 2026-11-08 | #42 | Release v0.1.0 | verte |
+| 2026-11-08 | #43 | Livraison : tags SemVer de l'image, runner macOS | verte |
+| 2026-11-09 | #44 | Lanceur npm préfixé (`@buntu/cli`) | verte |
+| 2026-11-09 | #45 | Release v0.1.1 | verte |
+| 2026-11-09 | #46 | Lanceur npm `@buntuu/cli`, publication de confiance | verte |
+| 2026-11-09 | #47 | Publication de confiance npm, version du lanceur lue au bon endroit | verte |
+| 2026-11-09 | #48 | Release v0.1.2 | verte |
+| 2026-11-09 | #49 | Lanceur npm : champ `repository` exigé par la provenance | verte |
+| 2026-11-09 | #50 | Release v0.1.3 | verte |
+| 2026-11-09 | #51 | Revue classée par priorité (P0–P3) | verte |
