@@ -16,7 +16,7 @@ pub const TOKEN_PREFIX: &str = "buntu_";
 /// Erreur de jeton.
 #[derive(Debug, Error)]
 pub enum TokenError {
-    #[error("jeton invalide")]
+    #[error("invalid token")]
     Invalid,
 }
 

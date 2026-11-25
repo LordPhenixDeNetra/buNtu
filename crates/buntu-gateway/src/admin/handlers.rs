@@ -225,7 +225,7 @@ fn base_provider<'a>(
         .iter_mut()
         .find(|provider| provider.id == id)
         .ok_or_else(|| GatewayError::InvalidRequest {
-            message: format!("fournisseur `{id}` inconnu"),
+            message: format!("unknown provider `{id}`"),
         })
 }
 
@@ -242,7 +242,7 @@ fn base_route<'a>(
         .iter_mut()
         .find(|route| route.alias == alias)
         .ok_or_else(|| GatewayError::InvalidRequest {
-            message: format!("route `{alias}` inconnue"),
+            message: format!("unknown route `{alias}`"),
         })
 }
 
@@ -336,7 +336,7 @@ pub async fn create_provider(
                 || file.providers.iter().any(|entry| entry.id == id)
             {
                 return Err(GatewayError::InvalidRequest {
-                    message: format!("le fournisseur `{id}` existe déjà"),
+                    message: format!("provider `{id}` already exists"),
                 });
             }
             base.providers.push(provider.clone());
@@ -355,7 +355,7 @@ pub async fn create_provider(
 pub async fn get_provider(State(state): State<GatewayState>, Path(id): Path<String>) -> Response {
     match providers(&state).into_iter().find(|view| view.id == id) {
         Some(view) => ok(view),
-        None => not_found(&format!("fournisseur `{id}` inconnu")),
+        None => not_found(&format!("unknown provider `{id}`")),
     }
 }
 
@@ -452,7 +452,7 @@ pub async fn delete_key(
             let provider = base_provider(base, file, &id)?;
             if index >= provider.keys.len() {
                 return Err(GatewayError::InvalidRequest {
-                    message: format!("clé {index} inexistante pour `{id}`"),
+                    message: format!("key {index} does not exist for `{id}`"),
                 });
             }
             provider.keys.remove(index);
@@ -509,7 +509,7 @@ pub async fn create_route(
                 || file.routes.iter().any(|entry| entry.alias == alias)
             {
                 return Err(GatewayError::InvalidRequest {
-                    message: format!("la route `{alias}` existe déjà"),
+                    message: format!("route `{alias}` already exists"),
                 });
             }
             base.routes.push(route.clone());
@@ -528,7 +528,7 @@ pub async fn create_route(
 pub async fn get_route(State(state): State<GatewayState>, Path(alias): Path<String>) -> Response {
     match routes(&state).into_iter().find(|view| view.alias == alias) {
         Some(view) => ok(view),
-        None => not_found(&format!("route `{alias}` inconnue")),
+        None => not_found(&format!("unknown route `{alias}`")),
     }
 }
 
@@ -629,7 +629,7 @@ pub struct RequestFilters {
 
 fn journal_unavailable() -> Response {
     error_response::response(&GatewayError::Internal {
-        message: "journal non configuré (stockage indisponible)".to_owned(),
+        message: "request log not configured (storage unavailable)".to_owned(),
     })
 }
 
@@ -684,7 +684,7 @@ pub async fn get_request(State(state): State<GatewayState>, Path(id): Path<Strin
     };
     match store.request_log(&id).await {
         Ok(record) => ok(RequestLogView::from(&record)),
-        Err(_) => not_found(&format!("requête `{id}` inconnue")),
+        Err(_) => not_found(&format!("unknown request `{id}`")),
     }
 }
 

@@ -9,14 +9,14 @@ use serde_json::Value;
 
 pub fn parse(body: &[u8]) -> Result<Response, GatewayError> {
     let value: Value = serde_json::from_slice(body).map_err(|error| GatewayError::Internal {
-        message: format!("réponse Anthropic illisible : {error}"),
+        message: format!("unreadable Anthropic response: {error}"),
     })?;
 
     let blocks = value
         .get("content")
         .and_then(Value::as_array)
         .ok_or_else(|| GatewayError::Internal {
-            message: "réponse Anthropic sans `content`".to_owned(),
+            message: "Anthropic response without `content`".to_owned(),
         })?;
 
     let mut content = Vec::with_capacity(blocks.len());
@@ -43,7 +43,7 @@ pub fn parse(body: &[u8]) -> Result<Response, GatewayError> {
             }),
             other => {
                 return Err(GatewayError::Internal {
-                    message: format!("bloc de contenu Anthropic inconnu : {other:?}"),
+                    message: format!("unknown Anthropic content block: {other:?}"),
                 });
             }
         }

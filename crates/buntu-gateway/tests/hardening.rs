@@ -259,7 +259,7 @@ async fn oversized_upstream_body_is_rejected() -> Result<(), Box<dyn Error>> {
         .await?;
     assert_eq!(response.status(), 502);
     let body = response.text().await?;
-    assert!(body.contains("trop volumineuse"), "{body}");
+    assert!(body.contains("too large"), "{body}");
     Ok(())
 }
 
@@ -276,7 +276,7 @@ async fn https_base_url_attempts_a_tls_handshake() -> Result<(), Box<dyn Error>>
         .await?;
     assert_eq!(response.status(), 502);
     let body = response.text().await?;
-    assert!(!body.contains("TLS amont non branché"), "{body}");
-    assert!(body.contains("connexion au fournisseur"), "{body}");
+    assert!(!body.contains("TLS client unavailable"), "{body}");
+    assert!(body.contains("connecting to provider"), "{body}");
     Ok(())
 }

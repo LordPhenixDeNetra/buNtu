@@ -19,11 +19,11 @@ pub const DEFAULT_KEY_ENV: &str = "BUNTU_MASTER_KEY";
 /// Erreur de chiffrement.
 #[derive(Debug, Error)]
 pub enum SecretError {
-    #[error("clé maître absente ou invalide : {0}")]
+    #[error("master key missing or invalid: {0}")]
     Key(String),
-    #[error("chiffrement : {0}")]
+    #[error("encryption: {0}")]
     Encrypt(String),
-    #[error("déchiffrement refusé (clé ou données altérées)")]
+    #[error("decryption refused (wrong key or tampered data)")]
     Decrypt,
 }
 
@@ -44,13 +44,13 @@ impl SecretCipher {
     pub fn from_master_key(key: &[u8]) -> Result<Self, SecretError> {
         if key.len() != MASTER_KEY_BYTES {
             return Err(SecretError::Key(format!(
-                "32 octets attendus, {} reçus",
+                "32 bytes expected, {} received",
                 key.len()
             )));
         }
         Ok(Self {
             cipher: Aes256Gcm::new_from_slice(key)
-                .map_err(|_| SecretError::Key("clé AES-256 invalide".to_owned()))?,
+                .map_err(|_| SecretError::Key("invalid AES-256 key".to_owned()))?,
         })
     }
 
@@ -88,7 +88,7 @@ impl SecretCipher {
         }
         let decoded = base64::engine::general_purpose::STANDARD
             .decode(content)
-            .map_err(|_| SecretError::Key("ni 32 octets bruts ni base64".to_owned()))?;
+            .map_err(|_| SecretError::Key("neither 32 raw bytes nor base64".to_owned()))?;
         Self::from_master_key(&decoded)
     }
 

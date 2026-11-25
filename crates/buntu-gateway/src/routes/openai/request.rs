@@ -28,7 +28,7 @@ pub fn parse(body: &Value) -> Result<Request, GatewayError> {
     let messages = body
         .get("messages")
         .and_then(Value::as_array)
-        .ok_or_else(|| invalid("`messages` est requis"))?;
+        .ok_or_else(|| invalid("`messages` is required"))?;
     let mut canonical_messages = Vec::with_capacity(messages.len());
     for message in messages {
         canonical_messages.extend(parse_message(message)?);
@@ -91,7 +91,7 @@ fn parse_message(value: &Value) -> Result<Vec<Message>, GatewayError> {
         Some("user") => Role::User,
         Some("assistant") => Role::Assistant,
         Some("tool") | Some("function") => Role::Tool,
-        other => return Err(invalid(format!("rôle inconnu : {other:?}"))),
+        other => return Err(invalid(format!("unknown role: {other:?}"))),
     };
 
     if role == Role::Tool {
@@ -179,15 +179,13 @@ fn parse_content(value: Option<&Value>) -> Result<Vec<ContentPart>, GatewayError
                         });
                     }
                     other => {
-                        return Err(invalid(format!(
-                            "type de contenu non pris en charge : {other:?}"
-                        )));
+                        return Err(invalid(format!("unsupported content type: {other:?}")));
                     }
                 }
             }
             Ok(content)
         }
-        Some(other) => Err(invalid(format!("contenu de message invalide : {other}"))),
+        Some(other) => Err(invalid(format!("invalid message content: {other}"))),
     }
 }
 
@@ -208,11 +206,11 @@ fn parse_image_source(url: &str) -> ImageSource {
 
 fn parse_tool(value: &Value) -> Result<Tool, GatewayError> {
     if value.get("type").and_then(Value::as_str) != Some("function") {
-        return Err(invalid("seuls les outils `function` sont acceptés"));
+        return Err(invalid("only `function` tools are supported"));
     }
     let function = value
         .get("function")
-        .ok_or_else(|| invalid("outil sans `function`"))?;
+        .ok_or_else(|| invalid("tool without `function`"))?;
     Ok(Tool {
         name: string_field(function, "name")?,
         description: function
@@ -233,17 +231,17 @@ fn parse_tool_choice(value: &Value) -> Result<ToolChoice, GatewayError> {
             "auto" => Ok(ToolChoice::Auto),
             "none" => Ok(ToolChoice::None),
             "required" => Ok(ToolChoice::Required),
-            other => Err(invalid(format!("tool_choice inconnu : {other}"))),
+            other => Err(invalid(format!("unknown tool_choice: {other}"))),
         },
         Value::Object(_) => {
             let name = value
                 .get("function")
                 .and_then(|function| function.get("name"))
                 .and_then(Value::as_str)
-                .ok_or_else(|| invalid("tool_choice nommé sans `function.name`"))?;
+                .ok_or_else(|| invalid("named tool_choice without `function.name`"))?;
             Ok(ToolChoice::Named(name.to_owned()))
         }
-        other => Err(invalid(format!("tool_choice invalide : {other}"))),
+        other => Err(invalid(format!("invalid tool_choice: {other}"))),
     }
 }
 
@@ -257,10 +255,10 @@ fn parse_stop(value: Option<&Value>) -> Result<Vec<String>, GatewayError> {
                 value
                     .as_str()
                     .map(str::to_owned)
-                    .ok_or_else(|| invalid("`stop` doit contenir des chaînes"))
+                    .ok_or_else(|| invalid("`stop` must contain strings"))
             })
             .collect(),
-        Some(other) => Err(invalid(format!("`stop` invalide : {other}"))),
+        Some(other) => Err(invalid(format!("invalid `stop`: {other}"))),
     }
 }
 
@@ -271,7 +269,7 @@ fn parse_response_format(value: &Value) -> Result<ResponseFormat, GatewayError> 
         Some("json_schema") => {
             let schema = value
                 .get("json_schema")
-                .ok_or_else(|| invalid("json_schema sans corps"))?;
+                .ok_or_else(|| invalid("json_schema without a body"))?;
             Ok(ResponseFormat::JsonSchema {
                 name: schema
                     .get("name")
@@ -284,7 +282,7 @@ fn parse_response_format(value: &Value) -> Result<ResponseFormat, GatewayError> 
                     .unwrap_or(Value::Object(Map::new())),
             })
         }
-        other => Err(invalid(format!("response_format inconnu : {other:?}"))),
+        other => Err(invalid(format!("unknown response_format: {other:?}"))),
     }
 }
 
@@ -293,7 +291,7 @@ fn string_field(value: &Value, field: &str) -> Result<String, GatewayError> {
         .get(field)
         .and_then(Value::as_str)
         .map(str::to_owned)
-        .ok_or_else(|| invalid(format!("`{field}` est requis")))
+        .ok_or_else(|| invalid(format!("`{field}` is required")))
 }
 
 fn text_of(value: Option<&Value>) -> String {

@@ -84,7 +84,7 @@ pub fn apply(raw: RawConfig, environment: &dyn Environment) -> Result<RawConfig,
         if segments.is_empty() || segments.iter().any(|segment| segment.is_empty()) {
             return Err(ConfigError::Invalid {
                 path: format!("environment.{name}"),
-                message: "chemin vide".to_owned(),
+                message: "empty path".to_owned(),
             });
         }
         set_path(&mut value, &segments, coerce(&raw_value)).map_err(|message| {
@@ -131,7 +131,7 @@ fn set_path(target: &mut Value, segments: &[String], new_value: Value) -> Result
             }
             if !map.contains_key(head) {
                 if is_index(&rest[0]) {
-                    return Err(format!("`{head}` devrait être un tableau"));
+                    return Err(format!("`{head}` should be an array"));
                 }
                 map.insert(head.clone(), Value::Object(Map::new()));
             }
@@ -147,9 +147,7 @@ fn set_path(target: &mut Value, segments: &[String], new_value: Value) -> Result
                 .ok_or_else(|| format!("index {index} hors limites"))?;
             set_path(slot, rest, new_value)
         }
-        _ => Err(format!(
-            "`{head}` ne peut pas être placé dans une valeur scalaire"
-        )),
+        _ => Err(format!("`{head}` cannot be placed inside a scalar value")),
     }
 }
 
@@ -159,9 +157,9 @@ fn is_index(segment: &str) -> bool {
 
 fn parse_index(segment: &str) -> Result<usize, String> {
     if !is_index(segment) {
-        return Err(format!("`{segment}` n'est pas un index de tableau"));
+        return Err(format!("`{segment}` is not an array index"));
     }
     segment
         .parse()
-        .map_err(|_| format!("index invalide : {segment}"))
+        .map_err(|_| format!("invalid index: {segment}"))
 }

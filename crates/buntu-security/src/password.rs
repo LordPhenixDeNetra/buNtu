@@ -20,11 +20,11 @@ pub const PARALLELISM: u32 = 1;
 /// Erreur de hachage ou de vérification.
 #[derive(Debug, Error)]
 pub enum PasswordError {
-    #[error("paramètres Argon2id invalides : {0}")]
+    #[error("invalid Argon2id parameters: {0}")]
     Params(String),
-    #[error("hachage Argon2id : {0}")]
+    #[error("Argon2id hashing: {0}")]
     Hash(String),
-    #[error("empreinte de mot de passe illisible")]
+    #[error("unreadable password hash")]
     InvalidHash,
 }
 

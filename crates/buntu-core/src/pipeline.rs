@@ -12,9 +12,9 @@ use crate::hooks::{
 
 #[derive(Debug, thiserror::Error)]
 pub enum PipelineError {
-    #[error("hook pré inconnu : `{name}`")]
+    #[error("unknown pre hook: `{name}`")]
     UnknownPreHook { name: String },
-    #[error("hook post inconnu : `{name}`")]
+    #[error("unknown post hook: `{name}`")]
     UnknownPostHook { name: String },
 }
 

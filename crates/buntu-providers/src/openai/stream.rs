@@ -19,7 +19,7 @@ pub fn parse(state: &mut StreamState, chunk: Bytes) -> Result<Vec<StreamEvent>, 
 
     for line in state.take_lines() {
         let text = std::str::from_utf8(&line).map_err(|error| GatewayError::Internal {
-            message: format!("ligne SSE OpenAI non UTF-8 : {error}"),
+            message: format!("OpenAI SSE line is not UTF-8: {error}"),
         })?;
         let Some(data) = text.strip_prefix("data: ") else {
             continue;
@@ -32,14 +32,14 @@ pub fn parse(state: &mut StreamState, chunk: Bytes) -> Result<Vec<StreamEvent>, 
         }
 
         let value: Value = serde_json::from_str(data).map_err(|error| GatewayError::Internal {
-            message: format!("chunk OpenAI illisible : {error}"),
+            message: format!("unreadable OpenAI chunk: {error}"),
         })?;
 
         if let Some(error) = value.get("error") {
             let message = error
                 .get("message")
                 .and_then(Value::as_str)
-                .unwrap_or("erreur pendant le flux")
+                .unwrap_or("error during the stream")
                 .to_owned();
             return Err(GatewayError::ProviderUnavailable { message });
         }

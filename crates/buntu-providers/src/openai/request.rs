@@ -34,7 +34,7 @@ pub fn build(
 
 fn internal_error(message: String) -> GatewayError {
     GatewayError::Internal {
-        message: format!("requête OpenAI : {message}"),
+        message: format!("OpenAI request: {message}"),
     }
 }
 
@@ -110,7 +110,7 @@ fn messages(messages: &[Message]) -> Result<Vec<Value>, GatewayError> {
             for part in &message.content {
                 let ContentPart::ToolResult(result) = part else {
                     return Err(unsupported(
-                        "message « tool » sans résultat d'outil".to_owned(),
+                        "`tool` message without a tool result".to_owned(),
                     ));
                 };
                 let mut entry = Map::new();
@@ -155,7 +155,7 @@ fn messages(messages: &[Message]) -> Result<Vec<Value>, GatewayError> {
                 }
                 other => {
                     return Err(unsupported(format!(
-                        "contenu non traduit pour OpenAI : {other:?}"
+                        "content not translated for OpenAI: {other:?}"
                     )));
                 }
             }
@@ -208,7 +208,7 @@ fn image_url(source: &ImageSource) -> Result<String, GatewayError> {
         ImageSource::Url { url } => Ok(url.clone()),
         ImageSource::Base64 { media_type, data } => Ok(format!("data:{media_type};base64,{data}")),
         ImageSource::File { .. } => Err(unsupported(
-            "l'API Chat Completions n'accepte pas de fichier image".to_owned(),
+            "the Chat Completions API does not accept image files".to_owned(),
         )),
     }
 }

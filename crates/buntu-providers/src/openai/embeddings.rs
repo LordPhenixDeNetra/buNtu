@@ -40,7 +40,7 @@ pub fn build(
     }
     let body =
         serde_json::to_vec(&Value::Object(body)).map_err(|error| GatewayError::Internal {
-            message: format!("requête d'embeddings OpenAI : {error}"),
+            message: format!("OpenAI embeddings request: {error}"),
         })?;
     hyper::Request::builder()
         .method(hyper::Method::POST)
@@ -48,20 +48,20 @@ pub fn build(
         .header("content-type", "application/json")
         .body(Bytes::from(body))
         .map_err(|error| GatewayError::Internal {
-            message: format!("requête HTTP d'embeddings : {error}"),
+            message: format!("embeddings HTTP request: {error}"),
         })
 }
 
 pub fn parse(body: &[u8]) -> Result<EmbeddingsResponse, GatewayError> {
     let value: Value = serde_json::from_slice(body).map_err(|error| GatewayError::Internal {
-        message: format!("réponse d'embeddings OpenAI illisible : {error}"),
+        message: format!("unreadable OpenAI embeddings response: {error}"),
     })?;
     let data =
         value
             .get("data")
             .and_then(Value::as_array)
             .ok_or_else(|| GatewayError::Internal {
-                message: "réponse d'embeddings sans `data`".to_owned(),
+                message: "embeddings response without `data`".to_owned(),
             })?;
     let mut embeddings = Vec::with_capacity(data.len());
     for (position, item) in data.iter().enumerate() {

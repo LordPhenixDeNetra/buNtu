@@ -143,7 +143,7 @@ async fn literal_keys_need_a_master_key_when_persisted() -> Result<(), Box<dyn E
     )
     .await?;
     assert_eq!(status, 400);
-    assert!(body.to_string().contains("clé maître"), "{body}");
+    assert!(body.to_string().contains("master key"), "{body}");
     assert!(
         store.providers().await?.is_empty(),
         "rien n'est publié ni écrit"

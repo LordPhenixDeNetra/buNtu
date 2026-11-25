@@ -64,7 +64,7 @@ pub fn resolve(
     let targets = filter_capabilities(ordered, required);
     if targets.is_empty() {
         return Err(GatewayError::InvalidRequest {
-            message: format!("aucune cible ne supporte les capacités demandées pour `{requested}`"),
+            message: format!("no target supports the requested capabilities for `{requested}`"),
         });
     }
     Ok(targets)
@@ -82,19 +82,19 @@ fn ordered_targets(config: &CompiledConfig, requested: &str) -> Result<Vec<Targe
     if let Some((provider, model)) = requested.split_once('/') {
         if provider.is_empty() || model.is_empty() {
             return Err(GatewayError::InvalidRequest {
-                message: format!("cible invalide : `{requested}`"),
+                message: format!("invalid target: `{requested}`"),
             });
         }
         if !config.providers.contains_key(provider) {
             return Err(GatewayError::InvalidRequest {
-                message: format!("fournisseur inconnu : `{provider}`"),
+                message: format!("unknown provider: `{provider}`"),
             });
         }
         return Ok(vec![Target::new(provider, model)]);
     }
 
     Err(GatewayError::InvalidRequest {
-        message: format!("alias ou cible inconnue : `{requested}`"),
+        message: format!("unknown alias or target: `{requested}`"),
     })
 }
 

@@ -10,7 +10,7 @@ use serde_json::Value;
 
 pub fn parse(body: &[u8]) -> Result<Response, GatewayError> {
     let value: Value = serde_json::from_slice(body).map_err(|error| GatewayError::Internal {
-        message: format!("réponse Gemini illisible : {error}"),
+        message: format!("unreadable Gemini response: {error}"),
     })?;
 
     let candidate = value
@@ -86,7 +86,7 @@ pub fn parse_parts(value: Option<&Value>) -> Result<Vec<ContentPart>, GatewayErr
             });
         } else {
             return Err(GatewayError::Internal {
-                message: "partie de réponse Gemini inconnue".to_owned(),
+                message: "unknown Gemini response part".to_owned(),
             });
         }
     }

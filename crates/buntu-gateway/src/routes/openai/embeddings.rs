@@ -59,7 +59,7 @@ async fn run(
         }
     }
     Err(last_error.unwrap_or_else(|| GatewayError::Internal {
-        message: "aucune cible pour les embeddings".to_owned(),
+        message: "no target for embeddings".to_owned(),
     }))
 }
 
@@ -68,7 +68,7 @@ fn parse_embeddings(body: &Value) -> Result<EmbeddingsRequest, GatewayError> {
         .get("model")
         .and_then(Value::as_str)
         .ok_or_else(|| GatewayError::InvalidRequest {
-            message: "`model` est requis".to_owned(),
+            message: "`model` is required".to_owned(),
         })?
         .to_owned();
     let input = match body.get("input") {
@@ -80,13 +80,13 @@ fn parse_embeddings(body: &Value) -> Result<EmbeddingsRequest, GatewayError> {
                     .as_str()
                     .map(str::to_owned)
                     .ok_or_else(|| GatewayError::InvalidRequest {
-                        message: "`input` doit contenir des chaînes".to_owned(),
+                        message: "`input` must contain strings".to_owned(),
                     })
             })
             .collect::<Result<Vec<String>, GatewayError>>()?,
         _ => {
             return Err(GatewayError::InvalidRequest {
-                message: "`input` est requis".to_owned(),
+                message: "`input` is required".to_owned(),
             });
         }
     };
