@@ -96,10 +96,10 @@ pub trait Provider: Send + Sync {
     /// En-tête d'authentification amont ; par défaut `Authorization: Bearer <clé>`.
     /// La valeur est marquée sensible (jamais affichée par `Debug`).
     fn auth_header(&self, secret: &str) -> Result<(HeaderName, HeaderValue), GatewayError> {
-        Ok((
-            hyper::header::AUTHORIZATION,
-            sensitive(&format!("Bearer {secret}"))?,
-        ))
+        // Valeur temporaire effacée de la mémoire à sa libération ; la copie gardée par
+        // `HeaderValue` vit le temps de la requête.
+        let value = zeroize::Zeroizing::new(format!("Bearer {secret}"));
+        Ok((hyper::header::AUTHORIZATION, sensitive(&value)?))
     }
 
     /// Construit une requête d'embeddings ; par défaut, le fournisseur ne les prend pas en
