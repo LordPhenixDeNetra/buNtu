@@ -1,6 +1,7 @@
 import createClient from 'openapi-fetch';
 import { get, writable } from 'svelte/store';
 import type { paths } from './api/schema';
+import { t } from './i18n';
 
 /**
  * Client d'API généré depuis `openapi.json` (openapi-typescript + openapi-fetch).
@@ -49,16 +50,27 @@ api.use({
   }
 });
 
-/** Message d'une erreur d'API ; `fallback` (traduit par l'appelant) sinon. */
+/**
+ * Message d'une erreur d'API ; `fallback` (traduit par l'appelant) sinon.
+ *
+ * L'API répond en anglais ; la console traduit le `code` stable de l'erreur et garde le détail
+ * du serveur, privé de son préfixe (`invalid request: …` pour `invalid_request`).
+ */
 export function errorMessage(error: unknown, fallback: string): string {
   if (typeof error === 'string' && error !== '') {
     return error;
   }
   if (error && typeof error === 'object' && 'error' in error) {
-    const detail = (error as { error?: { message?: string } }).error;
-    if (detail?.message) {
-      return detail.message;
+    const detail = (error as { error?: { message?: string; code?: string } }).error;
+    const label = detail?.code ? get(t)(`apiError.${detail.code}`) : '';
+    if (!label || label === `apiError.${detail?.code}`) {
+      return detail?.message || fallback;
     }
+    const prefix = `${detail?.code?.replace(/_/g, ' ')}: `;
+    const rest = detail?.message?.startsWith(prefix)
+      ? detail.message.slice(prefix.length)
+      : (detail?.message ?? '');
+    return rest ? `${label} — ${rest}` : label;
   }
   return fallback;
 }

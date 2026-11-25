@@ -23,6 +23,13 @@ test('create a provider, a route, then find the request in the journal', async (
   await expect(page.getByText('test-key-0001')).toHaveCount(0);
   await expect(page.getByText('tes…0001').first()).toBeVisible();
 
+  // Revue [5.1] — l'API répond en anglais, la console traduit le `code` de l'erreur.
+  await createProvider.getByLabel('Identifiant').fill('e2e-ui');
+  await createProvider.getByLabel('Type').selectOption('mock');
+  await createProvider.getByLabel('URL de base').fill('http://127.0.0.1:19001');
+  await createProvider.getByRole('button', { name: 'Enregistrer' }).click();
+  await expect(page.getByText('Requête invalide — provider `e2e-ui` already exists')).toBeVisible();
+
   // T1.23 — route avec chaîne de repli et réordonnancement.
   await page.goto('/routes');
   const createRoute = page.getByRole('group', { name: 'Créer une route' });
