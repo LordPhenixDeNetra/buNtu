@@ -41,3 +41,13 @@ curl -s http://127.0.0.1:8080/v1/chat/completions \
 - Les timeouts par défaut (premier octet 60 s, total 10 min) conviennent aux modèles locaux ; ils
   restent surchargeables via `timeouts = { first_byte_ms = …, total_ms = … }` sur le fournisseur
   ou la route.
+
+## Contrôle réel
+
+Avec Ollama lancé et un petit modèle téléchargé (`ollama pull llama3.2:1b`) :
+
+```bash
+BUNTU_LIVE=1 BUNTU_LIVE_COMPATIBLE_BASE_URL=http://127.0.0.1:11434 \n  BUNTU_LIVE_COMPATIBLE_MODEL=llama3.2:1b \n  cargo test -p buntu-conformance --test live compatible -- --nocapture
+```
+
+Le cas `error_401` est sauté sans clé (Ollama n'authentifie pas).

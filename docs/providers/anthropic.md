@@ -58,6 +58,7 @@ pas de réessai).
 
 ## Limites actuelles (assumées)
 
-- Fixtures **synthétiques** (aucune clé API) ; contrôle `BUNTU_LIVE=1` à faire.
+- Fixtures **synthétiques** (aucune clé API) ; contrôle réel à faire : `BUNTU_LIVE=1`,
+  `BUNTU_LIVE_ANTHROPIC_API_KEY` et `BUNTU_LIVE_ANTHROPIC_MODEL`, puis `cargo test -p buntu-conformance --test live`.
 - `response_format` JSON Schema n'existe pas côté Anthropic : refus explicite, pas d'invention.
 - `capabilities()` provisoire (`tools: true, vision: true`) en attendant T2.6.

@@ -171,11 +171,7 @@ async fn exhausted_budget_stops_retrying_across_targets() -> Result<(), Box<dyn 
     match result {
         Err(GatewayError::AllTargetsFailed { attempts, .. }) => {
             assert_eq!(attempts.len(), 2);
-            assert!(
-                attempts
-                    .iter()
-                    .all(|entry| entry.contains("1 attempt(s)"))
-            );
+            assert!(attempts.iter().all(|entry| entry.contains("1 attempt(s)")));
         }
         other => panic!("erreur attendue, obtenu : {other:?}"),
     }

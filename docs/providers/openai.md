@@ -65,7 +65,9 @@ Endpoint utilisé : `POST /v1/chat/completions`.
 
 - **Fixtures synthétiques** : aucune clé API réelle n'a été utilisée pour ce lot ; les fixtures de
   `tests/fixtures/openai/` sont construites d'après le schéma officiel et seront remplacées par
-  des enregistrements réels anonymisés, puis validées par un contrôle `BUNTU_LIVE=1`.
+  des enregistrements réels anonymisés, puis validées par le contrôle réel :
+  `BUNTU_LIVE=1`, `BUNTU_LIVE_OPENAI_API_KEY` et `BUNTU_LIVE_OPENAI_MODEL`, puis
+  `cargo test -p buntu-conformance --test live`.
 - `capabilities()` renvoie une valeur provisoire (`tools: true, vision: false`) en attendant le
   catalogue de modèles (T2.6).
 - Le client amont hyper-util (ADR-0004) n'existe pas encore : seule la traduction est livrée.

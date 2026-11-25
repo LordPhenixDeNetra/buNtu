@@ -60,7 +60,8 @@ fonction (arguments en une fois), `Usage` si `usageMetadata` est présent, puis 
 
 ## Limites actuelles (assumées)
 
-- Fixtures **synthétiques** ; contrôle `BUNTU_LIVE=1` à faire (clé AI Studio requise).
+- Fixtures **synthétiques** ; contrôle réel à faire (clé AI Studio) :
+  `BUNTU_LIVE=1`, `BUNTU_LIVE_GEMINI_API_KEY` et `BUNTU_LIVE_GEMINI_MODEL`, puis `cargo test -p buntu-conformance --test live`.
 - Images par URL refusées (seul `inlineData` base64 est produit).
 - `functionResponse.name` utilise `tool_call_id` : le schéma canonique ne transporte pas le nom
   de l'outil dans le résultat (à corriger si le besoin apparaît en T1.13).
