@@ -14,6 +14,8 @@ export default defineConfig({
   reporter: [['list']],
   use: {
     baseURL,
+    // Les E2E décrivent l'interface en français ; `tests/i18n.spec.ts` couvre l'anglais.
+    locale: 'fr-FR',
     extraHTTPHeaders: { Authorization: `Bearer ${adminToken}` },
     trace: 'retain-on-failure'
   },

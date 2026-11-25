@@ -3,7 +3,7 @@ import { derived, get, writable } from 'svelte/store';
 export type Locale = 'fr' | 'en';
 
 /** Aucune chaîne visible en dur dans `ui/` (FR-UI-6) : tout passe par ce dictionnaire. */
-const dictionary: Record<Locale, Record<string, string>> = {
+export const dictionary: Record<Locale, Record<string, string>> = {
   fr: {
     'app.title': 'buNtu — console',
     'a11y.skip': 'Aller au contenu',
@@ -290,14 +290,24 @@ export function setLocale(next: Locale): void {
   }
 }
 
+/** Langue du navigateur : français si elle est préférée, anglais sinon. */
+export function browserLocale(languages: readonly string[]): Locale {
+  const first = languages.find((language) => /^(fr|en)(-|$)/i.test(language));
+  return first?.toLowerCase().startsWith('fr') ? 'fr' : 'en';
+}
+
+/** Choix mémorisé, sinon langue du navigateur. */
 export function restoreLocale(): void {
+  let next: Locale | null = null;
   try {
     const stored = localStorage.getItem('buntu.locale');
     if (stored === 'fr' || stored === 'en') {
-      locale.set(stored);
-      applyLang(stored);
+      next = stored;
     }
   } catch {
     // stockage local indisponible
   }
+  next ??= browserLocale(typeof navigator === 'undefined' ? [] : navigator.languages);
+  locale.set(next);
+  applyLang(next);
 }
