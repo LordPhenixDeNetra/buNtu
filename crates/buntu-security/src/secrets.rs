@@ -57,11 +57,11 @@ impl SecretCipher {
     /// Lit la clé maître depuis une variable d'environnement (base64 standard ou URL).
     pub fn from_env(variable: &str) -> Result<Self, SecretError> {
         let value = std::env::var(variable)
-            .map_err(|_| SecretError::Key(format!("variable `{variable}` absente")))?;
+            .map_err(|_| SecretError::Key(format!("variable `{variable}` missing")))?;
         let decoded = base64::engine::general_purpose::STANDARD
             .decode(value.trim())
             .or_else(|_| base64::engine::general_purpose::URL_SAFE_NO_PAD.decode(value.trim()))
-            .map_err(|_| SecretError::Key(format!("`{variable}` n'est pas du base64")))?;
+            .map_err(|_| SecretError::Key(format!("`{variable}` is not base64")))?;
         Self::from_master_key(&decoded)
     }
 
@@ -75,7 +75,7 @@ impl SecretCipher {
             let mode = metadata.permissions().mode() & 0o777;
             if mode & 0o077 != 0 {
                 return Err(SecretError::Key(format!(
-                    "permissions trop ouvertes sur {} ({mode:o}) ; attendu 0600",
+                    "permissions too open on {} ({mode:o}); expected 0600",
                     path.display()
                 )));
             }

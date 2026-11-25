@@ -17,15 +17,15 @@ use buntu_gateway::{GatewayState, Readiness, app_with_state, serve, shutdown};
 use buntu_security::secrets::{DEFAULT_KEY_ENV, SecretCipher};
 
 const USAGE: &str = "\
-usage: buntu <commande>
+usage: buntu <command>
 
-commandes:
-  serve [--config FICHIER] [--listen ADRESSE]   démarre la passerelle
-  config validate FICHIER                       valide un fichier de configuration
-  config schema                                 affiche le schéma JSON de la configuration
-  health [ADRESSE]                              sonde GET /health (défaut 127.0.0.1:8080)
-  secrets rotate NOUVELLE_CLE                   réchiffre les clés avec une nouvelle clé maître
-  --version                                     affiche la version
+commands:
+  serve [--config FILE] [--listen ADDRESS]      start the gateway
+  config validate FILE                          validate a configuration file
+  config schema                                 print the configuration JSON schema
+  health [ADDRESS]                              probe GET /health (default 127.0.0.1:8080)
+  secrets rotate NEW_KEY_FILE                   re-encrypt keys with a new master key
+  --version                                     print the version
 ";
 
 #[derive(Debug, Default)]
@@ -58,10 +58,10 @@ fn main() -> Result<(), Box<dyn Error>> {
             if health_cmd::probe(address) {
                 Ok(())
             } else {
-                Err(format!("passerelle injoignable ou non prête sur {address}").into())
+                Err(format!("gateway unreachable or not ready on {address}").into())
             }
         }
-        other => Err(format!("commande inconnue : {other}\n{USAGE}").into()),
+        other => Err(format!("unknown command: {other}\n{USAGE}").into()),
     }
 }
 
@@ -72,17 +72,15 @@ fn parse_serve(arguments: Vec<String>) -> Result<ServeOptions, Box<dyn Error>> {
         match arguments[index].as_str() {
             "--listen" => {
                 index += 1;
-                let value = arguments
-                    .get(index)
-                    .ok_or("--listen requiert une adresse")?;
+                let value = arguments.get(index).ok_or("--listen requires an address")?;
                 options.listen = Some(value.parse()?);
             }
             "--config" => {
                 index += 1;
-                let value = arguments.get(index).ok_or("--config requiert un fichier")?;
+                let value = arguments.get(index).ok_or("--config requires a file")?;
                 options.config = Some(PathBuf::from(value));
             }
-            other => return Err(format!("option inconnue : {other}\n{USAGE}").into()),
+            other => return Err(format!("unknown option: {other}\n{USAGE}").into()),
         }
         index += 1;
     }
@@ -99,7 +97,7 @@ fn serve_command(options: ServeOptions) -> Result<(), Box<dyn Error>> {
         let store = match buntu_store::Store::open(&format!("sqlite://{database}")).await {
             Ok(store) => Some(store),
             Err(error) => {
-                eprintln!("buNtu: stockage indisponible ({error})");
+                eprintln!("buNtu: storage unavailable ({error})");
                 None
             }
         };
@@ -125,7 +123,7 @@ fn serve_command(options: ServeOptions) -> Result<(), Box<dyn Error>> {
         println!("buntu listening on {address}");
         // Exportateur Prometheus global (T1.19) : un échec n'empêche pas de servir.
         if let Err(error) = buntu_observe::metrics::install_global() {
-            eprintln!("buNtu: métriques indisponibles ({error})");
+            eprintln!("buNtu: metrics unavailable ({error})");
         }
         let readiness = Readiness::new(true);
         let mut state = GatewayState::new(readiness.clone(), handle)
@@ -149,7 +147,7 @@ fn serve_command(options: ServeOptions) -> Result<(), Box<dyn Error>> {
                 .await
                 .is_err()
         {
-            eprintln!("buNtu: journal non vidé dans le délai d'arrêt");
+            eprintln!("buNtu: request log not flushed within the shutdown deadline");
         }
         Ok::<(), Box<dyn Error>>(())
     })
@@ -172,7 +170,7 @@ fn master_key(database: &str, has_store: bool) -> Result<Option<SecretCipher>, B
     let (cipher, created) = SecretCipher::load_or_create(&path)?;
     if created {
         println!(
-            "buNtu: clé maître créée dans {} (à sauvegarder, jamais à versionner)",
+            "buNtu: master key created in {} (back it up, never commit it)",
             path.display()
         );
     }
@@ -198,26 +196,23 @@ async fn admin_token(state: GatewayState) -> Result<GatewayState, Box<dyn Error>
     if let Ok(token) = std::env::var("BUNTU_ADMIN_TOKEN") {
         if token.chars().count() < MIN_ADMIN_TOKEN_CHARS {
             return Err(format!(
-                "BUNTU_ADMIN_TOKEN trop court ({MIN_ADMIN_TOKEN_CHARS} caractères minimum)"
+                "BUNTU_ADMIN_TOKEN too short ({MIN_ADMIN_TOKEN_CHARS} characters minimum)"
             )
             .into());
         }
         return Ok(state.with_admin_token(&token));
     }
     let Some(store) = state.store.clone() else {
-        eprintln!("buNtu: API d'administration fermée (ni stockage ni BUNTU_ADMIN_TOKEN)");
+        eprintln!("buNtu: admin API closed (no storage and no BUNTU_ADMIN_TOKEN)");
         return Ok(state);
     };
     if !store.has_active_api_token().await? {
         let token = buntu_security::tokens::generate_token();
         let id = format!("tok-{}", token.hash.get(..16).unwrap_or(&token.hash));
         store
-            .insert_api_token(&id, &token.hash, "jeton admin initial")
+            .insert_api_token(&id, &token.hash, "initial admin token")
             .await?;
-        println!(
-            "buNtu: jeton d'administration (affiché une seule fois) : {}",
-            token.token
-        );
+        println!("buNtu: admin token (shown only once): {}", token.token);
     }
     Ok(state)
 }
@@ -235,14 +230,12 @@ fn spawn_sighup(handle: ConfigHandle, path: PathBuf) {
     tokio::spawn(async move {
         use tokio::signal::unix::{SignalKind, signal};
         let Ok(mut stream) = signal(SignalKind::hangup()) else {
-            eprintln!("buNtu: SIGHUP indisponible");
+            eprintln!("buNtu: SIGHUP unavailable");
             return;
         };
         while stream.recv().await.is_some() {
             if let Err(error) = handle.reload(&path, &ProcessEnv) {
-                eprintln!(
-                    "buNtu: rechargement sur SIGHUP refusé ({error}) ; ancienne configuration conservée"
-                );
+                eprintln!("buNtu: reload on SIGHUP refused ({error}); previous configuration kept");
             }
         }
     });
@@ -253,10 +246,10 @@ fn config_command(arguments: Vec<String>) -> Result<(), Box<dyn Error>> {
         Some("validate") => {
             let path = arguments
                 .get(1)
-                .ok_or("usage: buntu config validate <fichier>")?;
+                .ok_or("usage: buntu config validate <file>")?;
             let config = config_cmd::validate(Path::new(path))?;
             println!(
-                "configuration valide : {} ({} fournisseur(s), {} route(s), écoute {})",
+                "valid configuration: {} ({} provider(s), {} route(s), listening on {})",
                 path,
                 config.providers.len(),
                 config.routes.len(),
@@ -267,14 +260,14 @@ fn config_command(arguments: Vec<String>) -> Result<(), Box<dyn Error>> {
         Some("schema") => {
             let schema = buntu_core::config::json_schema();
             let pretty = serde_json::to_string_pretty(&schema)
-                .map_err(|error| format!("schéma non sérialisable : {error}"))?;
+                .map_err(|error| format!("schema not serializable: {error}"))?;
             println!("{pretty}");
             Ok(())
         }
         Some(other) => Err(format!(
-            "sous-commande inconnue : {other}\nusage: buntu config validate <fichier> | buntu config schema"
+            "unknown subcommand: {other}\nusage: buntu config validate <file> | buntu config schema"
         )
         .into()),
-        None => Err("usage: buntu config validate <fichier> | buntu config schema".into()),
+        None => Err("usage: buntu config validate <file> | buntu config schema".into()),
     }
 }

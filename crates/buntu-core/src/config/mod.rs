@@ -214,12 +214,12 @@ pub fn spawn_file_watcher(
             }) {
                 Ok(watcher) => watcher,
                 Err(error) => {
-                    eprintln!("buNtu: surveillance de la configuration impossible : {error}");
+                    eprintln!("buNtu: cannot watch the configuration: {error}");
                     return;
                 }
             };
         if let Err(error) = watcher.watch(&watch_path, notify::RecursiveMode::NonRecursive) {
-            eprintln!("buNtu: surveillance de la configuration impossible : {error}");
+            eprintln!("buNtu: cannot watch the configuration: {error}");
             return;
         }
 
@@ -236,9 +236,7 @@ pub fn spawn_file_watcher(
                 }
             }
             if let Err(error) = handle.reload(&path, &environment) {
-                eprintln!(
-                    "buNtu: rechargement refusé ({error}) ; ancienne configuration conservée"
-                );
+                eprintln!("buNtu: reload refused ({error}); previous configuration kept");
             }
         }
     }))
