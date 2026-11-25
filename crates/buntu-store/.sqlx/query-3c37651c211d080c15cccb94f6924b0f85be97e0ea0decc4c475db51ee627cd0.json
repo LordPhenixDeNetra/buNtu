@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO routes (alias, fallbacks, timeouts) VALUES (?, ?, ?) ON CONFLICT(alias) DO UPDATE SET fallbacks = excluded.fallbacks, timeouts = excluded.timeouts",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "3c37651c211d080c15cccb94f6924b0f85be97e0ea0decc4c475db51ee627cd0"
+}

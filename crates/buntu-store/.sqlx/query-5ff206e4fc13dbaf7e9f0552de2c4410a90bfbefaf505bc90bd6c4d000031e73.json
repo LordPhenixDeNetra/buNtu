@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM routes WHERE alias = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "5ff206e4fc13dbaf7e9f0552de2c4410a90bfbefaf505bc90bd6c4d000031e73"
+}

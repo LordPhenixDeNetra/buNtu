@@ -1,0 +1,38 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT alias, fallbacks FROM routes WHERE alias = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "alias",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "routes",
+            "name": "alias"
+          }
+        }
+      },
+      {
+        "name": "fallbacks",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "routes",
+            "name": "fallbacks"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "1def3ce2356b8314d4653ff34103282340f1d3e8bdb8bd3cc3ac1eaea53a6b1c"
+}

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO provider_keys (provider_id, secret_ciphertext, weight) VALUES (?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "553c69710257bd29c6121dc7c017fe80a5bd2dd65a91ac502da2273765b523d2"
+}

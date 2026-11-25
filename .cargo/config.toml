@@ -1,3 +1,8 @@
 [alias]
 xtask = "run --package xtask --"
 dist = "!dist"
+
+# Requêtes sqlx vérifiées hors ligne (T1.17) : la compilation lit crates/buntu-store/.sqlx/
+# et ne se connecte jamais à une base. Régénérer avec scripts/sqlx-prepare.sh.
+[env]
+SQLX_OFFLINE = "true"

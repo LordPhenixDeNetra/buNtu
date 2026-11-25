@@ -1,0 +1,50 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT alias, fallbacks, timeouts FROM routes ORDER BY alias",
+  "describe": {
+    "columns": [
+      {
+        "name": "alias",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "routes",
+            "name": "alias"
+          }
+        }
+      },
+      {
+        "name": "fallbacks",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "routes",
+            "name": "fallbacks"
+          }
+        }
+      },
+      {
+        "name": "timeouts",
+        "ordinal": 2,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "routes",
+            "name": "timeouts"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "a5a453f3d3cfec1b1cdaa23badd28ce284677345f5428675dc72b440bb920c1f"
+}

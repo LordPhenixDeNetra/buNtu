@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM provider_keys WHERE provider_id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "723d460e1701d5e23db13cd9a688d43271dbcdbddb761baf821505284032834a"
+}

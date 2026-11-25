@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO routes (alias, fallbacks) VALUES (?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "838291517920d6ed3d76edc14b7c82eea5a0b31757e66fe87f3b03982cf9f867"
+}

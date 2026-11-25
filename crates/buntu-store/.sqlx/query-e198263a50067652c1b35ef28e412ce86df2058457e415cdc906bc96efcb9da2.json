@@ -1,0 +1,38 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT id, secret_ciphertext FROM provider_keys WHERE reference IS NULL ORDER BY id",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "provider_keys",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "name": "secret_ciphertext",
+        "ordinal": 1,
+        "type_info": "Blob",
+        "origin": {
+          "Table": {
+            "table": "provider_keys",
+            "name": "secret_ciphertext"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "e198263a50067652c1b35ef28e412ce86df2058457e415cdc906bc96efcb9da2"
+}

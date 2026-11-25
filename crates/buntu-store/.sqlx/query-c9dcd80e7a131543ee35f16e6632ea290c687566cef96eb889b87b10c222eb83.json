@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE provider_keys SET secret_ciphertext = ? WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "c9dcd80e7a131543ee35f16e6632ea290c687566cef96eb889b87b10c222eb83"
+}
