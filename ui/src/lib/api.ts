@@ -56,13 +56,17 @@ api.use({
  * L'API répond en anglais ; la console traduit le `code` stable de l'erreur et garde le détail
  * du serveur, privé de son préfixe (`invalid request: …` pour `invalid_request`).
  */
-export function errorMessage(error: unknown, fallback: string): string {
+export function errorMessage(
+  error: unknown,
+  fallback: string,
+  translate: (key: string) => string = get(t)
+): string {
   if (typeof error === 'string' && error !== '') {
     return error;
   }
   if (error && typeof error === 'object' && 'error' in error) {
     const detail = (error as { error?: { message?: string; code?: string } }).error;
-    const label = detail?.code ? get(t)(`apiError.${detail.code}`) : '';
+    const label = detail?.code ? translate(`apiError.${detail.code}`) : '';
     if (!label || label === `apiError.${detail?.code}`) {
       return detail?.message || fallback;
     }

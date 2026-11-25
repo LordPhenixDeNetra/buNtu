@@ -66,7 +66,7 @@
       createError = failure(error);
       return;
     }
-    notify('success', $t('routes.created'));
+    notify('success', { key: 'routes.created' });
     form = { alias: '', fallbacks: '' };
     await load();
   }
@@ -106,10 +106,10 @@
       body: { fallbacks: drafts[route.alias] ?? [] }
     });
     if (error) {
-      notify('error', failure(error));
+      notify('error', { error });
       return;
     }
-    notify('success', $t('routes.saved'));
+    notify('success', { key: 'routes.saved' });
     await load();
   }
 
@@ -119,9 +119,9 @@
     }
     const { error } = await api.DELETE('/admin/v1/routes/{alias}', { params: { path: { alias } } });
     if (error) {
-      notify('error', failure(error));
+      notify('error', { error });
     } else {
-      notify('success', $t('routes.deleted'));
+      notify('success', { key: 'routes.deleted' });
     }
     await load();
   }

@@ -8,6 +8,7 @@
   import Nav from '$lib/components/Nav.svelte';
   import Toasts from '$lib/components/Toasts.svelte';
   import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
+  import CommandPalette from '$lib/components/CommandPalette.svelte';
 
   let { children }: { children: Snippet } = $props();
   let token = $state('');
@@ -53,6 +54,7 @@
 </div>
 <Toasts />
 <ConfirmDialog />
+<CommandPalette />
 
 <style>
   .shell {

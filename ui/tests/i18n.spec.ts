@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
-import { browserLocale, dictionary } from '../src/lib/i18n';
+import { get } from 'svelte/store';
+import { browserLocale, dictionary, locale, t } from '../src/lib/i18n';
 
 /** Revue 2026-11-05 [5] : parité FR/EN et langue du navigateur. */
 
@@ -20,6 +21,15 @@ test('browser language picks the console language', () => {
   expect(browserLocale(['de-DE', 'fr-CH'])).toBe('fr');
   expect(browserLocale(['de-DE'])).toBe('en');
   expect(browserLocale([])).toBe('en');
+});
+
+test('plural forms follow Intl.PluralRules', () => {
+  locale.set('fr');
+  expect(get(t)('overview.window', { n: 1 })).toBe('sur la dernière heure');
+  expect(get(t)('overview.window', { n: 24 })).toBe('sur les 24 dernières heures');
+  locale.set('en');
+  expect(get(t)('overview.window', { n: 1 })).toBe('over the last hour');
+  expect(get(t)('overview.window', { n: 24 })).toBe('over the last 24 hours');
 });
 
 test.describe('English browser', () => {

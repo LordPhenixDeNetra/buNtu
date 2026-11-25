@@ -61,7 +61,7 @@
       createError = failure(error);
       return;
     }
-    notify('success', $t('providers.created'));
+    notify('success', { key: 'providers.created' });
     form = { id: '', type: form.type, base_url: '', secret: '' };
     await load();
   }
@@ -73,9 +73,9 @@
       body: { base_url: value === '' ? null : value }
     });
     if (error) {
-      notify('error', failure(error));
+      notify('error', { error });
     } else {
-      notify('success', $t('providers.updated'));
+      notify('success', { key: 'providers.updated' });
     }
     await load();
   }
@@ -86,9 +86,9 @@
     }
     const { error } = await api.DELETE('/admin/v1/providers/{id}', { params: { path: { id } } });
     if (error) {
-      notify('error', failure(error));
+      notify('error', { error });
     } else {
-      notify('success', $t('providers.deleted'));
+      notify('success', { key: 'providers.deleted' });
     }
     await load();
   }
@@ -104,10 +104,27 @@
       body: { secret, weight: 1 }
     });
     if (error) {
-      notify('error', failure(error));
+      notify('error', { error });
     } else {
       keyDrafts[id] = '';
-      notify('success', $t('providers.keyAdded'));
+      notify('success', { key: 'providers.keyAdded' });
+    }
+    await load();
+  }
+
+  async function setWeight(id: string, index: number, weight: number): Promise<void> {
+    if (!Number.isInteger(weight) || weight < 1) {
+      await load(); // valeur invalide : on réaffiche le poids enregistré
+      return;
+    }
+    const { error } = await api.PATCH('/admin/v1/providers/{id}/keys/{index}', {
+      params: { path: { id, index } },
+      body: { weight }
+    });
+    if (error) {
+      notify('error', { error });
+    } else {
+      notify('success', { key: 'providers.weightSaved' });
     }
     await load();
   }
@@ -120,9 +137,9 @@
       params: { path: { id, index } }
     });
     if (error) {
-      notify('error', failure(error));
+      notify('error', { error });
     } else {
-      notify('success', $t('providers.keyRemoved'));
+      notify('success', { key: 'providers.keyRemoved' });
     }
     await load();
   }
@@ -245,8 +262,22 @@
                   <li>
                     <KeyRound size={16} />
                     <code class="key-preview">{key.preview}</code>
-                    <span class="badge">{$t('providers.weight')} {key.weight}</span>
-                    {#if !readOnly}
+                    {#if readOnly}
+                      <span class="badge">{$t('providers.weight')} {key.weight}</span>
+                    {:else}
+                      <label class="weight">
+                        <span aria-hidden="true">{$t('providers.weight')}</span>
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          inputmode="numeric"
+                          value={key.weight}
+                          aria-label={`${$t('providers.weight')} ${key.preview}`}
+                          onchange={(event) =>
+                            setWeight(provider.id, index, event.currentTarget.valueAsNumber)}
+                        />
+                      </label>
                       <button
                         class="btn-ghost btn-icon"
                         type="button"
@@ -358,6 +389,17 @@
   .key-preview {
     flex: 1;
     color: var(--color-text);
+  }
+
+  .weight {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-size: var(--text-sm);
+  }
+
+  .weight input {
+    width: 4.5rem;
   }
 
   .small {
