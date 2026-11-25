@@ -127,4 +127,6 @@ console en lecture seule (GitOps).
 Les clés API saisies dans la console sont chiffrées avec une clé maître :
 `BUNTU_MASTER_KEY` (base64), sinon le fichier `BUNTU_MASTER_KEY_FILE`, sinon `buntu.sqlite.key`,
 créé au premier démarrage. **Sauvegardez ce fichier** : sans lui, les clés enregistrées sont
-illisibles.
+illisibles. Pour changer de clé maître, `buntu secrets rotate nouvelle.key` réchiffre toutes les
+clés en une transaction (le fichier est créé s'il n'existe pas) ; pointez ensuite
+`BUNTU_MASTER_KEY_FILE` vers ce fichier avant de redémarrer.
