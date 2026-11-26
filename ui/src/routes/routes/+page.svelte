@@ -8,6 +8,8 @@
   import X from '@lucide/svelte/icons/x';
   import Save from '@lucide/svelte/icons/save';
   import Undo2 from '@lucide/svelte/icons/undo-2';
+  import RouteIcon from '@lucide/svelte/icons/route';
+  import CircleDot from '@lucide/svelte/icons/circle-dot';
   import { api, errorMessage } from '$lib/api';
   import type { components } from '$lib/api/schema';
   import { t } from '$lib/i18n';
@@ -129,16 +131,22 @@
   onMount(load);
 </script>
 
-<h1>{$t('routes.title')}</h1>
-<p class="muted lead">{$t('routes.subtitle')}</p>
+<header class="page-header">
+  <div>
+    <h1>{$t('routes.title')}</h1>
+    <p>{$t('routes.subtitle')}</p>
+  </div>
+</header>
 
-<form onsubmit={createRoute}>
+<form class="card" onsubmit={createRoute}>
   <fieldset>
-    <legend>{$t('routes.create')}</legend>
-    <div class="grid">
+    <legend class="card-header create-title">
+      <span class="icon-tile"><Plus size={16} /></span>{$t('routes.create')}
+    </legend>
+    <div class="card-body create-grid">
       <div class="field">
         <label for="route-alias">{$t('routes.alias')}</label>
-        <input id="route-alias" bind:value={form.alias} placeholder="chat" required />
+        <input id="route-alias" class="mono" bind:value={form.alias} placeholder="chat" required />
       </div>
       <div class="field">
         <label for="route-fallbacks">{$t('routes.fallbacks')}</label>
@@ -148,14 +156,16 @@
           placeholder={'openai/gpt-4o-mini\nanthropic/claude-haiku'}
         ></textarea>
       </div>
+      {#if createError}
+        <p class="field-error full" role="alert">{$t('error.title')} : {createError}</p>
+      {/if}
     </div>
-    {#if createError}
-      <p class="field-error" role="alert">{$t('error.title')} : {createError}</p>
-    {/if}
-    <button type="submit" disabled={saving}>
-      <Plus size={18} />
-      {saving ? $t('common.saving') : $t('providers.save')}
-    </button>
+    <div class="card-footer">
+      <button type="submit" disabled={saving}>
+        <Plus size={16} />
+        {saving ? $t('common.saving') : $t('providers.save')}
+      </button>
+    </div>
   </fieldset>
 </form>
 
@@ -163,13 +173,21 @@
   <p class="field-error" role="alert">{$t('error.title')} : {loadError}</p>
 {/if}
 
+<h2 class="section-title">
+  <RouteIcon size={16} />{$t('routes.title')}
+  {#if !loading}<span class="badge">{routes.length}</span>{/if}
+</h2>
+
 {#if loading}
   <div class="stack" aria-busy="true">
     <div class="skeleton card-skeleton"></div>
     <div class="skeleton card-skeleton"></div>
   </div>
 {:else if routes.length === 0}
-  <p class="muted">{$t('routes.empty')}</p>
+  <div class="empty">
+    <span class="icon-tile"><RouteIcon size={18} /></span>
+    <strong>{$t('routes.empty')}</strong>
+  </div>
 {:else}
   <div class="stack">
     {#each routes as route (route.alias)}
@@ -177,86 +195,100 @@
       {@const chain = drafts[route.alias] ?? []}
       <section class="card" aria-labelledby={`route-${route.alias}`}>
         <header class="card-header">
+          <span class="icon-tile"><RouteIcon size={16} /></span>
           <h2 id={`route-${route.alias}`} class="mono">{route.alias}</h2>
           <SourceBadge source={route.source} />
           {#if !readOnly && isDirty(route)}
-            <span class="badge badge-warning">{$t('routes.unsaved')}</span>
+            <span class="badge badge-warning"><CircleDot size={12} />{$t('routes.unsaved')}</span>
           {/if}
           <span class="spacer"></span>
           {#if readOnly}
-            <span class="muted small read-only"><Lock size={14} />{$t('source.fileHint')}</span>
+            <span class="muted small read-only"><Lock size={12} />{$t('source.fileHint')}</span>
           {:else}
             <button class="btn-danger" type="button" onclick={() => deleteRoute(route.alias)}>
-              <Trash2 size={16} />
+              <Trash2 size={14} />
               {$t('routes.delete')}
             </button>
           {/if}
         </header>
 
-        <h3 class="label">{$t('routes.chain')}</h3>
-        <ol class="chain">
-          {#each chain as target, index (`${index}-${target}`)}
-            <li>
-              <span class="step mono" aria-hidden="true">{index + 1}</span>
-              <code class="target">{target}</code>
-              {#if !readOnly}
-                <button
-                  class="btn-ghost btn-icon"
-                  type="button"
-                  aria-label={`${$t('routes.moveUp')} ${target}`}
-                  disabled={index === 0}
-                  onclick={() => move(route.alias, index, -1)}
-                >
-                  <ArrowUp size={16} />
-                </button>
-                <button
-                  class="btn-ghost btn-icon"
-                  type="button"
-                  aria-label={`${$t('routes.moveDown')} ${target}`}
-                  disabled={index === chain.length - 1}
-                  onclick={() => move(route.alias, index, 1)}
-                >
-                  <ArrowDown size={16} />
-                </button>
-                <button
-                  class="btn-ghost btn-icon"
-                  type="button"
-                  aria-label={`${$t('routes.removeTarget')} ${target}`}
-                  onclick={() => removeTarget(route.alias, index)}
-                >
-                  <X size={16} />
-                </button>
-              {/if}
-            </li>
-          {/each}
-        </ol>
+        <div class="card-body">
+          <h3 class="eyebrow chain-title">{$t('routes.chain')}</h3>
+          <ol class="chain">
+            {#each chain as target, index (`${index}-${target}`)}
+              {@const slash = target.indexOf('/')}
+              <li>
+                <span class="step mono" aria-hidden="true">{index + 1}</span>
+                <span class="target">
+                  <code>
+                    {#if slash > 0}<span class="muted">{target.slice(0, slash)}/</span
+                      >{target.slice(slash + 1)}{:else}{target}{/if}
+                  </code>
+                  <span class="badge" class:badge-brand={index === 0}>
+                    {index === 0 ? $t('routes.primary') : $t('routes.fallback')}
+                  </span>
+                </span>
+                {#if !readOnly}
+                  <span class="step-actions">
+                    <button
+                      class="btn-ghost btn-icon"
+                      type="button"
+                      aria-label={`${$t('routes.moveUp')} ${target}`}
+                      disabled={index === 0}
+                      onclick={() => move(route.alias, index, -1)}
+                    >
+                      <ArrowUp size={14} />
+                    </button>
+                    <button
+                      class="btn-ghost btn-icon"
+                      type="button"
+                      aria-label={`${$t('routes.moveDown')} ${target}`}
+                      disabled={index === chain.length - 1}
+                      onclick={() => move(route.alias, index, 1)}
+                    >
+                      <ArrowDown size={14} />
+                    </button>
+                    <button
+                      class="btn-ghost btn-icon"
+                      type="button"
+                      aria-label={`${$t('routes.removeTarget')} ${target}`}
+                      onclick={() => removeTarget(route.alias, index)}
+                    >
+                      <X size={14} />
+                    </button>
+                  </span>
+                {/if}
+              </li>
+            {/each}
+          </ol>
+        </div>
 
         {#if !readOnly}
-          <form class="inline" onsubmit={(event) => addTarget(event, route.alias)}>
-            <label for={`new-target-${route.alias}`} class="sr-only">{$t('routes.newTarget')}</label>
-            <input
-              id={`new-target-${route.alias}`}
-              class="mono"
-              bind:value={newTargets[route.alias]}
-              placeholder={$t('routes.newTarget')}
-            />
-            <button class="btn-secondary" type="submit">
-              <Plus size={16} />
-              {$t('routes.addTarget')}
-            </button>
-          </form>
-          <div class="actions">
+          <div class="card-footer">
+            <form class="inline spacer" onsubmit={(event) => addTarget(event, route.alias)}>
+              <label for={`new-target-${route.alias}`} class="sr-only">{$t('routes.newTarget')}</label>
+              <input
+                id={`new-target-${route.alias}`}
+                class="mono"
+                bind:value={newTargets[route.alias]}
+                placeholder={$t('routes.newTarget')}
+              />
+              <button class="btn-secondary" type="submit">
+                <Plus size={14} />
+                {$t('routes.addTarget')}
+              </button>
+            </form>
             <button
-              class="btn-secondary"
+              class="btn-ghost"
               type="button"
               disabled={!isDirty(route)}
               onclick={() => discard(route)}
             >
-              <Undo2 size={16} />
+              <Undo2 size={14} />
               {$t('routes.discard')}
             </button>
             <button type="button" disabled={!isDirty(route)} onclick={() => saveChain(route)}>
-              <Save size={16} />
+              <Save size={14} />
               {$t('routes.save')}
             </button>
           </div>
@@ -267,31 +299,36 @@
 {/if}
 
 <style>
-  .lead {
-    margin: 0 0 var(--space-5);
+  .create-title {
+    width: 100%;
+    margin: 0;
+    font-size: var(--text-sm);
+    font-weight: 600;
   }
 
-  .grid {
+  .create-title .icon-tile {
+    width: 1.75rem;
+    height: 1.75rem;
+    color: var(--color-accent-text);
+  }
+
+  .create-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
     gap: var(--space-4);
-    margin-bottom: var(--space-3);
   }
 
-  .card-header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-2);
+  @media (min-width: 48rem) {
+    .create-grid {
+      grid-template-columns: minmax(12rem, 1fr) 2fr;
+    }
+
+    .full {
+      grid-column: 1 / -1;
+    }
   }
 
   .card-header h2 {
-    margin: 0;
     font-size: var(--text-base);
-  }
-
-  .spacer {
-    flex: 1;
   }
 
   .read-only {
@@ -300,62 +337,80 @@
     gap: var(--space-1);
   }
 
-  .label {
-    margin: var(--space-4) 0 var(--space-2);
-    font-size: var(--text-sm);
-    font-weight: 600;
+  .chain-title {
+    margin-bottom: var(--space-3);
   }
 
   .chain {
+    position: relative;
     display: grid;
-    gap: var(--space-1);
-    margin: 0 0 var(--space-3);
+    gap: var(--space-2);
+    margin: 0;
     padding: 0;
     list-style: none;
   }
 
   .chain li {
+    position: relative;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-1) var(--space-2);
+    gap: var(--space-3);
+    min-height: 2.75rem;
+    padding: var(--space-1) var(--space-2) var(--space-1) var(--space-1);
+    border: 1px solid var(--color-border);
     border-radius: var(--radius-control);
     background: var(--color-surface-2);
   }
 
+  /* Trait qui relie les étapes : on lit l'ordre de repli d'un coup d'œil. */
+  .chain li + li::before {
+    content: '';
+    position: absolute;
+    left: calc(var(--space-1) + 0.875rem);
+    top: calc(-1 * var(--space-2) - 1px);
+    width: 1px;
+    height: var(--space-2);
+    background: var(--color-border-strong);
+  }
+
   .step {
     display: inline-grid;
+    flex: none;
     place-items: center;
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-pill);
     background: var(--color-surface);
     color: var(--color-muted);
     font-size: var(--text-xs);
   }
 
+  .chain li:first-child .step {
+    border-color: color-mix(in srgb, var(--color-accent) 60%, transparent);
+    color: var(--color-accent-text);
+  }
+
   .target {
+    display: flex;
     flex: 1;
-  }
-
-  .inline {
-    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     gap: var(--space-2);
+    min-width: 10rem;
   }
 
-  .actions {
+  .step-actions {
     display: flex;
-    justify-content: flex-end;
-    gap: var(--space-2);
-    margin-top: var(--space-3);
+    gap: 2px;
   }
 
-  .small {
-    margin: 0;
-    font-size: var(--text-sm);
+  .card-footer form {
+    min-width: min(100%, 18rem);
   }
 
   .card-skeleton {
-    height: 8rem;
+    height: 10rem;
   }
 </style>

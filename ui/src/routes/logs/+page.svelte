@@ -5,6 +5,7 @@
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import PanelRightOpen from '@lucide/svelte/icons/panel-right-open';
   import X from '@lucide/svelte/icons/x';
+  import ScrollText from '@lucide/svelte/icons/scroll-text';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import { api, errorMessage } from '$lib/api';
@@ -120,8 +121,12 @@
   }}
 />
 
-<h1>{$t('logs.title')}</h1>
-<p class="muted lead">{$t('logs.subtitle')}</p>
+<header class="page-header">
+  <div>
+    <h1>{$t('logs.title')}</h1>
+    <p>{$t('logs.subtitle')}</p>
+  </div>
+</header>
 
 {#if error}
   <p class="field-error" role="alert">{$t('error.title')} : {error}</p>
@@ -148,11 +153,11 @@
       <option value="100">100</option>
     </select>
   </div>
-  <button type="submit"><Filter size={16} />{$t('logs.filter')}</button>
+  <button type="submit"><Filter size={14} />{$t('logs.filter')}</button>
 </form>
 
 <div class="layout" class:with-detail={detail !== null}>
-  <div>
+  <div class="results">
     {#if loading}
       <div class="stack" aria-busy="true">
         {#each [0, 1, 2, 3, 4] as row (row)}
@@ -160,7 +165,10 @@
         {/each}
       </div>
     {:else if logs.length === 0}
-      <p class="muted">{$t('logs.empty')}</p>
+      <div class="empty">
+        <span class="icon-tile"><ScrollText size={18} /></span>
+        <strong>{$t('logs.empty')}</strong>
+      </div>
     {:else}
       <div class="table-wrap">
         <table>
@@ -179,22 +187,22 @@
           <tbody>
             {#each logs as entry (entry.id)}
               <tr class:selected={detail?.id === entry.id}>
-                <td class="mono nowrap">{formatDate(entry.created_at, $locale)}</td>
+                <td class="mono muted">{formatDate(entry.created_at, $locale)}</td>
                 <td>{entry.provider || '—'}</td>
                 <td class="mono">{entry.model}</td>
                 <td><StatusBadge status={entry.status} /></td>
                 <td class="num mono">{formatMs(entry.latency_ms, $locale)}</td>
                 <td class="num mono">{entry.attempts}</td>
-                <td class="num mono">
+                <td class="num mono muted">
                   {formatCount(entry.input_tokens, $locale)} / {formatCount(entry.output_tokens, $locale)}
                 </td>
-                <td>
+                <td class="num">
                   <button
-                    class="btn-ghost"
+                    class="btn-ghost row-action"
                     type="button"
                     onclick={(event) => showDetail(entry, event)}
                   >
-                    <PanelRightOpen size={16} />{$t('logs.detail')}
+                    <PanelRightOpen size={14} />{$t('logs.detail')}
                   </button>
                 </td>
               </tr>
@@ -204,10 +212,10 @@
       </div>
       <div class="pager">
         <button class="btn-secondary" type="button" disabled={history.length === 0} onclick={previousPage}>
-          <ChevronLeft size={16} />{$t('logs.previous')}
+          <ChevronLeft size={14} />{$t('logs.previous')}
         </button>
         <button class="btn-secondary" type="button" disabled={nextCursor === null} onclick={nextPage}>
-          {$t('logs.next')}<ChevronRight size={16} />
+          {$t('logs.next')}<ChevronRight size={14} />
         </button>
       </div>
     {/if}
@@ -215,21 +223,23 @@
 
   {#if detail !== null}
     <section class="card detail" aria-label={$t('logs.detail')}>
-      <header class="detail-header">
+      <header class="card-header">
         <h2 bind:this={detailHeading} tabindex="-1">{$t('logs.detail')}</h2>
+        <StatusBadge status={detail.status} />
+        <span class="spacer"></span>
         <button class="btn-ghost btn-icon" type="button" aria-label={$t('common.close')} onclick={closeDetail}>
-          <X size={18} />
+          <X size={16} />
         </button>
       </header>
-      <dl>
-        <div><dt>{$t('logs.id')}</dt><dd class="mono break">{detail.id}</dd></div>
-        <div><dt>{$t('logs.date')}</dt><dd class="mono">{formatDate(detail.created_at, $locale)}</dd></div>
-        <div><dt>{$t('logs.status')}</dt><dd><StatusBadge status={detail.status} /></dd></div>
+      <dl class="card-body">
+        <div class="wide"><dt>{$t('logs.id')}</dt><dd class="mono break">{detail.id}</dd></div>
+        <div class="wide"><dt>{$t('logs.date')}</dt><dd class="mono">{formatDate(detail.created_at, $locale)}</dd></div>
+        <div><dt>{$t('logs.status')}</dt><dd class="mono">{detail.status}</dd></div>
         <div><dt>{$t('logs.provider')}</dt><dd>{detail.provider || '—'}</dd></div>
-        <div><dt>{$t('logs.model')}</dt><dd class="mono">{detail.model}</dd></div>
+        <div class="wide"><dt>{$t('logs.model')}</dt><dd class="mono">{detail.model}</dd></div>
         <div><dt>{$t('logs.latency')}</dt><dd class="mono">{formatMs(detail.latency_ms, $locale)}</dd></div>
         <div><dt>{$t('logs.attempts')}</dt><dd class="mono">{detail.attempts}</dd></div>
-        <div>
+        <div class="wide">
           <dt>{$t('logs.tokens')}</dt>
           <dd class="mono">
             {formatCount(detail.input_tokens, $locale)} / {formatCount(detail.output_tokens, $locale)}
@@ -241,21 +251,22 @@
 </div>
 
 <style>
-  .lead {
-    margin: 0 0 var(--space-5);
-  }
-
   .filters {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
     gap: var(--space-3);
     align-items: end;
     margin-bottom: var(--space-4);
+    padding: var(--space-3) var(--space-4);
   }
 
   .layout {
     display: grid;
     gap: var(--space-4);
+  }
+
+  .results {
+    min-width: 0;
   }
 
   @media (min-width: 80rem) {
@@ -265,12 +276,19 @@
     }
   }
 
-  .nowrap {
-    white-space: nowrap;
+  tr.selected,
+  tr.selected:hover {
+    background: color-mix(in srgb, var(--color-accent) var(--tint-strength), transparent);
   }
 
-  tr.selected {
-    background: color-mix(in srgb, var(--color-accent) var(--tint-strength), transparent);
+  td.num:last-child {
+    padding-right: var(--space-2);
+  }
+
+  .row-action {
+    min-height: 1.875rem;
+    padding: 0 var(--space-2);
+    font-size: var(--text-xs);
   }
 
   .pager {
@@ -290,29 +308,24 @@
     animation: detail-in var(--motion-slow) var(--ease-out);
   }
 
-  .detail-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .detail-header h2 {
-    margin: 0;
-    font-size: var(--text-lg);
+  .detail h2 {
+    font-size: var(--text-sm);
   }
 
   dl {
     display: grid;
-    gap: var(--space-3);
-    margin: var(--space-4) 0 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4) var(--space-3);
+    margin: 0;
+  }
+
+  dl .wide {
+    grid-column: 1 / -1;
   }
 
   dt {
     color: var(--color-muted);
     font-size: var(--text-xs);
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
   }
 
   dd {

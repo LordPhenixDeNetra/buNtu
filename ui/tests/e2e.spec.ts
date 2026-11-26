@@ -127,14 +127,16 @@ test('file entries are read-only, deletions are confirmed, focus follows the det
   }
 });
 
-test.describe('dark theme', () => {
-  // Le sombre est le thème prioritaire du système de design : axe le vérifie aussi.
-  test.use({ colorScheme: 'dark' });
+test.describe('light theme', () => {
+  // Les autres tests tournent dans le thème par défaut (sombre) : axe vérifie aussi le clair.
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('buntu.theme', 'light'));
+  });
 
-  test('key screens have no serious accessibility violation in dark mode', async ({ page }) => {
+  test('key screens have no serious accessibility violation in light mode', async ({ page }) => {
     for (const path of ['/', '/providers', '/routes', '/logs?provider=e2e']) {
       await page.goto(path);
-      await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+      await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
       const results = await new AxeBuilder({ page }).analyze();
       const serious = results.violations.filter((violation) =>
         ['serious', 'critical'].includes(violation.impact ?? '')
