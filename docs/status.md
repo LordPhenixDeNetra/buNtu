@@ -109,6 +109,7 @@ publics (release GitHub, `ghcr.io/lordphenixdenetra/buntu`, `npx @buntuu/cli`).
 | v0.1.2 | 2026-11-09 | #48 | image et binaires ; npm refusé à la vérification de provenance (champ `repository`, corrigé par #49) |
 | v0.1.3 | 2026-11-09 | #50 | **complète** : 4 plateformes, image amd64 + arm64, `npx @buntuu/cli@0.1.3` publié par la CI sans jeton, avec provenance |
 | v0.2.0 | 2026-11-26 | #63 | image amd64 + arm64 (job relancé), 4 binaires bruts signés, `npx @buntuu/cli@0.2.0` ; **sans archives ni installateurs** : une ligne des notes, masquée par GitHub Actions, a fait sauter les builds cargo-dist (corrigé en v0.2.1) |
+| v0.2.1 | 2026-11-26 | #64 | **complète** : archives et installateurs des 4 plateformes, sommes et signatures, image amd64 + arm64 (`latest`), `npx @buntuu/cli@0.2.1` (`latest`) ; même code que v0.2.0 |
 
 ## Historique des fusions
 
