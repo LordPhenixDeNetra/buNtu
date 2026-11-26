@@ -6,6 +6,24 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 le [versionnage sémantique](https://semver.org/lang/fr/) (avant 1.0, une mineure peut casser :
 voir `docs/release.md`).
 
+## [0.2.1] - 2026-11-26
+
+Correctif de livraison de la v0.2.0 : même code, avec cette fois les archives et les
+installateurs.
+
+### Corrections
+
+- **release** : la v0.2.0 est parue sans archives `.tar.xz`/`.zip` ni installateurs shell et
+  PowerShell. Une ligne de ses notes ressemblait à un jeton d'authentification ; GitHub Actions
+  l'a masquée et a supprimé la sortie du plan cargo-dist, ce qui a sauté la construction des
+  archives. La ligne est reformulée, et `node scripts/release.mjs check vX.Y.Z` refuse
+  désormais ce type de texte dans les notes d'une version.
+
+### Contributeurs
+
+- @LordPhenixDeNetra
+- @NetraDevLPDN
+
 ## [0.2.0] - 2026-11-26
 
 Console entièrement repensée, statistiques côté serveur, rotation de la clé maître, requêtes SQL
@@ -42,7 +60,7 @@ vérifiées à la compilation et mode réel du kit de conformité.
 - **deps** : Bump sqlx to 0.9 and url to 2.5.9 for RustSec advisories
 - **gateway** : Return API error messages in English
 - **gateway** : Keep the log writer and answer JSON 404 under API prefixes
-- **gateway** : Wipe the temporary Bearer value and drop a request clone
+- **gateway** : Wipe the temporary authorization header value and drop a request clone
 - **cli** : Print CLI and process messages in English
 - **ci** : Make the workflow file valid YAML again
 

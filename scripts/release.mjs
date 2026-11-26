@@ -40,6 +40,27 @@ export function bumpCargo(text, version) {
     .replace(INTERNAL, (_line, name) => `${name} = { version = "${version}", path = `);
 }
 
+/**
+ * Phrases que le masquage des journaux de GitHub Actions prend pour un secret (« Bearer » suivi
+ * d'un mot). Dans les notes de version, elles font sauter la sortie `val` du plan cargo-dist
+ * (« Skip output since it may contain secret ») et donc la construction des archives : c'est
+ * arrivé à la v0.2.0.
+ */
+const MASKED = /\bBearer\s+\S+/gi;
+
+/** Section `## [version]` du CHANGELOG, jusqu'à la section suivante. */
+export function changelogSection(text, version) {
+  const lines = text.split(/\r?\n/);
+  const start = lines.findIndex((line) => line.startsWith(`## [${version}]`));
+  if (start < 0) return null;
+  const end = lines.findIndex((line, index) => index > start && line.startsWith('## ['));
+  return lines.slice(start, end < 0 ? undefined : end).join('\n');
+}
+
+export function maskedPhrases(text) {
+  return [...text.matchAll(MASKED)].map((match) => match[0]);
+}
+
 export function bumpPackage(text, version) {
   return text.replace(/("version":\s*")[^"]+(")/, `$1${version}$2`);
 }
@@ -56,7 +77,7 @@ function versions() {
   };
 }
 
-function check(tag) {
+function check(tag, { changelog = true } = {}) {
   const found = versions();
   const expected = tag ? tag.replace(/^v/, '') : found['Cargo.toml [workspace.package]'];
   const wrong = Object.entries(found).filter(([, v]) => v !== expected);
@@ -68,6 +89,18 @@ function check(tag) {
     console.error(`versions incohérentes (attendu ${expected}) :`);
     for (const [where, v] of wrong) console.error(`  ${where} = ${v}`);
     process.exit(1);
+  }
+  if (tag && changelog && existsSync(CHANGELOG)) {
+    const section = changelogSection(readFileSync(CHANGELOG, 'utf8'), expected);
+    if (section === null) {
+      console.error(`CHANGELOG.md : section [${expected}] absente`);
+      process.exit(1);
+    }
+    const masked = maskedPhrases(section);
+    if (masked.length > 0) {
+      console.error(`CHANGELOG.md [${expected}] : texte pris pour un secret par GitHub Actions, à reformuler : ${masked.join(', ')}`);
+      process.exit(1);
+    }
   }
   console.log(`OK — ${Object.keys(found).length} emplacements en ${expected}${tag ? ` (tag ${tag})` : ''}.`);
 }
@@ -90,7 +123,7 @@ function bump(version) {
   writeFileSync(NPX, bumpPackage(readFileSync(NPX, 'utf8'), version));
   // Cargo.lock suit les versions du workspace, sans toucher aux dépendances externes.
   execFileSync('cargo', ['update', '--workspace', '--offline'], { cwd: root, stdio: 'inherit' });
-  check(`v${version}`);
+  check(`v${version}`, { changelog: false }); // la section du CHANGELOG est créée juste après
 
   if (hasGitCliff()) {
     const args = existsSync(CHANGELOG)
