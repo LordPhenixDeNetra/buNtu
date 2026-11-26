@@ -15,9 +15,12 @@ test('home page has no serious accessibility violation', async ({ page }) => {
 test('theme toggle and language switch work', async ({ page }) => {
   await page.goto('/');
   const html = page.locator('html');
-  await expect(html).toHaveAttribute('data-theme', 'light');
-  await page.getByRole('button', { name: /thème sombre|dark theme/i }).click();
+  // Sombre par défaut (MASTER), quel que soit le thème du système ; le choix est mémorisé.
   await expect(html).toHaveAttribute('data-theme', 'dark');
+  await page.getByRole('button', { name: /thème clair|light theme/i }).click();
+  await expect(html).toHaveAttribute('data-theme', 'light');
+  await page.reload();
+  await expect(html).toHaveAttribute('data-theme', 'light');
   await page.locator('#langue').selectOption('en');
   // Le lien de navigation est ciblé pour éviter la carte de la page d'accueil.
   const navigation = page.getByRole('navigation', { name: /Navigation principale|Main navigation/i });

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, type Snippet } from 'svelte';
   import KeyRound from '@lucide/svelte/icons/key-round';
+  import ArrowRight from '@lucide/svelte/icons/arrow-right';
   import '../app.css';
   import { restoreLocale, t } from '$lib/i18n';
   import { restoreTheme } from '$lib/theme';
@@ -38,14 +39,21 @@
   <main id="contenu" tabindex="-1">
     {#if $tokenRequired}
       <form class="card token" onsubmit={submitToken} aria-labelledby="titre-jeton">
-        <KeyRound size={28} />
+        <span class="icon-tile token-icon"><KeyRound size={20} /></span>
         <h1 id="titre-jeton">{$t('auth.title')}</h1>
         <p class="muted">{$t('auth.help')}</p>
         <div class="field">
           <label for="jeton-admin">{$t('auth.token')}</label>
-          <input id="jeton-admin" type="password" autocomplete="off" bind:value={token} required />
+          <input
+            id="jeton-admin"
+            class="mono"
+            type="password"
+            autocomplete="off"
+            bind:value={token}
+            required
+          />
         </div>
-        <button type="submit">{$t('auth.submit')}</button>
+        <button type="submit">{$t('auth.submit')}<ArrowRight size={16} /></button>
       </form>
     {:else}
       {@render children()}
@@ -62,10 +70,23 @@
   }
 
   main {
+    position: relative;
+    isolation: isolate;
     width: 100%;
     max-width: var(--content-width);
     margin: 0 auto;
     padding: var(--space-5) var(--space-4) var(--space-7);
+  }
+
+  /* Halo de marque très discret en haut de page : profondeur sans gêner la lecture. */
+  main::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 28rem;
+    z-index: -1;
+    background: var(--glow);
+    pointer-events: none;
   }
 
   main:focus {
@@ -75,30 +96,30 @@
   @media (min-width: 64rem) {
     .shell {
       display: grid;
-      grid-template-columns: 15rem minmax(0, 1fr);
+      grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
     }
 
     main {
-      padding: var(--space-6) var(--space-6) var(--space-7);
+      padding: var(--space-7) var(--space-6) var(--space-7);
     }
   }
 
   .token {
     display: grid;
-    gap: var(--space-3);
-    max-width: 30rem;
-    margin: var(--space-7) auto 0;
+    gap: var(--space-4);
+    max-width: 26rem;
+    margin: 10vh auto 0;
+    padding: var(--space-6);
+    box-shadow: var(--shadow-raised);
   }
 
-  .token :global(svg) {
-    color: var(--color-accent);
+  .token-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+    color: var(--color-accent-text);
   }
 
-  .token h1 {
-    margin: 0;
-  }
-
-  .token p {
-    margin: 0;
+  .token button {
+    width: 100%;
   }
 </style>

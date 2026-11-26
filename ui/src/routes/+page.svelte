@@ -4,9 +4,11 @@
   import Server from '@lucide/svelte/icons/server';
   import Route from '@lucide/svelte/icons/route';
   import Gauge from '@lucide/svelte/icons/gauge';
-  import CircleCheck from '@lucide/svelte/icons/circle-check';
+  import Timer from '@lucide/svelte/icons/timer';
+  import Hash from '@lucide/svelte/icons/hash';
   import CircleAlert from '@lucide/svelte/icons/circle-alert';
-  import ChevronRight from '@lucide/svelte/icons/chevron-right';
+  import CircleCheck from '@lucide/svelte/icons/circle-check';
+  import ArrowRight from '@lucide/svelte/icons/arrow-right';
   import { api } from '$lib/api';
   import type { components } from '$lib/api/schema';
   import { locale, t } from '$lib/i18n';
@@ -29,6 +31,7 @@
   let stats = $state<StatsView | null>(null);
 
   const errors = $derived(logs.filter((log) => log.status >= 400));
+  const errorRate = $derived(stats && stats.requests > 0 ? stats.errors / stats.requests : 0);
 
   onMount(async () => {
     const [health, providerPage, routePage, logPage, statsPage] = await Promise.all([
@@ -57,28 +60,35 @@
   });
 </script>
 
-<h1>{$t('overview.title')}</h1>
-<p class="muted lead">{$t('overview.subtitle')}</p>
+<header class="page-header">
+  <div>
+    <h1>{$t('overview.title')}</h1>
+    <p>{$t('overview.subtitle')}</p>
+  </div>
+  <a class="btn btn-secondary" href="/logs">{$t('overview.seeLogs')}<ArrowRight size={16} /></a>
+</header>
 
-<div class="bento overview">
+<div class="bento summary">
   <section class="tile" aria-labelledby="tile-health">
-    <h2 id="tile-health" class="tile-title"><Activity size={16} />{$t('overview.health')}</h2>
+    <h2 id="tile-health" class="kpi-label"><Activity size={14} />{$t('overview.health')}</h2>
     {#if ready === null}
-      <div class="skeleton metric-skeleton"></div>
-    {:else if ready}
-      <p class="metric metric-ok"><CircleCheck size={28} />{$t('overview.ready')}</p>
+      <div class="skeleton value-skeleton"></div>
     {:else}
-      <p class="metric metric-ko"><CircleAlert size={28} />{$t('overview.notReady')}</p>
+      <p class="kpi-value health">
+        <span class="status-dot" class:ok={ready} class:ko={!ready}></span>
+        {ready ? $t('overview.ready') : $t('overview.notReady')}
+      </p>
+      <p class="kpi-foot mono">GET /ready</p>
     {/if}
   </section>
 
   <a class="tile" href="/providers">
-    <h2 id="tile-providers" class="tile-title"><Server size={16} />{$t('overview.providers')}</h2>
+    <h2 id="tile-providers" class="kpi-label"><Server size={14} />{$t('overview.providers')}</h2>
     {#if loading}
-      <div class="skeleton metric-skeleton"></div>
+      <div class="skeleton value-skeleton"></div>
     {:else}
-      <p class="metric">{formatCount(providers.total, $locale)}</p>
-      <p class="muted small">
+      <p class="kpi-value">{formatCount(providers.total, $locale)}</p>
+      <p class="kpi-foot">
         {providers.file}
         {$t('overview.fromFile')} · {providers.total - providers.file}
         {$t('overview.fromConsole')}
@@ -87,153 +97,150 @@
   </a>
 
   <a class="tile" href="/routes">
-    <h2 id="tile-routes" class="tile-title"><Route size={16} />{$t('overview.routes')}</h2>
+    <h2 id="tile-routes" class="kpi-label"><Route size={14} />{$t('overview.routes')}</h2>
     {#if loading}
-      <div class="skeleton metric-skeleton"></div>
+      <div class="skeleton value-skeleton"></div>
     {:else}
-      <p class="metric">{formatCount(routes.total, $locale)}</p>
-      <p class="muted small">
+      <p class="kpi-value">{formatCount(routes.total, $locale)}</p>
+      <p class="kpi-foot">
         {routes.file}
         {$t('overview.fromFile')} · {routes.total - routes.file}
         {$t('overview.fromConsole')}
       </p>
     {/if}
   </a>
-
-  <section class="tile tile-wide" aria-labelledby="tile-traffic">
-    <h2 id="tile-traffic" class="tile-title"><Gauge size={16} />{$t('overview.traffic')}</h2>
-    {#if loading}
-      <div class="skeleton metric-skeleton"></div>
-    {:else if !stats || stats.requests === 0}
-      <p class="muted">{$t('overview.noTraffic')}</p>
-    {:else}
-      <dl class="stats">
-        <div>
-          <dt>{$t('overview.requests')}</dt>
-          <dd class="mono">{formatCount(stats.requests, $locale)}</dd>
-        </div>
-        <div>
-          <dt>{$t('overview.errorRate')}</dt>
-          <dd class="mono">{formatPercent(stats.errors / stats.requests, $locale)}</dd>
-        </div>
-        <div>
-          <dt>{$t('overview.latencyP50')}</dt>
-          <dd class="mono">{stats.latency_p50_ms == null ? '—' : formatMs(stats.latency_p50_ms, $locale)}</dd>
-        </div>
-        <div>
-          <dt>{$t('overview.latencyP95')}</dt>
-          <dd class="mono">{stats.latency_p95_ms == null ? '—' : formatMs(stats.latency_p95_ms, $locale)}</dd>
-        </div>
-      </dl>
-      <p class="muted small">{$t('overview.window', { n: WINDOW_HOURS })}</p>
-    {/if}
-  </section>
-
-  <section class="tile tile-wide" aria-labelledby="tile-errors">
-    <h2 id="tile-errors" class="tile-title">
-      <CircleAlert size={16} />{$t('overview.recentErrors')}
-    </h2>
-    {#if loading}
-      <div class="skeleton metric-skeleton"></div>
-    {:else if errors.length === 0}
-      <p class="muted">{$t('overview.noErrors')}</p>
-    {:else}
-      <ul class="errors">
-        {#each errors.slice(0, 5) as error (error.id)}
-          <li>
-            <StatusBadge status={error.status} />
-            <span class="mono error-model">{error.model}</span>
-            <span class="muted small">{formatDate(error.created_at, $locale)}</span>
-          </li>
-        {/each}
-      </ul>
-    {/if}
-    <a class="see-logs" href="/logs">{$t('overview.seeLogs')}<ChevronRight size={16} /></a>
-  </section>
 </div>
 
+<h2 class="section-title" id="tile-traffic">
+  <Gauge size={16} />{$t('overview.traffic')}
+  <span class="muted">· {$t('overview.window', { n: WINDOW_HOURS })}</span>
+</h2>
+
+{#if loading}
+  <div class="bento metrics" aria-busy="true">
+    {#each [0, 1, 2, 3] as index (index)}
+      <div class="tile"><div class="skeleton value-skeleton"></div></div>
+    {/each}
+  </div>
+{:else if !stats || stats.requests === 0}
+  <div class="empty">
+    <span class="icon-tile"><Gauge size={18} /></span>
+    <strong>{$t('overview.noTraffic')}</strong>
+  </div>
+{:else}
+  <dl class="bento metrics" aria-labelledby="tile-traffic">
+    <div class="tile">
+      <dt class="kpi-label"><Hash size={14} />{$t('overview.requests')}</dt>
+      <dd class="kpi-value">{formatCount(stats.requests, $locale)}</dd>
+    </div>
+    <div class="tile">
+      <dt class="kpi-label"><CircleAlert size={14} />{$t('overview.errorRate')}</dt>
+      <dd class="kpi-value" class:bad={errorRate >= 0.05}>{formatPercent(errorRate, $locale)}</dd>
+    </div>
+    <div class="tile">
+      <dt class="kpi-label"><Timer size={14} />{$t('overview.latencyP50')}</dt>
+      <dd class="kpi-value">
+        {stats.latency_p50_ms == null ? '—' : formatMs(stats.latency_p50_ms, $locale)}
+      </dd>
+    </div>
+    <div class="tile">
+      <dt class="kpi-label"><Timer size={14} />{$t('overview.latencyP95')}</dt>
+      <dd class="kpi-value">
+        {stats.latency_p95_ms == null ? '—' : formatMs(stats.latency_p95_ms, $locale)}
+      </dd>
+    </div>
+  </dl>
+{/if}
+
+<section class="card recent" aria-labelledby="tile-errors">
+  <header class="card-header">
+    <h2 id="tile-errors" class="cluster"><CircleAlert size={16} />{$t('overview.recentErrors')}</h2>
+    <span class="spacer"></span>
+    <a class="small" href="/logs">{$t('overview.seeLogs')}</a>
+  </header>
+  {#if loading}
+    <div class="card-body stack" aria-busy="true">
+      <div class="skeleton row-skeleton"></div>
+      <div class="skeleton row-skeleton"></div>
+    </div>
+  {:else if errors.length === 0}
+    <p class="card-body no-errors">
+      <CircleCheck size={16} />{$t('overview.noErrors')}
+    </p>
+  {:else}
+    <ul class="errors">
+      {#each errors.slice(0, 5) as error (error.id)}
+        <li>
+          <StatusBadge status={error.status} />
+          <code class="error-model">{error.model}</code>
+          <span class="muted">{error.provider || '—'}</span>
+          <span class="muted mono small">{formatDate(error.created_at, $locale)}</span>
+        </li>
+      {/each}
+    </ul>
+  {/if}
+</section>
+
 <style>
-  .lead {
-    margin: 0 0 var(--space-5);
-  }
-
-  /* Ordinateur : 3 tuiles compactes puis 2 tuiles larges, sans colonne vide. */
   @media (min-width: 64rem) {
-    .overview {
-      grid-template-columns: repeat(6, minmax(0, 1fr));
+    .summary {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
-    .overview > :global(.tile) {
-      grid-column: span 2;
-    }
-
-    .overview > :global(.tile-wide) {
-      grid-column: span 3;
+    .metrics {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
 
-  .tile-title {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    margin: 0 0 var(--space-3);
-    color: var(--color-muted);
-    font-size: var(--text-sm);
-    font-weight: 600;
-  }
-
-  .metric {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
+  .metrics {
     margin: 0;
-    font-size: var(--text-2xl);
-    font-weight: 600;
-    letter-spacing: -0.02em;
   }
 
-  .metric-ok :global(svg) {
+  .metrics dd {
+    margin: 0;
+  }
+
+  .health {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .health .status-dot {
+    width: 0.625rem;
+    height: 0.625rem;
+  }
+
+  .bad {
+    color: color-mix(in srgb, var(--color-danger) 85%, var(--color-text));
+  }
+
+  .value-skeleton {
+    height: 2.25rem;
+    max-width: 8rem;
+    margin-top: var(--space-2);
+  }
+
+  .row-skeleton {
+    height: 1.5rem;
+  }
+
+  .recent {
+    margin-top: var(--space-6);
+  }
+
+  .no-errors {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-muted);
+  }
+
+  .no-errors :global(svg) {
     color: var(--color-success);
   }
 
-  .metric-ko :global(svg) {
-    color: var(--color-danger);
-  }
-
-  .metric-skeleton {
-    height: 2.5rem;
-    max-width: 10rem;
-  }
-
-  .small {
-    margin: var(--space-2) 0 0;
-    font-size: var(--text-sm);
-  }
-
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
-    gap: var(--space-4);
-    margin: 0;
-  }
-
-  .stats dt {
-    color: var(--color-muted);
-    font-size: var(--text-xs);
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
-
-  .stats dd {
-    margin: var(--space-1) 0 0;
-    font-size: var(--text-xl);
-    font-weight: 600;
-  }
-
   .errors {
-    display: grid;
-    gap: var(--space-2);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -243,19 +250,17 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .errors li:last-child {
+    border-bottom: 0;
   }
 
   .error-model {
     flex: 1;
-  }
-
-  .see-logs {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1);
-    margin-top: var(--space-3);
-    font-size: var(--text-sm);
-    font-weight: 500;
+    min-width: 10rem;
   }
 </style>

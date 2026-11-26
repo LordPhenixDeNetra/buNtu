@@ -5,6 +5,7 @@
   import Lock from '@lucide/svelte/icons/lock';
   import KeyRound from '@lucide/svelte/icons/key-round';
   import Save from '@lucide/svelte/icons/save';
+  import Server from '@lucide/svelte/icons/server';
   import { api, errorMessage } from '$lib/api';
   import type { components } from '$lib/api/schema';
   import { t } from '$lib/i18n';
@@ -147,53 +148,67 @@
   onMount(load);
 </script>
 
-<h1>{$t('providers.title')}</h1>
-<p class="muted lead">{$t('providers.subtitle')}</p>
+<header class="page-header">
+  <div>
+    <h1>{$t('providers.title')}</h1>
+    <p>{$t('providers.subtitle')}</p>
+  </div>
+</header>
 
-<form onsubmit={createProvider}>
+<form class="card create" onsubmit={createProvider}>
   <fieldset>
-    <legend>{$t('providers.create')}</legend>
-    <div class="grid">
-      <div class="field">
-        <label for="provider-id">{$t('providers.id')}</label>
-        <input id="provider-id" bind:value={form.id} autocomplete="off" required />
+    <legend class="card-header create-title">
+      <span class="icon-tile"><Plus size={16} /></span>{$t('providers.create')}
+    </legend>
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="field">
+          <label for="provider-id">{$t('providers.id')}</label>
+          <input id="provider-id" class="mono" bind:value={form.id} autocomplete="off" required />
+        </div>
+        <div class="field">
+          <label for="provider-type">{$t('providers.type')}</label>
+          <select id="provider-type" bind:value={form.type}>
+            {#each types as kind (kind)}
+              <option value={kind}>{kind}</option>
+            {/each}
+          </select>
+        </div>
+        <div class="field">
+          <label for="provider-base-url">{$t('providers.baseUrl')}</label>
+          <input
+            id="provider-base-url"
+            class="mono"
+            bind:value={form.base_url}
+            placeholder="https://api.example.com"
+            inputmode="url"
+          />
+        </div>
+        <div class="field">
+          <label for="provider-secret">{$t('providers.secret')}</label>
+          <input
+            id="provider-secret"
+            class="mono"
+            type="password"
+            bind:value={form.secret}
+            autocomplete="new-password"
+            aria-describedby="provider-secret-hint"
+          />
+        </div>
       </div>
-      <div class="field">
-        <label for="provider-type">{$t('providers.type')}</label>
-        <select id="provider-type" bind:value={form.type}>
-          {#each types as kind (kind)}
-            <option value={kind}>{kind}</option>
-          {/each}
-        </select>
-      </div>
-      <div class="field">
-        <label for="provider-base-url">{$t('providers.baseUrl')}</label>
-        <input
-          id="provider-base-url"
-          bind:value={form.base_url}
-          placeholder="https://api.example.com"
-          inputmode="url"
-        />
-      </div>
-      <div class="field">
-        <label for="provider-secret">{$t('providers.secret')}</label>
-        <input
-          id="provider-secret"
-          type="password"
-          bind:value={form.secret}
-          autocomplete="new-password"
-          aria-describedby="provider-secret-hint"
-        />
-      </div>
+      {#if createError}
+        <p class="field-error create-error" role="alert">{$t('error.title')} : {createError}</p>
+      {/if}
     </div>
-    <p id="provider-secret-hint" class="field-hint">{$t('providers.secretNotice')}</p>
-    {#if createError}
-      <p class="field-error" role="alert">{$t('error.title')} : {createError}</p>
-    {/if}
-    <button type="submit" disabled={saving}>
-      <Plus size={18} />
-      {saving ? $t('common.saving') : $t('providers.save')}
-    </button>
+    <div class="card-footer">
+      <p id="provider-secret-hint" class="field-hint spacer">
+        <Lock size={12} />{$t('providers.secretNotice')}
+      </p>
+      <button type="submit" disabled={saving}>
+        <Plus size={16} />
+        {saving ? $t('common.saving') : $t('providers.save')}
+      </button>
+    </div>
   </fieldset>
 </form>
 
@@ -201,39 +216,49 @@
   <p class="field-error" role="alert">{$t('error.title')} : {loadError}</p>
 {/if}
 
+<h2 class="section-title">
+  <Server size={16} />{$t('providers.title')}
+  {#if !loading}<span class="badge">{providers.length}</span>{/if}
+</h2>
+
 {#if loading}
   <div class="stack" aria-busy="true">
     <div class="skeleton card-skeleton"></div>
     <div class="skeleton card-skeleton"></div>
   </div>
 {:else if providers.length === 0}
-  <p class="muted">{$t('providers.empty')}</p>
+  <div class="empty">
+    <span class="icon-tile"><Server size={18} /></span>
+    <strong>{$t('providers.empty')}</strong>
+  </div>
 {:else}
   <div class="stack">
     {#each providers as provider (provider.id)}
       {@const readOnly = provider.source === 'file'}
       <section class="card" aria-labelledby={`provider-${provider.id}`}>
         <header class="card-header">
+          <span class="icon-tile"><Server size={16} /></span>
           <h2 id={`provider-${provider.id}`} class="mono">{provider.id}</h2>
           <span class="badge mono">{provider.type}</span>
           <SourceBadge source={provider.source} />
           <span class="spacer"></span>
           {#if readOnly}
-            <span class="muted small read-only"><Lock size={14} />{$t('source.fileHint')}</span>
+            <span class="muted small read-only"><Lock size={12} />{$t('source.fileHint')}</span>
           {:else}
             <button class="btn-danger" type="button" onclick={() => deleteProvider(provider.id)}>
-              <Trash2 size={16} />
+              <Trash2 size={14} />
               {$t('providers.delete')}
             </button>
           {/if}
         </header>
 
-        <div class="card-body">
+        <div class="card-body columns">
           <div class="field">
             <label for={`base-url-${provider.id}`}>{$t('providers.baseUrl')}</label>
             <div class="inline">
               <input
                 id={`base-url-${provider.id}`}
+                class="mono"
                 bind:value={baseUrls[provider.id]}
                 placeholder="https://api.example.com"
                 disabled={readOnly}
@@ -245,7 +270,7 @@
                   onclick={() => saveBaseUrl(provider.id)}
                   disabled={(baseUrls[provider.id] ?? '') === (provider.base_url ?? '')}
                 >
-                  <Save size={16} />
+                  <Save size={14} />
                   {$t('providers.save')}
                 </button>
               {/if}
@@ -253,14 +278,16 @@
           </div>
 
           <div class="field">
-            <h3 class="label">{$t('providers.keys')}</h3>
+            <h3 class="keys-title">
+              {$t('providers.keys')}<span class="badge">{provider.keys.length}</span>
+            </h3>
             {#if provider.keys.length === 0}
-              <p class="muted small">{$t('providers.noKeys')}</p>
+              <p class="muted no-keys">{$t('providers.noKeys')}</p>
             {:else}
               <ul class="keys">
                 {#each provider.keys as key, index (index)}
                   <li>
-                    <KeyRound size={16} />
+                    <KeyRound size={14} />
                     <code class="key-preview">{key.preview}</code>
                     {#if readOnly}
                       <span class="badge">{$t('providers.weight')} {key.weight}</span>
@@ -269,6 +296,7 @@
                         <span aria-hidden="true">{$t('providers.weight')}</span>
                         <input
                           type="number"
+                          class="mono"
                           min="1"
                           step="1"
                           inputmode="numeric"
@@ -284,7 +312,7 @@
                         aria-label={`${$t('providers.deleteKey')} ${key.preview}`}
                         onclick={() => removeKey(provider.id, index)}
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={14} />
                       </button>
                     {/if}
                   </li>
@@ -296,13 +324,14 @@
                 <label for={`new-key-${provider.id}`} class="sr-only">{$t('providers.newKey')}</label>
                 <input
                   id={`new-key-${provider.id}`}
+                  class="mono"
                   type="password"
                   bind:value={keyDrafts[provider.id]}
                   autocomplete="new-password"
                   placeholder={$t('providers.newKey')}
                 />
                 <button class="btn-secondary" type="submit">
-                  <Plus size={16} />
+                  <Plus size={14} />
                   {$t('providers.addKey')}
                 </button>
               </form>
@@ -315,35 +344,32 @@
 {/if}
 
 <style>
-  .lead {
-    margin: 0 0 var(--space-5);
+  .create-title {
+    width: 100%;
+    margin: 0;
+    font-size: var(--text-sm);
+    font-weight: 600;
   }
 
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-    gap: var(--space-4);
-    margin-bottom: var(--space-3);
+  .create-title .icon-tile {
+    width: 1.75rem;
+    height: 1.75rem;
+    color: var(--color-accent-text);
   }
 
-  fieldset .field-hint {
-    margin: 0 0 var(--space-3);
+  .create-error {
+    margin-top: var(--space-4);
   }
 
-  .card-header {
+  .card-footer .field-hint {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--space-1);
+    min-width: 14rem;
   }
 
   .card-header h2 {
-    margin: 0;
     font-size: var(--text-base);
-  }
-
-  .spacer {
-    flex: 1;
   }
 
   .read-only {
@@ -352,38 +378,48 @@
     gap: var(--space-1);
   }
 
-  .card-body {
+  .columns {
     display: grid;
     align-items: start;
     grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
     gap: var(--space-5);
-    margin-top: var(--space-4);
   }
 
-  .inline {
+  .keys-title {
     display: flex;
+    align-items: center;
     gap: var(--space-2);
+    font-weight: 500;
   }
 
-  .label {
-    margin: 0 0 var(--space-1);
-    font-size: var(--text-sm);
-    font-weight: 600;
+  .no-keys {
+    padding: var(--space-3);
+    border: 1px dashed var(--color-border-strong);
+    border-radius: var(--radius-control);
+    text-align: center;
   }
 
   .keys {
-    display: grid;
-    gap: var(--space-1);
-    margin: 0 0 var(--space-2);
+    margin: 0;
     padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
     list-style: none;
   }
 
   .keys li {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface-2);
     color: var(--color-muted);
+  }
+
+  .keys li:last-child {
+    border-bottom: 0;
   }
 
   .key-preview {
@@ -394,20 +430,19 @@
   .weight {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-1);
-    font-size: var(--text-sm);
+    gap: var(--space-2);
+    color: var(--color-muted);
+    font-size: var(--text-xs);
+    font-weight: 400;
   }
 
   .weight input {
-    width: 4.5rem;
-  }
-
-  .small {
-    margin: 0;
-    font-size: var(--text-sm);
+    width: 4rem;
+    min-height: 1.875rem;
+    padding: 0 var(--space-2);
   }
 
   .card-skeleton {
-    height: 9rem;
+    height: 10rem;
   }
 </style>

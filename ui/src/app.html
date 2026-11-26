@@ -1,12 +1,22 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" data-theme="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
     <title>buNtu — console</title>
+    <script>
+      // Thème mémorisé appliqué avant le premier rendu : pas d'éclair clair/sombre.
+      try {
+        var stored = localStorage.getItem('buntu.theme');
+        if (stored === 'light' || stored === 'dark') {
+          document.documentElement.dataset.theme = stored;
+        }
+      } catch (error) {}
+    </script>
     %sveltekit.head%
   </head>
-  <body data-theme="light">
+  <body>
     <div style="display: contents">%sveltekit.body%</div>
   </body>
 </html>
