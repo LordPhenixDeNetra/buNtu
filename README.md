@@ -101,3 +101,21 @@ Voir [SECURITY.md](SECURITY.md). Ne signalez jamais une vulnérabilité en issue
 
 Apache License 2.0 — voir [LICENSE](LICENSE) et [NOTICE](NOTICE). Aucune fonctionnalité ne sera
 jamais réservée à une version payante ni conditionnée à une clé de licence.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- docker rm -f buntu -->
+<!-- docker run -d --name buntu -p 8080:8080 -v buntu-data:/data -e BUNTU_ADMIN_TOKEN="$(openssl rand -hex 24)" buntu:local -->
+<!-- docker inspect buntu --format '{{range .Config.Env}}{{println .}}{{end}}' | grep BUNTU_ADMIN_TOKEN -->
