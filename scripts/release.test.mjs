@@ -2,7 +2,14 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { bumpCargo, bumpPackage, cargoVersions, isSemver } from './release.mjs';
+import {
+  bumpCargo,
+  bumpPackage,
+  cargoVersions,
+  changelogSection,
+  isSemver,
+  maskedPhrases
+} from './release.mjs';
 
 const CARGO = `[workspace.package]
 version = "0.0.1-rc.1"
@@ -50,4 +57,16 @@ test('bump keeps CRLF line endings and the rest of package.json', () => {
   assert.equal(JSON.parse(bumped).version, '0.1.0');
   assert.equal(JSON.parse(bumped).license, 'Apache-2.0');
   assert.ok(bumped.endsWith('}\n'));
+});
+
+test('changelog: a version section stops at the next one', () => {
+  const text = '# Journal\n\n## [0.2.1] - 2026-11-26\n\n- fix\n\n## [0.2.0] - 2026-11-26\n\n- old\n';
+  assert.equal(changelogSection(text, '0.2.1'), '## [0.2.1] - 2026-11-26\n\n- fix\n');
+  assert.equal(changelogSection(text, '0.3.0'), null);
+});
+
+test('changelog: phrases masked by GitHub Actions are reported', () => {
+  // v0.2.0 : « Bearer value » a fait sauter la construction des archives cargo-dist.
+  assert.deepEqual(maskedPhrases('Wipe the temporary Bearer value and drop'), ['Bearer value']);
+  assert.deepEqual(maskedPhrases('Wipe the temporary authorization header value'), []);
 });
