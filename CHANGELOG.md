@@ -6,6 +6,71 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 le [versionnage sémantique](https://semver.org/lang/fr/) (avant 1.0, une mineure peut casser :
 voir `docs/release.md`).
 
+## [0.2.0] - 2026-11-26
+
+Console entièrement repensée, statistiques côté serveur, rotation de la clé maître, requêtes SQL
+vérifiées à la compilation et mode réel du kit de conformité.
+
+### À noter
+
+- **Messages en anglais** : les messages d'erreur de l'API (`error.message`) et la sortie de la
+  CLI sont désormais en anglais. Les `error.code`, statuts HTTP et types d'erreur ne changent
+  pas : un client qui teste `error.code` n'est pas concerné.
+- **Console** : nouveau design (polices Geist, thème sombre par défaut, le choix reste
+  mémorisé), palette de commandes `Ctrl/⌘ + K`, langue du navigateur suivie par défaut.
+- **API d'administration** : `GET /admin/v1/stats` (agrégats sur une fenêtre glissante) et
+  `PATCH /admin/v1/providers/{id}/keys/{index}` (poids d'une clé) ; les routes inconnues sous
+  `/v1`, `/admin` et `/anthropic` répondent par une 404 JSON (`not_found`).
+- **CLI** : `buntu secrets rotate <fichier>` réchiffre toutes les clés avec une nouvelle clé
+  maître.
+- **Écart à la procédure** : la campagne de benchmark exigée avant une mineure
+  (`docs/release.md`) n'a pas été faite pour cette version, sur décision du mainteneur.
+
+### Nouveautés
+
+- **ui** : Translate API errors from their stable code
+- **store** : Check sqlx queries at compile time with an offline cache
+- **cli** : Add buntu secrets rotate and flush the request log at shutdown
+- **ui** : Follow the browser language and test FR/EN parity and mobile layout
+- **gateway** : Edit key weights and expose request stats in the admin API
+- **ui** : Add a command palette, editable key weights and server-side overview stats
+- **ui** : New design system with Geist fonts and a dark default theme
+- **ui** : Redesign the shell and every console screen
+
+### Corrections
+
+- **deps** : Bump sqlx to 0.9 and url to 2.5.9 for RustSec advisories
+- **gateway** : Return API error messages in English
+- **gateway** : Keep the log writer and answer JSON 404 under API prefixes
+- **gateway** : Wipe the temporary Bearer value and drop a request clone
+- **cli** : Print CLI and process messages in English
+- **ci** : Make the workflow file valid YAML again
+
+### Documentation
+
+- Rank the review checklist by priority
+- Lift resolved reserves and record releases v0.1.0 to v0.1.3
+- **adr** : T0.1 keep the name buNtu and ask Canonical for its opinion
+- **adr** : T0.1 record the trademark enquiry sent to Canonical
+- **adr** : T0.1 record the USPTO trademark search
+- Tick the owner-side npm actions in the review
+- Record the P2 review items done on 2026-11-25
+- Tick the P3 items of the 2026-11-05 review
+- **design** : Record the redesigned console design system
+
+### Tests
+
+- **conformance** : Add the live mode of the conformance kit
+
+### Maintenance
+
+- **core** : Apply cargo fmt to the fallback test
+
+### Contributeurs
+
+- @LordPhenixDeNetra
+- @NetraDevLPDN
+
 ## [0.1.3] - 2026-11-09
 
 ### Corrections
